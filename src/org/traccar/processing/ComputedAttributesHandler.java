@@ -118,6 +118,36 @@ public class ComputedAttributesHandler extends BaseDataHandler {
                 }
             }
         }
+
+//        Number power = (Number) position.getAttributes().get(Position.KEY_POWER);
+//        if (power != null) {
+//                boolean ignition = power.doubleValue() > 1.0 && power.doubleValue() < 9.0;
+//                position.set(Position.KEY_DOOR, ignition);
+//
+//                Position lastPosition = Context.getDeviceManager().getLastPosition(position.getDeviceId());
+//                Boolean lastIgnition = (Boolean) lastPosition.getAttributes().get(Position.KEY_DOOR);
+//                if (lastIgnition != null) {
+//                        if (ignition && !lastIgnition) {
+//                            position.set(Position.KEY_ALARM, Position.ALARM_POWER_ON);
+//                        } else if (!ignition && lastIgnition) {
+//                            position.set(Position.KEY_ALARM, Position.ALARM_POWER_OFF);
+//                        }
+//                }
+//        }
+
+        Boolean door = (Boolean) position.getAttributes().get(Position.KEY_DOOR);
+        if (door != null) {
+            position.set(Position.KEY_DOOR, door);
+            Position lastPosition = Context.getDeviceManager().getLastPosition(position.getDeviceId());
+            Boolean lastDoor = (Boolean) lastPosition.getAttributes().get(Position.KEY_DOOR);
+            if (lastDoor != null) {
+                if (door && !lastDoor) {
+                    position.set(Position.KEY_ALARM, Position.ALARM_POWER_ON);
+                } else if (!door && lastDoor) {
+                    position.set(Position.KEY_ALARM, Position.ALARM_POWER_OFF);
+                }
+            }
+        }
         return position;
     }
 
