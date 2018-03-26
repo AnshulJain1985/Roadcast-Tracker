@@ -17,6 +17,7 @@ package org.traccar.protocol;
 
 import org.jboss.netty.channel.Channel;
 import org.traccar.BaseProtocolDecoder;
+import org.traccar.Context;
 import org.traccar.DeviceSession;
 import org.traccar.helper.DateBuilder;
 import org.traccar.helper.Parser;
@@ -135,6 +136,8 @@ public class GpsBoxProtocolDecoder extends BaseProtocolDecoder {
 
         if (parser.nextInt(0) == 1) {
             position.set(Position.KEY_IGNITION, true);
+        } else {
+            position.set(Position.KEY_IGNITION, false);
         }
         if (parser.nextInt(0) == 1) {
             position.set(Position.KEY_ALARM, Position.ALARM_SOS);
@@ -148,7 +151,7 @@ public class GpsBoxProtocolDecoder extends BaseProtocolDecoder {
         if (parser.nextInt(0) == 1) {
             position.set(Position.KEY_ALARM, Position.ALARM_SHOCK);
         }
-        if (parser.nextInt(0) == 1) {
+        if (parser.nextInt(0) == 0) {
             position.set(Position.KEY_ALARM, Position.ALARM_POWER_CUT);
             position.set(Position.KEY_CHARGE, false);
         } else {
@@ -182,14 +185,32 @@ public class GpsBoxProtocolDecoder extends BaseProtocolDecoder {
         if (parser.nextInt(0) == 1) {
             position.set(Position.PREFIX_IO + 6, true);
         }
-        if (parser.next().equals("A")) {
+
+        Position last = Context.getIdentityManager().getLastPosition(position.getDeviceId());
+
+//        boolean speedLogic = (position.getSpeed() > 0.0
+//                && last.getSpeed() == 0.0)
+//                || (position.getSpeed() == 0.0 && last.getSpeed() > 0.0)
+//                || position.getSpeed() > 0.0;
+
+        boolean speedLogic = last == null || (position.getSpeed() > 0.0
+                && last.getSpeed() > 0.0);
+
+        if (last == null || (parser.next().equals("A") && (
+                position.getBoolean(Position.KEY_IGNITION)
+                || (last.getLatitude() != position.getLatitude()
+                && last.getLongitude() != position.getLongitude()
+                && speedLogic)
+                || (last.getCourse() != position.getCourse()
+                && speedLogic)))) {
             position.set(Position.KEY_GPS, true);
+//            last.setSpeed(position.getSpeed());
+            position.set(Position.KEY_VIN, parser.next());
+            position.setCourse(parser.nextDouble(0));
         } else {
             getLastLocation(position, null);
+            position.setSpeed(position.getSpeed());
         }
-
-        position.set(Position.KEY_VIN, parser.next());
-        position.setCourse(parser.nextDouble(0));
 
         return position;
     }
