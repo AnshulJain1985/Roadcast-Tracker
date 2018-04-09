@@ -20,6 +20,7 @@ import org.traccar.BaseProtocolDecoder;
 import org.traccar.Context;
 import org.traccar.DeviceSession;
 import org.traccar.helper.DateBuilder;
+import org.traccar.helper.Log;
 import org.traccar.helper.Parser;
 import org.traccar.helper.PatternBuilder;
 import org.traccar.model.Position;
@@ -196,21 +197,29 @@ public class GpsBoxProtocolDecoder extends BaseProtocolDecoder {
         boolean speedLogic = last == null || (position.getSpeed() > 0.0
                 && last.getSpeed() > 0.0);
 
-        if (last == null || (parser.next().equals("A") && (
-                position.getBoolean(Position.KEY_IGNITION)
-                || (last.getLatitude() != position.getLatitude()
-                && last.getLongitude() != position.getLongitude()
-                && speedLogic)
-                || (last.getCourse() != position.getCourse()
-                && speedLogic)))) {
+//        if (last == null || (parser.next().equals("A") && (
+//                position.getBoolean(Position.KEY_IGNITION)
+//                || (last.getLatitude() != position.getLatitude()
+//                && last.getLongitude() != position.getLongitude()
+//                && speedLogic)
+//                || (last.getCourse() != position.getCourse()
+//                && speedLogic)))) {
+
+        String gpsStatus = parser.next();
+
+        Log.debug("GPS: " + gpsStatus + "Lat: " + position.getLatitude()
+                + "Lng: " + position.getLongitude() + "Speed: " + position.getSpeed() + "SpeedLogic: " + speedLogic);
+
+        if (last == null || (gpsStatus.equals("A") && (position.getBoolean(Position.KEY_IGNITION)
+                        || speedLogic))) {
             position.set(Position.KEY_GPS, true);
-//            last.setSpeed(position.getSpeed());
             position.set(Position.KEY_VIN, parser.next());
             position.setCourse(parser.nextDouble(0));
         } else {
             getLastLocation(position, null);
             position.setSpeed(position.getSpeed());
         }
+
 
         return position;
     }
