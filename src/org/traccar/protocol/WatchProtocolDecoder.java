@@ -21,6 +21,7 @@ import org.traccar.BaseProtocolDecoder;
 import org.traccar.Context;
 import org.traccar.DeviceSession;
 import org.traccar.helper.BitUtil;
+import org.traccar.helper.DistanceCalculator;
 import org.traccar.helper.Parser;
 import org.traccar.helper.PatternBuilder;
 import org.traccar.helper.UnitsConverter;
@@ -29,6 +30,8 @@ import org.traccar.model.Network;
 import org.traccar.model.Position;
 import org.traccar.model.WifiAccessPoint;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -107,7 +110,8 @@ public class WatchProtocolDecoder extends BaseProtocolDecoder {
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
 
-        position.setTime(parser.nextDateTime(Parser.DateTimeFormat.DMY_HMS));
+        Date deviceDateTime = parser.nextDateTime(Parser.DateTimeFormat.DMY_HMS);
+        position.setTime(deviceDateTime);
 
         position.setValid(parser.next().equals("A"));
         position.setLatitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
@@ -115,6 +119,26 @@ public class WatchProtocolDecoder extends BaseProtocolDecoder {
         position.setSpeed(UnitsConverter.knotsFromKph(parser.nextDouble(0)));
         position.setCourse(parser.nextDouble(0));
         position.setAltitude(parser.nextDouble(0));
+
+        int distanceFilter = Context.getConfig().getInteger(getProtocolName() + ".distanceFilter");
+
+        if (distanceFilter > 0) {
+            Position last = Context.getIdentityManager().getLastPosition(position.getDeviceId());
+
+            if (last != null && last.getLatitude() != 0.0 && last.getLongitude() != 0.0) {
+
+                double distance = DistanceCalculator.distance(
+                        position.getLatitude(), position.getLongitude(),
+                        last.getLatitude(), last.getLongitude());
+
+                distance = BigDecimal.valueOf(distance).setScale(2, RoundingMode.HALF_EVEN).doubleValue();
+
+                if (distance < distanceFilter || !position.getValid()) {
+                    getLastLocation(position, new Date());
+                    position.setTime(deviceDateTime);
+                }
+            }
+        }
 
         position.set(Position.KEY_SATELLITES, parser.nextInt(0));
         position.set(Position.KEY_RSSI, parser.nextInt(0));
