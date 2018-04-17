@@ -15,7 +15,6 @@
  */
 package org.traccar.protocol;
 
-import javafx.geometry.Pos;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
@@ -152,7 +151,7 @@ public class PrimeProtocolDecoder extends BaseProtocolDecoder {
 
         position.set(Position.PREFIX_TEMP, buf.readUnsignedByte());
 
-        float battery = (buf.readUnsignedShort())/10;
+        float battery = (buf.readUnsignedShort()) / 10;
         position.set(Position.KEY_BATTERY, battery + "v");
 
         if (battery > 11.0) {
@@ -329,7 +328,7 @@ public class PrimeProtocolDecoder extends BaseProtocolDecoder {
 
         position.setSpeed(parser.nextDouble(0));
         position.setCourse(parser.nextDouble(0));
-        position.set(Position.KEY_BATTERY, parser.nextDouble(0));
+        position.set(Position.KEY_BATTERY, (parser.nextDouble(0)) / 10 + "v");
 
         if (parser.hasNext(3)) {
             dateBuilder.setDateReverse(parser.nextInt(0), parser.nextInt(0), parser.nextInt(0));
