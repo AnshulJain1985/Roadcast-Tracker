@@ -15,6 +15,7 @@
  */
 package org.traccar.protocol;
 
+import javafx.geometry.Pos;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
@@ -128,7 +129,8 @@ public class PrimeProtocolDecoder extends BaseProtocolDecoder {
         position.setTime(dateBuilder.getDate());
 
         double latitude = readCoordinate(buf, false);
-        position.set(Position.KEY_BATTERY_LEVEL, decodeBattery(buf.readUnsignedByte()));
+//        position.set(Position.KEY_BATTERY_LEVEL, decodeBattery(buf.readUnsignedByte()));
+        position.set(Position.PREFIX_TEMP, buf.readUnsignedByte());
         double longitude = readCoordinate(buf, true);
 
         int flags = buf.readUnsignedByte() & 0x0f;
@@ -147,6 +149,23 @@ public class PrimeProtocolDecoder extends BaseProtocolDecoder {
         position.setCourse((buf.readUnsignedByte() & 0x0f) * 100.0 + BcdUtil.readInteger(buf, 2));
 
         processStatus(position, buf.readUnsignedInt());
+
+        position.set(Position.PREFIX_TEMP, buf.readUnsignedByte());
+
+        float battery = (buf.readUnsignedShort())/10;
+        position.set(Position.KEY_BATTERY, battery + "v");
+
+        if (battery > 11.0) {
+            position.set(Position.KEY_CHARGE, true);
+        } else {
+            position.set(Position.KEY_CHARGE, false);
+        }
+
+        position.set(Position.KEY_ODOMETER, buf.readUnsignedInt());
+
+        position.set(Position.KEY_ODOMETER_TRIP, buf.readUnsignedShort());
+
+        position.set(Position.KEY_ORIGINAL, buf.readUnsignedByte());
 
         return position;
     }
@@ -187,27 +206,28 @@ public class PrimeProtocolDecoder extends BaseProtocolDecoder {
             .number("(d+.?d*)?,")                // course
             .number("(d+.?d*)?,")                // battery
             .number("(?:(dd)(dd)(dd))?")         // date (ddmmyy)
-            .groupBegin()
-            .expression(",[^,]*,")
-            .expression("[^,]*,")
-            .expression("[^,]*")                 // sim info
-            .groupEnd("?")
-            .groupBegin()
+//            .groupBegin()
+//            .expression(",[^,]*,")
+//            .expression("[^,]*,")
+//            .expression("[^,]*")                 // sim info
+//            .groupEnd("?")
+//            .groupBegin()
             .number(",(x{8})")
-            .groupBegin()
-            .number(",(d+),")                    // odometer
-            .number("(-?d+),")                   // temperature
-            .number("(d+.d+),")                  // fuel
-            .number("(-?d+),")                   // altitude
-            .number("(x+),")                     // lac
-            .number("(x+)")                      // cid
-            .or()
-            .text(",")
-            .expression("(.*)")                  // data
-            .or()
-            .groupEnd()
-            .or()
-            .groupEnd()
+//            .groupBegin()
+            .number(",(d+)")                    // odometer
+//            .number("(-?d+),")                   // temperature
+//            .number("(d+.d+),")                  // fuel
+//            .number("(-?d+),")                   // altitude
+//            .number("(x+),")                     // lac
+//            .number("(x+)")                      // cid
+//            .or()
+//            .text(",")
+//            .expression("(.*)")                  // data
+//            .or()
+//            .groupEnd()
+//            .or()
+//            .groupEnd()
+            .number(",(d+)")                    // distance
             .text("#")
             .compile();
 
@@ -322,21 +342,24 @@ public class PrimeProtocolDecoder extends BaseProtocolDecoder {
             processStatus(position, parser.nextLong(16, 0));
         }
 
-        if (parser.hasNext(6)) {
+        if (parser.hasNext()) {
             position.set(Position.KEY_ODOMETER, parser.nextInt(0));
-            position.set(Position.PREFIX_TEMP + 1, parser.nextInt(0));
-            position.set(Position.KEY_FUEL_LEVEL, parser.nextDouble(0));
 
-            position.setAltitude(parser.nextInt(0));
-
-            position.setNetwork(new Network(CellTower.fromLacCid(parser.nextHexInt(0), parser.nextHexInt(0))));
+//            position.set(Position.PREFIX_TEMP + 1, parser.nextInt(0));
+//            position.set(Position.KEY_FUEL_LEVEL, parser.nextDouble(0));
+//            position.setAltitude(parser.nextInt(0));
+//            position.setNetwork(new Network(CellTower.fromLacCid(parser.nextHexInt(0), parser.nextHexInt(0))));
         }
 
-        if (parser.hasNext(4)) {
-            String[] values = parser.next().split(",");
-            for (int i = 0; i < values.length; i++) {
-                position.set(Position.PREFIX_IO + (i + 1), values[i].trim());
-            }
+//        if (parser.hasNext(4)) {
+//            String[] values = parser.next().split(",");
+//            for (int i = 0; i < values.length; i++) {
+//                position.set(Position.PREFIX_IO + (i + 1), values[i].trim());
+//            }
+//        }
+
+        if (parser.hasNext()) {
+            position.set(Position.KEY_ODOMETER_TRIP, parser.nextInt(0));
         }
 
         return position;

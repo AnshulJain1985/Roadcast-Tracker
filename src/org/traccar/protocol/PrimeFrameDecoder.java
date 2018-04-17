@@ -22,8 +22,8 @@ import org.jboss.netty.handler.codec.frame.FrameDecoder;
 
 public class PrimeFrameDecoder extends FrameDecoder {
 
-    private static final int MESSAGE_SHORT = 32;
-    private static final int MESSAGE_LONG = 45;
+    private static final int MESSAGE_SHORT = 42;
+    private static final int MESSAGE_LONG = 42;
 
     private int messageLength;
 

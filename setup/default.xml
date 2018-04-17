@@ -93,6 +93,8 @@
     <entry key='skypatrol.port'>5021</entry>
     <entry key='gt02.port'>5022</entry>
     <entry key='gt06.port'>5023</entry>
+    <entry key='gt06.language'>true</entry>
+
     <entry key='megastek.port'>5024</entry>
     <entry key='navigil.port'>5025</entry>
     <entry key='gpsgate.port'>5026</entry>

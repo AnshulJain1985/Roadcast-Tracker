@@ -45,7 +45,7 @@ public class PrimeProtocol extends BaseProtocol {
             @Override
             protected void addSpecificHandlers(ChannelPipeline pipeline) {
                 int messageLength = Context.getConfig().getInteger(getName() + ".messageLength");
-                pipeline.addLast("frameDecoder", new H02FrameDecoder(messageLength));
+                pipeline.addLast("frameDecoder", new PrimeFrameDecoder(messageLength));
                 pipeline.addLast("stringEncoder", new StringEncoder());
                 pipeline.addLast("objectEncoder", new PrimeProtocolEncoder());
                 pipeline.addLast("objectDecoder", new PrimeProtocolDecoder(PrimeProtocol.this));
