@@ -30,6 +30,7 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.glassfish.jersey.jackson.JacksonFeature;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.traccar.Config;
@@ -178,7 +179,7 @@ public class WebServer {
 
         ResourceConfig resourceConfig = new ResourceConfig();
         resourceConfig.registerClasses(JacksonFeature.class, ObjectMapperProvider.class, ResourceErrorHandler.class);
-        resourceConfig.registerClasses(SecurityRequestFilter.class, CorsResponseFilter.class);
+        resourceConfig.registerClasses(SecurityRequestFilter.class, CorsResponseFilter.class, MultiPartFeature.class);
         resourceConfig.packages(ServerResource.class.getPackage().getName());
         servletHandler.addServlet(new ServletHolder(new ServletContainer(resourceConfig)), "/*");
 
