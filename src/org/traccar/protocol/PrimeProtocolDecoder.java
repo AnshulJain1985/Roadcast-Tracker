@@ -78,11 +78,10 @@ public class PrimeProtocolDecoder extends BaseProtocolDecoder {
         } else if (!BitUtil.check(status, 17)) {
             position.set(Position.KEY_ALARM, Position.ALARM_LOW_BATTERY);
         } else if (!BitUtil.check(status, 20)) {
-            position.set(Position.KEY_ALARM, Position.ALARM_POWER_CUT);
-        } else if (!BitUtil.check(status, 24)) {
-            position.set(Position.KEY_DOOR, true);
+                position.set(Position.KEY_ALARM, Position.ALARM_POWER_CUT);
         }
 
+        position.set(Position.KEY_DOOR, BitUtil.check(status, 24));
         position.set(Position.KEY_IGNITION, BitUtil.check(status, 10));
         position.set(Position.KEY_STATUS, status);
 
