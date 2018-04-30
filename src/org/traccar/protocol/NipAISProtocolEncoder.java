@@ -43,11 +43,11 @@ public class NipAISProtocolEncoder extends StringProtocolEncoder implements Stri
 
         switch (command.getType()) {
             case Command.TYPE_CUSTOM:
-                return formatCommand(command, "\\r\\n+ACC {%s}\\n\\r\\n", Command.KEY_DATA);
+                return formatCommand(command, "\r\n+ACC {%s}\n\r\n", Command.KEY_DATA);
             case Command.TYPE_ENGINE_STOP:
-                return formatCommand(command, "\\r\\n+ACC {%s}\\n\\r\\n", "SETDOP 2,1");
+                return formatCommand(command, "\r\n+ACC SETDOP 2,1\n\r\n");
             case Command.TYPE_ENGINE_RESUME:
-                return formatCommand(command, "\\r\\n+ACC {%s}\\n\\r\\n", "SETDOP 2,0");
+                return formatCommand(command, "\r\n+ACC SETDOP 2,0\n\r\n");
             default:
                 Log.warning(new UnsupportedOperationException(command.getType()));
                 break;

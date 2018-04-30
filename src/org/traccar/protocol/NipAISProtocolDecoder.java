@@ -182,7 +182,7 @@ public class NipAISProtocolDecoder extends BaseProtocolDecoder {
         position.set(Position.KEY_OPERATOR, parser.next());
         position.set(Position.KEY_IGNITION, parser.nextInt(0) == 1);
         position.set(Position.KEY_CHARGE, parser.nextInt(0) == 1);
-        position.set(Position.KEY_POWER, parser.nextDouble(0));
+        position.set("maininput", parser.nextDouble(0));
         position.set(Position.KEY_BATTERY, parser.nextDouble(0));
         position.set(Position.KEY_STATUS, parser.nextInt(0));
 
@@ -206,9 +206,10 @@ public class NipAISProtocolDecoder extends BaseProtocolDecoder {
         }
 
         for (int i = 1; i <= 4; i++) {
-            position.set(Position.PREFIX_IN + i, parser.nextInt(0));
+            int tempDio = parser.nextInt(0);
+            position.set(Position.PREFIX_IN + i, tempDio);
             if (i == 2) {
-                position.set(Position.KEY_DOOR, parser.nextInt(0) == 1);
+                position.set(Position.KEY_DOOR, tempDio == 1);
             }
         }
         for (int i = 1; i <= 2; i++) {
