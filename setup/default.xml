@@ -237,5 +237,6 @@
 
     <entry key='gpsbox.port'>5200</entry>
     <entry key='prime07.port'>5202</entry>
+    <entry key='nippon.port'>5203</entry>
 
 </properties>
