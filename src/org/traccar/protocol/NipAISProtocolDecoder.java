@@ -155,6 +155,12 @@ public class NipAISProtocolDecoder extends BaseProtocolDecoder {
         String packetStatus = parser.next();
         String imei = parser.next();
 
+        if (!sentence.isEmpty() && !packetType.isEmpty() && packetType.equals("EA")) {
+            if (channel != null) {
+                channel.write("\n\r+ACC CLRSOS\n\r\n", remoteAddress);
+            }
+        }
+
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
         if (deviceSession == null) {
             return null;

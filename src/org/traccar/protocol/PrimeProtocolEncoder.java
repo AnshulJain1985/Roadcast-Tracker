@@ -44,18 +44,10 @@ public class PrimeProtocolEncoder extends StringProtocolEncoder {
         String uniqueId = getUniqueId(command.getDeviceId());
 
         switch (command.getType()) {
-            case Command.TYPE_ALARM_ARM:
-                return formatCommand(time, uniqueId, "SCF", "0", "0");
-            case Command.TYPE_ALARM_DISARM:
-                return formatCommand(time, uniqueId, "SCF", "1", "1");
             case Command.TYPE_ENGINE_STOP:
-                return formatCommand(
-                        time, uniqueId, "S20", "1", "3", "10", "3", "5", "5", "3", "5", "3", "5", "3", "5");
+                return formatCommand(time, uniqueId, "S20", "1", "0");
             case Command.TYPE_ENGINE_RESUME:
                 return formatCommand(time, uniqueId, "S20", "0", "0");
-            case Command.TYPE_POSITION_PERIODIC:
-                return formatCommand(
-                        time, uniqueId, "S71", "22", command.getAttributes().get(Command.KEY_FREQUENCY).toString());
             default:
                 Log.warning(new UnsupportedOperationException(command.getType()));
                 break;
