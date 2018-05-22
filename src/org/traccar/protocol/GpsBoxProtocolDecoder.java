@@ -169,6 +169,9 @@ public class GpsBoxProtocolDecoder extends BaseProtocolDecoder {
             position.set(Position.KEY_COMMAND, "Immobilize");
         }
         if (parser.nextInt(0) == 1) {
+            position.set(Position.ALARM_TOW, true);
+        }
+        if (parser.nextInt(0) == 1) {
             position.set(Position.PREFIX_IO + 1, true);
         }
         if (parser.nextInt(0) == 1) {
@@ -182,9 +185,6 @@ public class GpsBoxProtocolDecoder extends BaseProtocolDecoder {
         }
         if (parser.nextInt(0) == 1) {
             position.set(Position.PREFIX_IO + 5, true);
-        }
-        if (parser.nextInt(0) == 1) {
-            position.set(Position.PREFIX_IO + 6, true);
         }
 
         Position last = Context.getIdentityManager().getLastPosition(position.getDeviceId());

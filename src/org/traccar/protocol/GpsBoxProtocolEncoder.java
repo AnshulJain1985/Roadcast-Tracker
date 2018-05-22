@@ -31,9 +31,9 @@ public class GpsBoxProtocolEncoder extends StringProtocolEncoder implements Stri
 
         switch (command.getType()) {
             case Command.TYPE_ENGINE_STOP:
-                return formatCommand(command, "**,imei:{%s},J", Command.KEY_UNIQUE_ID);
+                return formatCommand(command, "++S*R:IMON#;", Command.KEY_UNIQUE_ID);
             case Command.TYPE_ENGINE_RESUME:
-                return formatCommand(command, "**,imei:{%s},K", Command.KEY_UNIQUE_ID);
+                return formatCommand(command, "++S*R:IMOFF#;", Command.KEY_UNIQUE_ID);
             default:
                 Log.warning(new UnsupportedOperationException(command.getType()));
                 break;
