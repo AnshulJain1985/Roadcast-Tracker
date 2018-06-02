@@ -194,8 +194,8 @@ public class GpsBoxProtocolDecoder extends BaseProtocolDecoder {
 //                || (position.getSpeed() == 0.0 && last.getSpeed() > 0.0)
 //                || position.getSpeed() > 0.0;
 
-        boolean speedLogic = last == null || (position.getSpeed() > 0.0
-                && last.getSpeed() > 0.0);
+//        boolean speedLogic = last == null || (position.getSpeed() > 0.0
+//                && last.getSpeed() > 0.0);
 
 //        if (last == null || (parser.next().equals("A") && (
 //                position.getBoolean(Position.KEY_IGNITION)
@@ -206,18 +206,17 @@ public class GpsBoxProtocolDecoder extends BaseProtocolDecoder {
 //                && speedLogic)))) {
 
         String gpsStatus = parser.next();
+        position.setSpeed(position.getSpeed());
 
-        Log.debug("GPS: " + gpsStatus + "Lat: " + position.getLatitude()
-                + "Lng: " + position.getLongitude() + "Speed: " + position.getSpeed() + "SpeedLogic: " + speedLogic);
+        Log.debug("GPS: " + gpsStatus + "Lat: " + position.getLatitude() + "Lng: "
+                + position.getLongitude() + "Speed: " + position.getSpeed() + "SpeedLogic: " + position.getSpeed());
 
-        if (last == null || (gpsStatus.equals("A") && (position.getBoolean(Position.KEY_IGNITION)
-                        || speedLogic))) {
+        if (last == null || (gpsStatus.equals("A"))) {
             position.set(Position.KEY_GPS, true);
             position.set(Position.KEY_VIN, parser.next());
             position.setCourse(parser.nextDouble(0));
         } else {
             getLastLocation(position, null);
-            position.setSpeed(position.getSpeed());
         }
 
 
