@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 - 2017 Anton Tananaev (anton@traccar.org)
+ * Copyright 2015 - 2018 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Properties;
 
+import com.ning.http.client.AsyncHttpClientConfigDefaults;
 import org.apache.velocity.app.VelocityEngine;
 import org.eclipse.jetty.util.URIUtil;
 import org.traccar.database.CalendarManager;
@@ -35,6 +36,7 @@ import org.traccar.database.DeviceManager;
 import org.traccar.database.DriversManager;
 import org.traccar.database.IdentityManager;
 import org.traccar.database.LdapProvider;
+import org.traccar.database.MaintenancesManager;
 import org.traccar.database.MediaManager;
 import org.traccar.database.NotificationManager;
 import org.traccar.database.PermissionsManager;
@@ -48,6 +50,7 @@ import org.traccar.geocoder.AddressFormat;
 import org.traccar.geocoder.BingMapsGeocoder;
 import org.traccar.geocoder.FactualGeocoder;
 import org.traccar.geocoder.GeocodeFarmGeocoder;
+import org.traccar.geocoder.GeocodeXyzGeocoder;
 import org.traccar.geocoder.GisgraphyGeocoder;
 import org.traccar.geocoder.GoogleGeocoder;
 import org.traccar.geocoder.MapQuestGeocoder;
@@ -64,6 +67,7 @@ import org.traccar.model.Device;
 import org.traccar.model.Driver;
 import org.traccar.model.Geofence;
 import org.traccar.model.Group;
+import org.traccar.model.Maintenance;
 import org.traccar.model.Notification;
 import org.traccar.model.User;
 import org.traccar.geolocation.GoogleGeolocationProvider;
@@ -78,6 +82,9 @@ import org.traccar.smpp.SmppClient;
 import org.traccar.web.WebServer;
 
 public final class Context {
+
+    private static final String USER_AGENT =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:59.0) Gecko/20100101 Firefox/59.0";
 
     private Context() {
     }
@@ -202,10 +209,15 @@ public final class Context {
         return velocityEngine;
     }
 
-    private static final AsyncHttpClient ASYNC_HTTP_CLIENT = new AsyncHttpClient();
+    private static AsyncHttpClient asyncHttpClient;
+
+    static {
+        System.setProperty(AsyncHttpClientConfigDefaults.ASYNC_CLIENT + "userAgent", USER_AGENT);
+        asyncHttpClient = new AsyncHttpClient();
+    }
 
     public static AsyncHttpClient getAsyncHttpClient() {
-        return ASYNC_HTTP_CLIENT;
+        return asyncHttpClient;
     }
 
     private static EventForwarder eventForwarder;
@@ -230,6 +242,12 @@ public final class Context {
 
     public static CommandsManager getCommandsManager() {
         return commandsManager;
+    }
+
+    private static MaintenancesManager maintenancesManager;
+
+    public static MaintenancesManager getMaintenancesManager() {
+        return maintenancesManager;
     }
 
     private static StatisticsManager statisticsManager;
@@ -303,6 +321,8 @@ public final class Context {
                 return new FactualGeocoder(url, key, cacheSize, addressFormat);
             case "geocodefarm":
                 return new GeocodeFarmGeocoder(key, language, cacheSize, addressFormat);
+            case "geocodexyz":
+                return new GeocodeXyzGeocoder(key, cacheSize, addressFormat);
             default:
                 return new GoogleGeocoder(key, language, cacheSize, addressFormat);
         }
@@ -383,7 +403,7 @@ public final class Context {
 
         driversManager = new DriversManager(dataManager);
 
-        commandsManager = new CommandsManager(dataManager);
+        commandsManager = new CommandsManager(dataManager, config.getBoolean("commands.queueing"));
 
         statisticsManager = new StatisticsManager();
 
@@ -419,6 +439,7 @@ public final class Context {
 
         geofenceManager = new GeofenceManager(dataManager);
         calendarManager = new CalendarManager(dataManager);
+        maintenancesManager = new MaintenancesManager(dataManager);
         notificationManager = new NotificationManager(dataManager);
         Properties velocityProperties = new Properties();
         velocityProperties.setProperty("file.resource.loader.path",
@@ -443,7 +464,8 @@ public final class Context {
         motionEventHandler = new MotionEventHandler(tripsConfig);
         overspeedEventHandler = new OverspeedEventHandler(
                 Context.getConfig().getLong("event.overspeed.minimalDuration") * 1000,
-                Context.getConfig().getBoolean("event.overspeed.notRepeat"));
+                Context.getConfig().getBoolean("event.overspeed.notRepeat"),
+                Context.getConfig().getBoolean("event.overspeed.preferLowest"));
     }
 
     public static void init(IdentityManager testIdentityManager) {
@@ -469,6 +491,8 @@ public final class Context {
             return (BaseObjectManager<T>) driversManager;
         } else if (clazz.equals(Command.class)) {
             return (BaseObjectManager<T>) commandsManager;
+        } else if (clazz.equals(Maintenance.class)) {
+            return (BaseObjectManager<T>) maintenancesManager;
         } else if (clazz.equals(Notification.class)) {
             return (BaseObjectManager<T>) notificationManager;
         }

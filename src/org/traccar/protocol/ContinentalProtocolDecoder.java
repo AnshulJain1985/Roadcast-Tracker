@@ -19,6 +19,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.traccar.BaseProtocolDecoder;
 import org.traccar.DeviceSession;
+import org.traccar.helper.BitUtil;
 import org.traccar.helper.UnitsConverter;
 import org.traccar.model.Position;
 
@@ -46,7 +47,8 @@ public class ContinentalProtocolDecoder extends BaseProtocolDecoder {
         buf.readUnsignedShort(); // length
         buf.readUnsignedByte(); // software version
 
-        DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, String.valueOf(buf.readUnsignedInt()));
+        long serialNumber = buf.readUnsignedInt();
+        DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, String.valueOf(serialNumber));
         if (deviceSession == null) {
             return null;
         }
@@ -76,12 +78,24 @@ public class ContinentalProtocolDecoder extends BaseProtocolDecoder {
             position.setDeviceTime(new Date(buf.readUnsignedInt() * 1000L));
 
             position.set(Position.KEY_EVENT, buf.readUnsignedShort());
-            position.set(Position.KEY_INPUT, buf.readUnsignedShort());
+
+            int input = buf.readUnsignedShort();
+            position.set(Position.KEY_IGNITION, BitUtil.check(input, 0));
+            position.set(Position.KEY_INPUT, input);
+
             position.set(Position.KEY_OUTPUT, buf.readUnsignedShort());
             position.set(Position.KEY_BATTERY, buf.readUnsignedByte());
             position.set(Position.KEY_DEVICE_TEMP, buf.readByte());
 
             buf.readUnsignedShort(); // reserved
+
+            if (buf.readableBytes() > 4) {
+                position.set(Position.KEY_ODOMETER, buf.readUnsignedInt());
+            }
+
+            if (buf.readableBytes() > 4) {
+                position.set(Position.KEY_HOURS, buf.readUnsignedInt());
+            }
 
             return position;
 
