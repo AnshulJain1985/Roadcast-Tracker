@@ -38,7 +38,7 @@ public class GpsBoxProtocolDecoder extends BaseProtocolDecoder {
             .text("A:")
             .number("(d+),")                     // imei
             .text("B:")
-            .expression("([^,]+),")              // battery in volts
+            .number("(d+.?d*)?[V]*,")              // battery in volts
             .text("C:")
             .expression("([^,]+),")              // fuel in %
             .text("D:")
@@ -127,7 +127,8 @@ public class GpsBoxProtocolDecoder extends BaseProtocolDecoder {
 
         position.setLatitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_MIN_HEM));
         position.setLongitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_MIN_HEM));
-        position.setSpeed(parser.nextDouble(0));
+//        position.setSpeed(parser.nextDouble(0));
+        position.setSpeed(convertSpeed(parser.nextDouble(0), "kmh"));
 
         DateBuilder dateBuilder = new DateBuilder()
                 .setDateReverse(parser.nextInt(0), parser.nextInt(0), parser.nextInt(0));
@@ -206,7 +207,7 @@ public class GpsBoxProtocolDecoder extends BaseProtocolDecoder {
 //                && speedLogic)))) {
 
         String gpsStatus = parser.next();
-        position.setSpeed(position.getSpeed());
+//        position.setSpeed(position.getSpeed());
 
         Log.debug("GPS: " + gpsStatus + "Lat: " + position.getLatitude() + "Lng: "
                 + position.getLongitude() + "Speed: " + position.getSpeed() + "SpeedLogic: " + position.getSpeed());
