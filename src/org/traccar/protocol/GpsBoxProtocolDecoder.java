@@ -20,6 +20,7 @@ import org.traccar.BaseProtocolDecoder;
 import org.traccar.Context;
 import org.traccar.DeviceSession;
 import org.traccar.helper.DateBuilder;
+import org.traccar.helper.Log;
 import org.traccar.helper.Parser;
 import org.traccar.helper.PatternBuilder;
 import org.traccar.model.Position;
@@ -93,6 +94,8 @@ public class GpsBoxProtocolDecoder extends BaseProtocolDecoder {
         String sentence = (String) msg;
 
         if (!sentence.isEmpty()) {
+                    Log.debug("GPSBOX: " + sentence);
+
             if (channel != null) {
                 channel.write("+##Received OK", remoteAddress);
             }

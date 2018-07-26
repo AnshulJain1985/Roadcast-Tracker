@@ -239,4 +239,8 @@
     <entry key='prime07.port'>5202</entry>
     <entry key='nippon.port'>5203</entry>
 
+    <entry key='jcx00.port'>5223</entry>
+    <entry key='jcx00.language'>true</entry>
+    <!--<entry key='jcx00.timezone'>19800</entry>-->
+
 </properties>
