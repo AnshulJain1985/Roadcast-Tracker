@@ -21,13 +21,7 @@ import org.jboss.netty.channel.Channel;
 import org.traccar.BaseProtocolDecoder;
 import org.traccar.Context;
 import org.traccar.DeviceSession;
-import org.traccar.helper.BcdUtil;
-import org.traccar.helper.BitUtil;
-import org.traccar.helper.Checksum;
-import org.traccar.helper.DateBuilder;
-import org.traccar.helper.Parser;
-import org.traccar.helper.PatternBuilder;
-import org.traccar.helper.UnitsConverter;
+import org.traccar.helper.*;
 import org.traccar.model.CellTower;
 import org.traccar.model.Device;
 import org.traccar.model.Network;
@@ -776,6 +770,8 @@ public class JCX00ProtocolDecoder extends BaseProtocolDecoder {
             Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
 
         ChannelBuffer buf = (ChannelBuffer) msg;
+
+        Log.info("JCX00 HEX: " + ChannelBuffers.hexDump(buf));
 
         int header = buf.readShort();
 
