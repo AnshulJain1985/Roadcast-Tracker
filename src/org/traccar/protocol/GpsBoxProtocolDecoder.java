@@ -150,7 +150,9 @@ public class GpsBoxProtocolDecoder extends BaseProtocolDecoder {
             position.set(Position.KEY_INPUT, true); //Need to check and update
         }
         if (parser.nextInt(0) == 1) {
-            position.set(Position.KEY_ALARM, Position.ALARM_DOOR);
+            position.set(Position.KEY_DOOR, true);
+        } else {
+            position.set(Position.KEY_DOOR, false);
         }
         if (parser.nextInt(0) == 1) {
             position.set(Position.KEY_ALARM, Position.ALARM_SHOCK);
