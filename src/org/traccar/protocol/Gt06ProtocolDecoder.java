@@ -281,7 +281,9 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
                 break;
         }
 
-        position.set(Position.KEY_BATTERY, buf.readUnsignedByte());
+        short battery = buf.readUnsignedByte();
+        position.set(Position.KEY_BATTERY, battery);
+        position.set(Position.KEY_BATTERY_LEVEL, ((battery * 100) / 6));
         position.set(Position.KEY_RSSI, buf.readUnsignedByte());
         position.set(Position.KEY_ALARM, decodeAlarm(buf.readUnsignedByte()));
 
@@ -427,6 +429,13 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
             position.set(Position.KEY_ARMED, BitUtil.check(status, 0));
             position.set(Position.KEY_IGNITION, BitUtil.check(status, 1));
             position.set(Position.KEY_CHARGE, BitUtil.check(status, 2));
+
+            if (buf.readableBytes() >= 2 + 6) {
+                position.set(Position.KEY_BATTERY, buf.readUnsignedShort() * 0.01);
+            }
+            if (buf.readableBytes() >= 1 + 6) {
+                position.set(Position.KEY_RSSI, buf.readUnsignedByte());
+            }
 
             sendResponse(channel, false, type, buf.getShort(buf.writerIndex() - 6), null);
 
@@ -689,6 +698,7 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
 
                 int flags = buf.readUnsignedByte();
                 position.set(Position.KEY_DOOR, BitUtil.check(flags, 0));
+                position.set(Position.PREFIX_TEMP, BitUtil.check(flags, 1));
                 position.set(Position.PREFIX_IO + 1, BitUtil.check(flags, 2));
                 return position;
 
