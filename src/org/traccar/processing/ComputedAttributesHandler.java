@@ -123,6 +123,21 @@ public class ComputedAttributesHandler extends BaseDataHandler {
                 }
             }
         }
+        Boolean door = (Boolean) position.getAttributes().get(Position.KEY_DOOR);
+        if (door != null) {
+            position.set(Position.KEY_DOOR, door);
+            Position lastPosition = Context.getDeviceManager().getLastPosition(position.getDeviceId());
+            if (lastPosition != null) {
+                Boolean lastDoor = (Boolean) lastPosition.getAttributes().get(Position.KEY_DOOR);
+                if (lastDoor != null) {
+                    if (door && !lastDoor) {
+                        position.set(Position.KEY_ALARM, Position.ALARM_POWER_ON);
+                    } else if (!door && lastDoor) {
+                        position.set(Position.KEY_ALARM, Position.ALARM_POWER_OFF);
+                    }
+                }
+            }
+        }
         return position;
     }
 
