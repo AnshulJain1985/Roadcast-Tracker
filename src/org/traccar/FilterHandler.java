@@ -196,21 +196,26 @@ public class FilterHandler extends BaseDataHandler {
             last = Context.getIdentityManager().getLastPosition(position.getDeviceId());
         }
 
-        if (skipLimit(position, last) || skipAttributes(position)) {
+        if (skipAttributes(position)) {
+            return false;
+        }
+
+        if (filterZero(position)) {
+            filterType.append("Zero ");
+        }
+        if (filterFuture(position)) {
+            filterType.append("Future ");
+        }
+
+        if (filterType.length() == 0 && skipLimit(position, last)) {
             return false;
         }
 
         if (filterInvalid(position)) {
             filterType.append("Invalid ");
         }
-        if (filterZero(position)) {
-            filterType.append("Zero ");
-        }
         if (filterDuplicate(position, last)) {
             filterType.append("Duplicate ");
-        }
-        if (filterFuture(position)) {
-            filterType.append("Future ");
         }
         if (filterAccuracy(position)) {
             filterType.append("Accuracy ");
