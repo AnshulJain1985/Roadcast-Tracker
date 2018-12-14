@@ -18,6 +18,12 @@
     <entry key='geocoder.enable'>false</entry>
     <entry key='geocoder.type'>google</entry>
 
+    <entry key='geolocation.enable'>true</entry>
+    <entry key='geolocation.type'>unwired</entry>
+    <entry key='geolocation.url'>http://bugs.roadcast.co.in:8288/location</entry>
+    <entry key='geolocation.key'>roadcast</entry>
+    <entry key='geolocation.processInvalidPositions'>true</entry>
+
     <entry key='logger.enable'>true</entry>
     <entry key='logger.level'>info</entry>
     <entry key='logger.file'>./logs/tracker-server.log</entry>

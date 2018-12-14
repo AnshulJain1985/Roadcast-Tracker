@@ -22,9 +22,9 @@ import org.traccar.NetworkMessage;
 import org.traccar.Protocol;
 import org.traccar.helper.Checksum;
 import org.traccar.helper.DateBuilder;
-import org.traccar.helper.ObdDecoder;
 import org.traccar.helper.Parser;
 import org.traccar.helper.PatternBuilder;
+import org.traccar.helper.ObdDecoder;
 import org.traccar.model.CellTower;
 import org.traccar.model.Network;
 import org.traccar.model.Position;
@@ -153,7 +153,10 @@ public class L100ProtocolDecoder extends BaseProtocolDecoder {
         dateBuilder.setDateReverse(parser.nextInt(), parser.nextInt(), parser.nextInt());
         position.setTime(dateBuilder.getDate());
 
-        position.set(Position.KEY_STATUS, parser.next());
+        String status = parser.next();
+        position.set(Position.KEY_IGNITION, status.charAt(0) == '1');
+
+        position.set(Position.KEY_STATUS, status);
         position.set(Position.PREFIX_ADC + 1, parser.next());
         position.set(Position.KEY_ODOMETER, parser.nextDouble());
         position.set(Position.PREFIX_TEMP + 1, parser.nextDouble());
