@@ -93,6 +93,7 @@ public class JCX00ProtocolDecoder extends BaseProtocolDecoder {
     public static final int MSG_FENCE_MULTI = 0xA4;
     public static final int MSG_LBS_ALARM = 0xA5;
     public static final int MSG_LBS_ADDRESS = 0xA7;
+    public static final int MSG_JCXX_ALARM = 0x95;
 
     private static boolean isSupported(int type) {
         return hasGps(type) || hasLbs(type) || hasStatus(type);
@@ -299,18 +300,32 @@ public class JCX00ProtocolDecoder extends BaseProtocolDecoder {
                 return Position.ALARM_POWER_CUT;
             case 0x03:
             case 0x09:
+            case 0x80:
                 return Position.ALARM_VIBRATION;
             case 0x04:
                 return Position.ALARM_GEOFENCE_ENTER;
             case 0x05:
                 return Position.ALARM_GEOFENCE_EXIT;
             case 0x06:
+            case 0X87:
                 return Position.ALARM_OVERSPEED;
             case 0x0E:
             case 0x0F:
                 return Position.ALARM_LOW_BATTERY;
             case 0x11:
+            case 0X88:
                 return Position.ALARM_POWER_OFF;
+            case 0x90:
+                return Position.ALARM_ACCELERATION;
+            case 0x91:
+                return Position.ALARM_BRAKING;
+            case 0x83:
+            case 0x93:
+                return Position.ALARM_ACCIDENT;
+            case 0x84:
+                return "outcamfault";
+            case 0x85:
+                return "incamfault";
             default:
                 return null;
         }
@@ -494,6 +509,10 @@ public class JCX00ProtocolDecoder extends BaseProtocolDecoder {
 
             return decodeWifi(buf, deviceSession);
 
+        } else if (type == MSG_JCXX_ALARM) {
+
+            return decodeJCXXAlarm(buf, deviceSession);
+
         } else {
 
             return decodeBasicOther(channel, buf, deviceSession, type, dataLength);
@@ -501,6 +520,27 @@ public class JCX00ProtocolDecoder extends BaseProtocolDecoder {
         }
 
         return null;
+    }
+
+    private Object decodeJCXXAlarm(ChannelBuffer buf, DeviceSession deviceSession) {
+        Position position = new Position(getProtocolName());
+        position.setDeviceId(deviceSession.getDeviceId());
+
+        DateBuilder dateBuilder = new DateBuilder(deviceSession.getTimeZone())
+                .setDate(buf.readUnsignedByte(), buf.readUnsignedByte(), buf.readUnsignedByte())
+                .setTime(buf.readUnsignedByte(), buf.readUnsignedByte(), buf.readUnsignedByte());
+        dateBuilder.addMinute(DATETIMECORRECTION);
+        position.setTime(dateBuilder.getDate());
+
+        getLastLocation(position, null);
+
+        //For course and status.
+        int flags = buf.readUnsignedShort();
+        position.setValid(BitUtil.check(flags, 12));
+
+        position.set(Position.KEY_ALARM, decodeAlarm(buf.readUnsignedByte()));
+
+        return position;
     }
 
     private Object decodeWifi(ChannelBuffer buf, DeviceSession deviceSession) throws Exception {
