@@ -155,12 +155,27 @@ public class L100ProtocolDecoder extends BaseProtocolDecoder {
 
         String status = parser.next();
         position.set(Position.KEY_IGNITION, status.charAt(0) == '1');
+//        position.set(Position.KEY_DOOR, status.charAt(1) == '1');
+
+//        if (status.charAt(1) == '1') {
+//            position.set(Position.KEY_ALARM, Position.ALARM_DOOR);
+//        }
+
+//        if (status.charAt(2) == '1') {
+//            position.set(Position.KEY_ALARM, Position.ALARM_SOS);
+//        }
+
+        //Used for AC for now.
+        position.set(Position.KEY_DOOR, status.charAt(5) == '1');
 
         position.set(Position.KEY_STATUS, status);
         position.set(Position.PREFIX_ADC + 1, parser.next());
         position.set(Position.KEY_ODOMETER, parser.nextDouble());
         position.set(Position.PREFIX_TEMP + 1, parser.nextDouble());
-        position.set(Position.KEY_BATTERY, parser.nextDouble());
+
+        double battery = parser.nextDouble();
+        position.set(Position.KEY_BATTERY, battery);
+        position.set(Position.KEY_BATTERY_LEVEL, decodeBattery(battery));
 
         int rssi = parser.nextInt();
         if (rssi > 0) {
@@ -170,6 +185,21 @@ public class L100ProtocolDecoder extends BaseProtocolDecoder {
 
         return position;
     }
+
+    private Integer decodeBattery(double value) {
+        if (value <= 3.5) {
+            return 0;
+        } else if (value <= 3.65) {
+            return 25;
+        } else if (value <= 3.8) {
+            return 50;
+        } else if (value <= 3.975) {
+            return 75;
+        } else {
+            return 100;
+        }
+    }
+
 
     private Object decodeObdLocation(Channel channel, SocketAddress remoteAddress, String sentence) {
 
