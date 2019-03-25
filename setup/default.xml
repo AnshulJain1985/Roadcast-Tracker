@@ -247,6 +247,9 @@
     <entry key='et300.port'>6123</entry>
     <entry key='et300.language'>true</entry>
     <entry key='et300.timeout'>185</entry>
+    <entry key='lt05.port'>6223</entry>
+    <entry key='lt05.language'>true</entry>
+    <entry key='lt05.timeout'>185</entry>
     <!--<entry key='jcx00.timezone'>19800</entry>-->
 
 </properties>
