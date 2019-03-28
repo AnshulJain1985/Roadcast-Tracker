@@ -17,6 +17,7 @@ package org.traccar.protocol;
 
 import org.jboss.netty.channel.Channel;
 import org.traccar.BaseProtocolDecoder;
+import org.traccar.Context;
 import org.traccar.DeviceSession;
 import org.traccar.helper.DateBuilder;
 import org.traccar.helper.Parser;
@@ -46,6 +47,7 @@ public class RpAISProtocolDecoder extends BaseProtocolDecoder {
             .text("*")
             .compile();
 
+//    $HLM,ROADRPA,1.9AIS,869867036058354,98,20,0,60,60,0000,11*
     private static final Pattern PATTERN_HEARTBEAT = new PatternBuilder()
             .text("$HLM,")
             .expression("([A-Z]+),")                // Vendor Id
@@ -131,9 +133,9 @@ public class RpAISProtocolDecoder extends BaseProtocolDecoder {
             .number("(d+.d+),")                     // distance
             .expression("([GN]),")                  // Provider
             .expression("([^,]+)?,")                // vehicle reg no
-            .number("(d+),")                        // reply number
-            .number("(xxxxxxxx)")                   // checksum
+            .expression("([^,]+)?,")                // reply number
             .text("*")
+            .number("(xxxxxxxx)")                   // checksum
             .compile();
 
 
@@ -186,6 +188,36 @@ public class RpAISProtocolDecoder extends BaseProtocolDecoder {
         }
     }
 
+    public void getLastLocation(Position position, Date deviceTime) {
+        if (position.getDeviceId() != 0) {
+            position.setOutdated(true);
+
+            Position last = Context.getIdentityManager().getLastPosition(position.getDeviceId());
+            if (last != null) {
+                position.setFixTime(last.getFixTime());
+                position.setValid(last.getValid());
+                position.setLatitude(last.getLatitude());
+                position.setLongitude(last.getLongitude());
+                position.setAltitude(last.getAltitude());
+                position.setSpeed(last.getSpeed());
+                position.setCourse(last.getCourse());
+                position.setAccuracy(last.getAccuracy());
+            } else {
+                position.setFixTime(new Date(0));
+            }
+
+            if (deviceTime != null) {
+                position.setDeviceTime(deviceTime);
+            } else {
+                position.setDeviceTime(new Date());
+            }
+        }
+    }
+
+    private void decodeLogin() {
+
+    }
+
     @Override
     protected Object decode(
             Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
@@ -225,6 +257,9 @@ public class RpAISProtocolDecoder extends BaseProtocolDecoder {
             }
             position.setDeviceId(deviceSession.getDeviceId());
             position.set(Position.KEY_BATTERY_LEVEL, parser.nextInt(0));
+
+            getLastLocation(position, null);
+
             int lowBatThreshold = parser.nextInt();
             int memPercentage = parser.nextInt();
             int intervalIgnitionOn = parser.nextInt();
@@ -266,8 +301,7 @@ public class RpAISProtocolDecoder extends BaseProtocolDecoder {
             position.set(Position.KEY_DISTANCE, parser.nextInt(0));
             String provider = parser.next();
             String deviceName = parser.next();
-            int frameNumber = parser.nextInt(0);
-            String checksum = parser.next();
+            String replyNumber = parser.next();
 
         } else {
             parser = new Parser(PATTERN, sentence);
@@ -289,11 +323,9 @@ public class RpAISProtocolDecoder extends BaseProtocolDecoder {
             position.set(Position.KEY_ALARM, decodeAlarm(packetType));
             position.set(Position.KEY_ORIGINAL, parser.next());
             position.setValid(parser.nextInt(0) == 1);
-
             DateBuilder dateBuilder = new DateBuilder()
                     .setDateReverse(parser.nextInt(0), parser.nextInt(0), parser.nextInt(0));
             dateBuilder.setTime(parser.nextInt(0), parser.nextInt(0), parser.nextInt(0));
-
             position.setTime(dateBuilder.getDate());
             position.setLatitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
             position.setLongitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
