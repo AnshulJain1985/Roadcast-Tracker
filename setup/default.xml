@@ -252,4 +252,8 @@
     <entry key='lt05.timeout'>185</entry>
     <!--<entry key='jcx00.timezone'>19800</entry>-->
 
+    <entry key='gt012.port'>6323</entry>
+    <entry key='gt012.language'>true</entry>
+    <entry key='gt012.timeout'>185</entry>
+
 </properties>
