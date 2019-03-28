@@ -214,8 +214,158 @@ public class RpAISProtocolDecoder extends BaseProtocolDecoder {
         }
     }
 
-    private void decodeLogin() {
+    private Object decodeLogin(Position position, Channel channel, SocketAddress remoteAddress, String sentence) {
 
+        Parser parser = new Parser(PATTERN_LOGIN, sentence);
+        if (!parser.matches()) {
+            return null;
+        }
+        String deviceName = parser.next();
+        String imei = parser.next();
+        DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
+        if (deviceSession == null) {
+            return null;
+        }
+        position.setDeviceId(deviceSession.getDeviceId());
+        position.set(Position.KEY_VERSION_FW, parser.next());
+        position.setTime(new Date());
+        position.setLatitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
+        position.setLongitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
+        return position;
+    }
+
+    private Object decodeHeartbeat(Position position, Channel channel, SocketAddress remoteAddress, String sentence) {
+
+        Parser parser = new Parser(PATTERN_HEARTBEAT, sentence);
+        if (!parser.matches()) {
+            return null;
+        }
+        position.set(Position.KEY_VERSION_HW, parser.next());
+        position.set(Position.KEY_VERSION_FW, parser.next());
+        String imei = parser.next();
+        DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
+        if (deviceSession == null) {
+            return null;
+        }
+        position.setDeviceId(deviceSession.getDeviceId());
+        position.set(Position.KEY_BATTERY_LEVEL, parser.nextInt(0));
+
+        getLastLocation(position, null);
+
+        int lowBatThreshold = parser.nextInt();
+        int memPercentage = parser.nextInt();
+        int intervalIgnitionOn = parser.nextInt();
+        int intervalIngitionOff = parser.nextInt();
+
+        for (int i = 1; i <= 4; i++) {
+            int tempDio = parser.nextInt(0);
+            position.set(Position.PREFIX_IN + i, tempDio);
+            if (i == 2) {
+                position.set(Position.KEY_DOOR, tempDio == 1);
+            }
+        }
+        for (int i = 1; i <= 2; i++) {
+            position.set(Position.PREFIX_OUT + i, parser.nextInt(0));
+        }
+        return position;
+    }
+
+    private Object decodeEmergency(Position position, Channel channel, SocketAddress remoteAddress, String sentence) {
+        Parser parser = new Parser(PATTERN_EMERGENCY, sentence);
+        if (!parser.matches()) {
+            return null;
+        }
+        String packetType = parser.next();
+        String imei = parser.next();
+        DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
+        if (deviceSession == null) {
+            return null;
+        }
+        position.setDeviceId(deviceSession.getDeviceId());
+        String packetStatus = parser.next();
+
+        DateBuilder dateBuilder = new DateBuilder()
+                .setDateReverse(parser.nextInt(0), parser.nextInt(0), parser.nextInt(0));
+        dateBuilder.setTime(parser.nextInt(0), parser.nextInt(0), parser.nextInt(0));
+        position.setTime(dateBuilder.getDate());
+        position.setValid(parser.nextInt(0) == 1);
+        position.setLatitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
+        position.setLongitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
+        position.setAltitude(parser.nextDouble(0));
+        position.setSpeed(parser.nextDouble(0));
+        position.set(Position.KEY_DISTANCE, parser.nextInt(0));
+        String provider = parser.next();
+        String deviceName = parser.next();
+        String replyNumber = parser.next();
+
+        return position;
+    }
+
+    private Object decodeNormal(Position position, Channel channel, SocketAddress remoteAddress, String sentence) {
+        Parser parser = new Parser(PATTERN, sentence);
+        if (!parser.matches()) {
+            return null;
+        }
+        position.set(Position.KEY_VERSION_HW, parser.next());
+        position.set(Position.KEY_VERSION_FW, parser.next());
+        String packetType = parser.next();
+        int alertId = parser.nextInt(0);
+        String packetStatus = parser.next();
+        String imei = parser.next();
+
+        DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
+        if (deviceSession == null) {
+            return null;
+        }
+        position.setDeviceId(deviceSession.getDeviceId());
+        position.set(Position.KEY_ALARM, decodeAlarm(packetType));
+        position.set(Position.KEY_ORIGINAL, parser.next());
+        position.setValid(parser.nextInt(0) == 1);
+        DateBuilder dateBuilder = new DateBuilder()
+                .setDateReverse(parser.nextInt(0), parser.nextInt(0), parser.nextInt(0));
+        dateBuilder.setTime(parser.nextInt(0), parser.nextInt(0), parser.nextInt(0));
+        position.setTime(dateBuilder.getDate());
+        position.setLatitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
+        position.setLongitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
+        position.setSpeed(parser.nextDouble(0));
+        position.setCourse(parser.nextDouble(0));
+        position.set(Position.KEY_SATELLITES, parser.nextInt(0));
+        position.setAltitude(parser.nextDouble(0));
+        position.set(Position.KEY_PDOP, parser.nextDouble(0));
+        position.set(Position.KEY_HDOP, parser.nextDouble(0));
+        position.set(Position.KEY_OPERATOR, parser.next());
+        position.set(Position.KEY_IGNITION, parser.nextInt(0) == 1);
+        position.set(Position.KEY_CHARGE, parser.nextInt(0) == 1);
+        position.set("maininput", parser.nextDouble(0));
+        position.set(Position.KEY_BATTERY, parser.nextDouble(0));
+        position.set(Position.KEY_STATUS, parser.nextInt(0));
+
+        String temperAlert = parser.next();
+        position.set(Position.KEY_RSSI, parser.nextInt(0));
+        Network network = new Network();
+        int mcc = parser.nextHexInt();
+        int mnc = parser.nextHexInt();
+        int lac = parser.nextHexInt();
+        int cellId = parser.nextHexInt();
+
+        for (int i = 0; i < 4; i++) {
+            int cellIdN = parser.nextHexInt();
+            int lacN = parser.nextHexInt();
+            int rssiN = parser.nextHexInt();
+            network.addCellTower(CellTower.from(mcc, mnc, lacN, cellIdN, rssiN));
+        }
+
+        for (int i = 1; i <= 4; i++) {
+            int tempDio = parser.nextInt(0);
+            position.set(Position.PREFIX_IN + i, tempDio);
+        }
+        for (int i = 1; i <= 2; i++) {
+            position.set(Position.PREFIX_OUT + i, parser.nextInt(0));
+        }
+        int frameNumber = parser.nextInt(0);
+        String checksum = parser.next();
+
+        return position;
     }
 
     @Override
@@ -224,150 +374,24 @@ public class RpAISProtocolDecoder extends BaseProtocolDecoder {
 
         String sentence = (String) msg;
         Position position = new Position(getProtocolName());
-        Parser parser = null;
         String header = sentence.substring(1, 4);
 
         if (header.equals("LGN")) {
-            parser = new Parser(PATTERN_LOGIN, sentence);
-            if (!parser.matches()) {
-                return null;
-            }
-            String deviceName = parser.next();
-            String imei = parser.next();
-            DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
-            if (deviceSession == null) {
-                return null;
-            }
-            position.setDeviceId(deviceSession.getDeviceId());
-            position.set(Position.KEY_VERSION_FW, parser.next());
-            position.setTime(new Date());
-            position.setLatitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
-            position.setLongitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
+            //Login
+            return decodeLogin(position, channel, remoteAddress, sentence);
+
         } else if (header.equals("HLM")) {
-            parser = new Parser(PATTERN_HEARTBEAT, sentence);
-            if (!parser.matches()) {
-                return null;
-            }
-            position.set(Position.KEY_VERSION_HW, parser.next());
-            position.set(Position.KEY_VERSION_FW, parser.next());
-            String imei = parser.next();
-            DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
-            if (deviceSession == null) {
-                return null;
-            }
-            position.setDeviceId(deviceSession.getDeviceId());
-            position.set(Position.KEY_BATTERY_LEVEL, parser.nextInt(0));
+            //heartbeat
+            return decodeHeartbeat(position, channel, remoteAddress, sentence);
 
-            getLastLocation(position, null);
-
-            int lowBatThreshold = parser.nextInt();
-            int memPercentage = parser.nextInt();
-            int intervalIgnitionOn = parser.nextInt();
-            int intervalIngitionOff = parser.nextInt();
-
-            for (int i = 1; i <= 4; i++) {
-                int tempDio = parser.nextInt(0);
-                position.set(Position.PREFIX_IN + i, tempDio);
-                if (i == 2) {
-                    position.set(Position.KEY_DOOR, tempDio == 1);
-                }
-            }
-            for (int i = 1; i <= 2; i++) {
-                position.set(Position.PREFIX_OUT + i, parser.nextInt(0));
-            }
         } else if (header.equals("EPB")) {
-            parser = new Parser(PATTERN_EMERGENCY, sentence);
-            if (!parser.matches()) {
-                return null;
-            }
-            String packetType = parser.next();
-            String imei = parser.next();
-            DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
-            if (deviceSession == null) {
-                return null;
-            }
-            position.setDeviceId(deviceSession.getDeviceId());
-            String packetStatus = parser.next();
-
-            DateBuilder dateBuilder = new DateBuilder()
-                    .setDateReverse(parser.nextInt(0), parser.nextInt(0), parser.nextInt(0));
-            dateBuilder.setTime(parser.nextInt(0), parser.nextInt(0), parser.nextInt(0));
-            position.setTime(dateBuilder.getDate());
-            position.setValid(parser.nextInt(0) == 1);
-            position.setLatitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
-            position.setLongitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
-            position.setAltitude(parser.nextDouble(0));
-            position.setSpeed(parser.nextDouble(0));
-            position.set(Position.KEY_DISTANCE, parser.nextInt(0));
-            String provider = parser.next();
-            String deviceName = parser.next();
-            String replyNumber = parser.next();
+            //emergency
+            return decodeEmergency(position, channel, remoteAddress, sentence);
 
         } else {
-            parser = new Parser(PATTERN, sentence);
-            if (!parser.matches()) {
-                return null;
-            }
-            position.set(Position.KEY_VERSION_HW, parser.next());
-            position.set(Position.KEY_VERSION_FW, parser.next());
-            String packetType = parser.next();
-            int alertId = parser.nextInt(0);
-            String packetStatus = parser.next();
-            String imei = parser.next();
-
-            DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
-            if (deviceSession == null) {
-                return null;
-            }
-            position.setDeviceId(deviceSession.getDeviceId());
-            position.set(Position.KEY_ALARM, decodeAlarm(packetType));
-            position.set(Position.KEY_ORIGINAL, parser.next());
-            position.setValid(parser.nextInt(0) == 1);
-            DateBuilder dateBuilder = new DateBuilder()
-                    .setDateReverse(parser.nextInt(0), parser.nextInt(0), parser.nextInt(0));
-            dateBuilder.setTime(parser.nextInt(0), parser.nextInt(0), parser.nextInt(0));
-            position.setTime(dateBuilder.getDate());
-            position.setLatitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
-            position.setLongitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
-            position.setSpeed(parser.nextDouble(0));
-            position.setCourse(parser.nextDouble(0));
-            position.set(Position.KEY_SATELLITES, parser.nextInt(0));
-            position.setAltitude(parser.nextDouble(0));
-            position.set(Position.KEY_PDOP, parser.nextDouble(0));
-            position.set(Position.KEY_HDOP, parser.nextDouble(0));
-            position.set(Position.KEY_OPERATOR, parser.next());
-            position.set(Position.KEY_IGNITION, parser.nextInt(0) == 1);
-            position.set(Position.KEY_CHARGE, parser.nextInt(0) == 1);
-            position.set("maininput", parser.nextDouble(0));
-            position.set(Position.KEY_BATTERY, parser.nextDouble(0));
-            position.set(Position.KEY_STATUS, parser.nextInt(0));
-
-            String temperAlert = parser.next();
-            position.set(Position.KEY_RSSI, parser.nextInt(0));
-            Network network = new Network();
-            int mcc = parser.nextHexInt();
-            int mnc = parser.nextHexInt();
-            int lac = parser.nextHexInt();
-            int cellId = parser.nextHexInt();
-
-            for (int i = 0; i < 4; i++) {
-                int cellIdN = parser.nextHexInt();
-                int lacN = parser.nextHexInt();
-                int rssiN = parser.nextHexInt();
-                network.addCellTower(CellTower.from(mcc, mnc, lacN, cellIdN, rssiN));
-            }
-
-            for (int i = 1; i <= 4; i++) {
-                int tempDio = parser.nextInt(0);
-                position.set(Position.PREFIX_IN + i, tempDio);
-            }
-            for (int i = 1; i <= 2; i++) {
-                position.set(Position.PREFIX_OUT + i, parser.nextInt(0));
-            }
-            int frameNumber = parser.nextInt(0);
-            String checksum = parser.next();
+            //normal and other packets
+            return decodeNormal(position, channel, remoteAddress, sentence);
         }
-        return position;
     }
 
 }
