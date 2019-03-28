@@ -256,4 +256,8 @@
     <entry key='gt012.language'>true</entry>
     <entry key='gt012.timeout'>185</entry>
 
+    <entry key='rpais.port'>5300</entry>
+    <entry key='rpais.timeout'>285</entry>
+
+
 </properties>
