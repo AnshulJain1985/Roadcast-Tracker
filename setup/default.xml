@@ -258,6 +258,11 @@
 
     <entry key='rpais.port'>5300</entry>
     <entry key='rpais.timeout'>285</entry>
+    <entry key='iacais.port'>5301</entry>
+    <entry key='iacais.timeout'>285</entry>
+    <entry key='transsync.port'>5302</entry>
+    <entry key='transsync.timeout'>285</entry>
+    <entry key='transsync.distanceFilter'>50</entry>
 
 
 </properties>
