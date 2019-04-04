@@ -123,7 +123,7 @@ public class RpAISProtocolDecoder extends BaseProtocolDecoder {
             .expression("([A-Z]+),")                    // Packet Status
             .number("(dd)(dd)(dddd),")                // date utc (DDMMYYYY)
             .number("(dd)(dd)(dd),")                // time utc (hhmmss)
-            .number("(d+),")                        // GPS Fix
+            .number("([VA]),")                        // GPS Fix
             .number("(-?d+.d+),")                   // latitude
             .expression("([NS]),")
             .number("(-?d+.d+),")                   // longitude
@@ -134,6 +134,10 @@ public class RpAISProtocolDecoder extends BaseProtocolDecoder {
             .expression("([GN]),")                  // Provider
             .expression("([^,]+)?,")                // vehicle reg no
             .expression("([^,]+)?,")                // reply number
+            .expression("([^,]+)?,")                // MCC
+            .expression("([^,]+)?,")                // MNC
+            .expression("([^,]+)?,")                // LAC
+            .expression("([A-Z0-9]+)")                // CELLID
             .text("*")
             .number("(xxxxxxxx)")                   // checksum
             .compile();
@@ -281,23 +285,39 @@ public class RpAISProtocolDecoder extends BaseProtocolDecoder {
         if (deviceSession == null) {
             return null;
         }
+
+        if (packetType.equals("EMR")) {
+            if (channel != null) {
+                channel.write("SET EO");
+            }
+            position.set(Position.KEY_ALARM, Position.ALARM_SOS);
+        }
+
         position.setDeviceId(deviceSession.getDeviceId());
         String packetStatus = parser.next();
-
         DateBuilder dateBuilder = new DateBuilder()
                 .setDateReverse(parser.nextInt(0), parser.nextInt(0), parser.nextInt(0));
         dateBuilder.setTime(parser.nextInt(0), parser.nextInt(0), parser.nextInt(0));
         position.setTime(dateBuilder.getDate());
-        position.setValid(parser.nextInt(0) == 1);
+        position.setValid(parser.next().equals("A"));
         position.setLatitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
         position.setLongitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
         position.setAltitude(parser.nextDouble(0));
         position.setSpeed(parser.nextDouble(0));
-        position.set(Position.KEY_DISTANCE, parser.nextInt(0));
+        position.set(Position.KEY_DISTANCE, parser.nextDouble(0));
         String provider = parser.next();
         String deviceName = parser.next();
         String replyNumber = parser.next();
 
+        Network network = new Network();
+        int mcc = parser.nextInt(0);
+        int mnc = parser.nextInt(0);
+        int lac = parser.nextHexInt();
+        int cellId = parser.nextHexInt();
+
+        network.addCellTower(CellTower.from(mcc, mnc, lac, cellId));
+
+        String checksum = parser.next();
         return position;
     }
 
