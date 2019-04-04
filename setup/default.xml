@@ -264,8 +264,17 @@
     <entry key='xrb28.port'>5180</entry>
 
     <entry key='gpsbox.port'>5200</entry>
-    <entry key='prime.port'>5202</entry>
-    <entry key='nipais.port'>5203</entry>
+    <entry key='gpsbox.timeout'>600</entry>
+    <entry key='trakinfi.port'>5201</entry>
+    <entry key='trakinfi.timeout'>85</entry>
+    <entry key='prime07.port'>5202</entry>
+    <entry key='prime07.timeout'>85</entry>
+    <entry key='nippon.port'>5203</entry>
+    <entry key='nippon.timeout'>85</entry>
+
+    <entry key='jcx00.port'>5223</entry>
+    <entry key='jcx00.language'>true</entry>
+    <entry key='jcx00.timeout'>185</entry>
 
     <entry key='rp05.port'>6023</entry>
     <entry key='rp05.language'>true</entry>
@@ -273,6 +282,27 @@
     <entry key='et300.port'>6123</entry>
     <entry key='et300.language'>true</entry>
     <entry key='et300.timeout'>185</entry>
+
+    <entry key='lt05.port'>6223</entry>
+    <entry key='lt05.language'>true</entry>
+    <entry key='lt05.timeout'>185</entry>
+    <entry key='gt012.port'>6323</entry>
+    <entry key='gt012.language'>true</entry>
+    <entry key='gt012.timeout'>185</entry>
+
+    <entry key='gt06asset.port'>6423</entry>
+    <entry key='gt06asset.language'>true</entry>
+    <entry key='gt06asset.timeout'>185</entry>
+
+    <entry key='rpais.port'>5300</entry>
+    <entry key='rpais.timeout'>285</entry>
+    <entry key='iacais.port'>5301</entry>
+    <entry key='iacais.timeout'>285</entry>
+    <entry key='transsync.port'>5302</entry>
+    <entry key='transsync.timeout'>285</entry>
+    <entry key='transsync.distanceFilter'>50</entry>
+
+
 
 
 </properties>
