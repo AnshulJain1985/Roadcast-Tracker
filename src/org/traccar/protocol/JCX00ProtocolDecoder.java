@@ -535,8 +535,8 @@ public class JCX00ProtocolDecoder extends BaseProtocolDecoder {
         getLastLocation(position, null);
 
         //For course and status.
-        int flags = buf.readUnsignedShort();
-        position.setValid(BitUtil.check(flags, 12));
+//        int flags = buf.readUnsignedShort();
+//        position.setValid(BitUtil.check(flags, 12));
 
         position.set(Position.KEY_ALARM, decodeAlarm(buf.readUnsignedByte()));
 
