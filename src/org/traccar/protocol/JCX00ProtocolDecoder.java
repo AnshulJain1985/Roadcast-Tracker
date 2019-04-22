@@ -818,7 +818,7 @@ public class JCX00ProtocolDecoder extends BaseProtocolDecoder {
 
         ChannelBuffer buf = (ChannelBuffer) msg;
 
-        Log.info(String.format("%08X",channel.getId()) + " - JCX00 HEX: " + ChannelBuffers.hexDump(buf));
+        Log.info(String.format("%08X", channel.getId()) + " - JCX00 HEX: " + ChannelBuffers.hexDump(buf));
 
         int header = buf.readShort();
 

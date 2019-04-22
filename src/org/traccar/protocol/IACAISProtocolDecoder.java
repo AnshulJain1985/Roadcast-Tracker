@@ -48,6 +48,8 @@ public class IACAISProtocolDecoder extends BaseProtocolDecoder {
             .number("(-?d+.d+),")                   // longitude
             .expression("([EW])")
             .text("*")
+            .number("(xx)+")                        // checksum
+            .any()
             .compile();
 
     private static final Pattern PATTERN_HEARTBEAT = new PatternBuilder()
@@ -67,6 +69,7 @@ public class IACAISProtocolDecoder extends BaseProtocolDecoder {
             .number("(d+.d+),")                     // analog input 2
             .text("*")
             .number("(xx)+")                        // checksum
+            .any()
             .compile();
 
     private static final Pattern PATTERN = new PatternBuilder()
@@ -75,7 +78,7 @@ public class IACAISProtocolDecoder extends BaseProtocolDecoder {
             .expression("([^,]+)?,")                // Vendor Id
             .expression("([^,]+)?,")                // Software version
             .expression("([A-Z]+),")                // Packet Type
-            .number("(dd),")                        // Alert ID
+            .number("(d+),")                        // Alert ID
             .expression("([HL]),")                    // Packet Status
             .expression("([0-9]+),")                // IMEI
             .expression("([^,]+)?,")                // vehicle reg no
@@ -86,8 +89,8 @@ public class IACAISProtocolDecoder extends BaseProtocolDecoder {
             .expression("([NS]),")
             .number("(-?d+.d+),")                   // longitude
             .expression("([EW]),")
-            .number("(d+.d+),")                     // speed
-            .number("(d+.d+),")                    // course
+            .number("(d+.?d*),")                     // speed
+            .number("(d+.?d*),")                    // course
             .number("(d+),")                        // No of satellites
             .number("(d+.?d*)?,?")                  // altitude
             .number("(d+.d+),")                     // pdop
@@ -122,9 +125,10 @@ public class IACAISProtocolDecoder extends BaseProtocolDecoder {
             .number("(d+.d+),")                     // analog input 1
             .number("(d+.d+),")                     // analog input 2
             .number("(d+),")                        // delta distance
-            .expression("([^,]+)?,")                // OTA Response
+            .expression("([^,]+)?")                // OTA Response
             .text("*")
             .number("(xx)+")                        // checksum
+            .any()
             .compile();
 
     private static final Pattern PATTERN_EMERGENCY = new PatternBuilder()
@@ -148,7 +152,8 @@ public class IACAISProtocolDecoder extends BaseProtocolDecoder {
             .expression("([^,]+)?,")                // vehicle reg no
             .expression("([^,]+)?,")                // reply number
             .text("*")
-            .number("(xxxxxxxx)")                   // checksum
+            .number("(xx)+")                        // checksum
+            .any()
             .compile();
 
 
@@ -227,12 +232,10 @@ public class IACAISProtocolDecoder extends BaseProtocolDecoder {
         }
     }
 
-    private Object decodeLogin(Position position, Channel channel, SocketAddress remoteAddress, String sentence) {
+    private Object decodeLogin(Position position, Channel channel, SocketAddress remoteAddress, Parser parser) {
 
-        Parser parser = new Parser(PATTERN_LOGIN, sentence);
-        if (!parser.matches()) {
-            return null;
-        }
+        String header = parser.next();
+        String vendorId = parser.next();
         String deviceName = parser.next();
         String imei = parser.next();
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
@@ -241,19 +244,17 @@ public class IACAISProtocolDecoder extends BaseProtocolDecoder {
         }
         position.setDeviceId(deviceSession.getDeviceId());
         position.set(Position.KEY_VERSION_FW, parser.next());
+        position.set(Position.KEY_VERSION_HW, parser.next());
         position.setTime(new Date());
         position.setLatitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
         position.setLongitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
         return position;
     }
 
-    private Object decodeHeartbeat(Position position, Channel channel, SocketAddress remoteAddress, String sentence) {
+    private Object decodeHeartbeat(Position position, Channel channel, SocketAddress remoteAddress, Parser parser) {
 
-        Parser parser = new Parser(PATTERN_HEARTBEAT, sentence);
-        if (!parser.matches()) {
-            return null;
-        }
-        position.set(Position.KEY_VERSION_HW, parser.next());
+        String header = parser.next();
+        String vendorId = parser.next();
         position.set(Position.KEY_VERSION_FW, parser.next());
         String imei = parser.next();
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
@@ -283,11 +284,9 @@ public class IACAISProtocolDecoder extends BaseProtocolDecoder {
         return position;
     }
 
-    private Object decodeEmergency(Position position, Channel channel, SocketAddress remoteAddress, String sentence) {
-        Parser parser = new Parser(PATTERN_EMERGENCY, sentence);
-        if (!parser.matches()) {
-            return null;
-        }
+    private Object decodeEmergency(Position position, Channel channel, SocketAddress remoteAddress, Parser parser) {
+        String header = parser.next();
+        String vendorId = parser.next();
         String packetType = parser.next();
         String imei = parser.next();
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
@@ -314,12 +313,10 @@ public class IACAISProtocolDecoder extends BaseProtocolDecoder {
         return position;
     }
 
-    private Object decodeNormal(Position position, Channel channel, SocketAddress remoteAddress, String sentence) {
-        Parser parser = new Parser(PATTERN, sentence);
-        if (!parser.matches()) {
-            return null;
-        }
-        position.set(Position.KEY_VERSION_HW, parser.next());
+    private Object decodeNormal(Position position, Channel channel, SocketAddress remoteAddress, Parser parser) {
+
+        String header = parser.next();
+        String vendorId = parser.next();
         position.set(Position.KEY_VERSION_FW, parser.next());
         String packetType = parser.next();
         int alertId = parser.nextInt(0);
@@ -387,24 +384,26 @@ public class IACAISProtocolDecoder extends BaseProtocolDecoder {
 
         String sentence = (String) msg;
         Position position = new Position(getProtocolName());
-        String header = sentence.substring(1, 4);
-
-        if (header.equals("LGN")) {
-            //Login
-            return decodeLogin(position, channel, remoteAddress, sentence);
-
-        } else if (header.equals("HLM")) {
-            //heartbeat
-            return decodeHeartbeat(position, channel, remoteAddress, sentence);
-
-        } else if (header.equals("EPB")) {
-            //emergency
-            return decodeEmergency(position, channel, remoteAddress, sentence);
-
-        } else {
-            //normal and other packets
-            return decodeNormal(position, channel, remoteAddress, sentence);
+//        String header = sentence.substring(1, 4);
+        Parser parser = new Parser(PATTERN_LOGIN, sentence);
+        if (parser.matches()) {
+            return decodeLogin(position, channel, remoteAddress, parser);
         }
+        parser = new Parser(PATTERN, sentence);
+        if (parser.matches()) {
+            return decodeNormal(position, channel, remoteAddress, parser);
+        }
+        parser = new Parser(PATTERN_HEARTBEAT, sentence);
+        if (parser.matches()) {
+            return decodeHeartbeat(position, channel, remoteAddress, parser);
+        }
+        parser = new Parser(PATTERN_EMERGENCY, sentence);
+        if (parser.matches()) {
+            return decodeEmergency(position, channel, remoteAddress, parser);
+        }
+
+
+        return null;
     }
 
 }
