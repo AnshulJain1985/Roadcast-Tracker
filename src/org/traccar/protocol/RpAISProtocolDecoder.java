@@ -22,6 +22,7 @@ import org.traccar.DeviceSession;
 import org.traccar.helper.DateBuilder;
 import org.traccar.helper.Parser;
 import org.traccar.helper.PatternBuilder;
+import org.traccar.helper.UnitsConverter;
 import org.traccar.model.CellTower;
 import org.traccar.model.Network;
 import org.traccar.model.Position;
@@ -347,7 +348,7 @@ public class RpAISProtocolDecoder extends BaseProtocolDecoder {
         position.setTime(dateBuilder.getDate());
         position.setLatitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
         position.setLongitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
-        position.setSpeed(parser.nextDouble(0));
+        position.setSpeed(UnitsConverter.knotsFromKph(parser.nextDouble(0)));
         position.setCourse(parser.nextDouble(0));
         position.set(Position.KEY_SATELLITES, parser.nextInt(0));
         position.setAltitude(parser.nextDouble(0));
