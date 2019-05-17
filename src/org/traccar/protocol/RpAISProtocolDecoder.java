@@ -23,6 +23,7 @@ import org.traccar.helper.DateBuilder;
 import org.traccar.helper.Parser;
 import org.traccar.helper.PatternBuilder;
 import org.traccar.helper.UnitsConverter;
+import org.traccar.helper.Log;
 import org.traccar.model.CellTower;
 import org.traccar.model.Network;
 import org.traccar.model.Position;
@@ -65,7 +66,8 @@ public class RpAISProtocolDecoder extends BaseProtocolDecoder {
             .compile();
 
     private static final Pattern PATTERN = new PatternBuilder()
-            .text("$NRM,")
+            .text("$")
+            .expression("(NRM|ALT),")
             .expression("([A-Z]+),")                // Vendor Id
             .expression("([^,]+)?,")                // Software version
             .expression("([A-Z]+),")                // Packet Type
@@ -112,9 +114,18 @@ public class RpAISProtocolDecoder extends BaseProtocolDecoder {
             .expression("([^,]+)?,")                // NMR4 LAC
             .number("(d)(d)(d)(d),")                // digital Input 4
             .number("(d)(d),")                      // digital Output 2
+            .number("(d+.?d*)?,")                  // Analog input 1
+            .number("(d+.?d*)?,")                  // Analog input 2
             .number("(d+),")                        // Frame number
-            .number("(xxxxxxxx)")                        // checksum
+            .number("(d+.?d*)?,")                  // Odometer
+            .expression("[^,]*,")
+            .expression("[^,]*,")
+            .expression("[^,]*,")
+            .expression("[^,]*,")
+            .expression("[^,]*,")
+            .number("(xxxxxxxx)")                   // checksum
             .text("*")
+            .any()
             .compile();
 
     private static final Pattern PATTERN_EMERGENCY = new PatternBuilder()
@@ -327,6 +338,7 @@ public class RpAISProtocolDecoder extends BaseProtocolDecoder {
         if (!parser.matches()) {
             return null;
         }
+        String header = parser.next();
         position.set(Position.KEY_VERSION_HW, parser.next());
         position.set(Position.KEY_VERSION_FW, parser.next());
         String packetType = parser.next();
@@ -383,8 +395,10 @@ public class RpAISProtocolDecoder extends BaseProtocolDecoder {
         for (int i = 1; i <= 2; i++) {
             position.set(Position.PREFIX_OUT + i, parser.nextInt(0));
         }
-        int frameNumber = parser.nextInt(0);
-        String checksum = parser.next();
+        position.set(Position.PREFIX_ADC + 1, parser.nextDouble(0));
+        position.set(Position.PREFIX_ADC + 2, parser.nextDouble(0));
+//        int frameNumber = parser.nextInt(0);
+//        String checksum = parser.next();
 
         return position;
     }
@@ -396,6 +410,8 @@ public class RpAISProtocolDecoder extends BaseProtocolDecoder {
         String sentence = (String) msg;
         Position position = new Position(getProtocolName());
         String header = sentence.substring(1, 4);
+
+//        Log.info(String.format("%08X", channel.getId()) + " - RPAIS HEX: " + sentence);
 
         if (header.equals("LGN")) {
             //Login
