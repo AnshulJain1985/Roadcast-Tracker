@@ -302,7 +302,9 @@
     <entry key='transsync.timeout'>285</entry>
     <entry key='transsync.distanceFilter'>50</entry>
 
-
-
+    <entry key='atlais.port'>5303</entry>
+    <entry key='atlais.timeout'>285</entry>
+    <entry key='st351.port'>5304</entry>
+    <entry key='st351.timeout'>285</entry>
 
 </properties>
