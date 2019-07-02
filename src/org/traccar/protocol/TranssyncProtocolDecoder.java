@@ -159,7 +159,7 @@ public class TranssyncProtocolDecoder extends BaseProtocolDecoder {
 
         int header = buf.readShort();
 
-        if (header == 0x2a2a) {
+        if (header == 0x2a2a || header == 0x3a3a) {
             return decodeBasic(channel, remoteAddress, buf);
         } else {
             return null;
