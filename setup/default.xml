@@ -306,5 +306,7 @@
     <entry key='atlais.timeout'>285</entry>
     <entry key='st351.port'>5304</entry>
     <entry key='st351.timeout'>285</entry>
+    <entry key='itriangleais.port'>5305</entry>
+    <entry key='itriangleais.timeout'>285</entry>
 
 </properties>
