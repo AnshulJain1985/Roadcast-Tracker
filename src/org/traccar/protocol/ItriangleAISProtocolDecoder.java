@@ -44,6 +44,7 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
             .expression("([^,]+)?,")                // vehicle reg no
             .expression("([0-9]+),")                // IMEI
             .expression("([^,]+)?,")                // Software version
+            .expression("([^,]+)?,")                // Protocol version
             .number("(-?d+.d+),")                   // latitude
             .expression("([NS]),")
             .number("(-?d+.d+),")                   // longitude
@@ -57,15 +58,15 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
             .expression("iTriangle,")                // Vendor Id
             .expression("([^,]+)?,")                // Software version
             .expression("([0-9]+),")                // IMEI
-            .number("(d+),")                        // battery percentage
-            .number("(d+),")                        // low battery threshold
-            .number("(d+),")                        // memory percentage1
-            .number("(d+),")                        // memory percentage2
+            .number("(d+.?d*)?,?")                        // battery percentage
+            .number("(d+.?d*)?,?")                        // low battery threshold
+            .number("(d+.?d*)?,?")                        // memory percentage1
+            .number("(d+.?d*)?,?")                        // memory percentage2
             .number("(d+),")                        // ignition on timer
             .number("(d+),")                        // ignition off timer
             .number("(d)(d)(d)(d),")                // digital Input 4
             .number("(d+.?d*)?,")                  // Analog input 1
-            .number("(d+.?d*)?,")                  // Analog input 2
+            .number("(d+.?d*)?")                  // Analog input 2
             .text("*")
             .any()
             .compile();
@@ -87,12 +88,12 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
             .expression("([NS]),")
             .number("(-?d+.d+),")                   // longitude
             .expression("([EW]),")
-            .number("(d+.d+),")                     // speed
-            .number("(d+.d+),")                    // course
+            .number("(d+.?d*)?,?")                     // speed
+            .number("(d+.?d*)?,?")                    // course
             .number("(d+),")                        // No of satellites
             .number("(d+.?d*)?,?")                  // altitude
-            .number("(d+.d+),")                     // pdop
-            .number("(d+.d+),")                     // hdop
+            .number("(d+.?d*)?,?")                     // pdop
+            .number("(d+.?d*)?,?")                     // hdop
             .expression("([^,]+)?,")                // Operator Name
             .number("(d),")                         // Ignition
             .number("(d),")                         // Main power status
@@ -123,7 +124,7 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
             .number("(d+.?d*)?,")                  // Analog input 1
             .number("(d+.?d*)?,")                  // Analog input 2
             .number("(d+.?d*)?,")                  // Odometer
-            .expression("[^,]*,")
+            .expression("[^,]*")
 //            .expression("[^,]*,")
 //            .expression("[^,]*,")
 //            .expression("[^,]*,")
@@ -146,11 +147,11 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
             .number("(-?d+.d+),")                   // longitude
             .expression("([EW]),")
             .number("(d+.?d*)?,?")                  // altitude
-            .number("(d+.d+),")                     // speed
-            .number("(d+.d+),")                     // distance
+            .number("(d+.?d*)?,?")                     // speed
+            .number("(d+.?d*)?,?")                     // distance
             .expression("([GN]),")                  // Provider
             .expression("([^,]+)?,")                // vehicle reg no
-            .expression("([^,]+)?,")                // reply number
+            .expression("([^,]+)?")                // reply number
             .text("*")
             .any()                   // checksum
             .compile();
@@ -241,6 +242,7 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
         }
         position.setDeviceId(deviceSession.getDeviceId());
         position.set(Position.KEY_VERSION_FW, parser.next());
+        position.set(Position.KEY_VERSION_HW, parser.next());
         position.setTime(new Date());
         position.setLatitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
         position.setLongitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
@@ -250,7 +252,6 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
     private Object decodeHeartbeat(Position position, Channel channel, SocketAddress remoteAddress, Parser parser) {
 
         position.set(Position.KEY_VERSION_HW, parser.next());
-        position.set(Position.KEY_VERSION_FW, parser.next());
         String imei = parser.next();
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
         if (deviceSession == null) {
@@ -261,9 +262,9 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
 
         getLastLocation(position, null);
 
-        int lowBatThreshold = parser.nextInt();
-        int memPercentage1 = parser.nextInt();
-        int memPercentage2 = parser.nextInt();
+        double lowBatThreshold = parser.nextDouble();
+        double memPercentage2 = parser.nextDouble();
+        double memPercentage1 = parser.nextDouble();
         int intervalIgnitionOn = parser.nextInt();
         int intervalIngitionOff = parser.nextInt();
 
@@ -317,8 +318,8 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
 
     private Object decodeNormal(Position position, Channel channel, SocketAddress remoteAddress, Parser parser) {
 
-        String header = parser.next();
-        position.set(Position.KEY_VERSION_HW, parser.next());
+//        String header = parser.next();
+//        position.set(Position.KEY_VERSION_HW, parser.next());
         position.set(Position.KEY_VERSION_FW, parser.next());
         String packetType = parser.next();
         int alertId = parser.nextInt(0);
@@ -388,7 +389,7 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
         String sentence = (String) msg;
         Position position = new Position(getProtocolName());
 
-        LOGGER.info(channel.id().asShortText() + " - GTAIS String: " + sentence);
+        LOGGER.info(channel.id().asShortText() + " - Itriais: " + sentence);
 
         Parser parser = new Parser(PATTERN_LOGIN, sentence);
         if (parser.matches()) {
