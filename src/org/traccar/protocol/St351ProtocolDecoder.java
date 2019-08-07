@@ -143,13 +143,21 @@ public class St351ProtocolDecoder extends BaseProtocolDecoder {
             position.set(Position.PREFIX_OUT + i, parser.nextInt(0));
         }
 
+        boolean ignition;
         switch (parser.nextInt()) {
             case 2:
-                position.set(Position.KEY_IGNITION, true);
+                ignition = true;
             case 3:
                 position.set(Position.KEY_ALARM, Position.ALARM_POWER_CUT);
             default:
-                position.set(Position.KEY_IGNITION, false);
+                ignition = false;
+        }
+
+        if (ignition) {
+            position.set(Position.KEY_IGNITION, true);
+        } else {
+            getLastLocation(position, null);
+            position.set(Position.KEY_IGNITION, false);
         }
 
 //        int frameNumber = parser.nextInt(0);
