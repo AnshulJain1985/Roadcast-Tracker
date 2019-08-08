@@ -308,5 +308,7 @@
     <entry key='st351.timeout'>285</entry>
     <entry key='itriangleais.port'>5305</entry>
     <entry key='itriangleais.timeout'>285</entry>
+    <entry key='gtais.port'>5323</entry>
+    <entry key='gtais.timeout'>285</entry>
 
 </properties>
