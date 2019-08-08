@@ -28,6 +28,7 @@ import org.traccar.model.CellTower;
 import org.traccar.model.Network;
 import org.traccar.model.Position;
 import java.net.SocketAddress;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.regex.Pattern;
 
@@ -398,11 +399,14 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
 
         Parser parser = new Parser(PATTERN_LOGIN, sentence);
         if (parser.matches()) {
+            String currentDate = new SimpleDateFormat("ddMMyyyyHHmmss").format(new Date());
+            channel.write("$LGN" + currentDate + "*");
             return decodeLogin(position, channel, remoteAddress, parser);
         }
 
         parser = new Parser(PATTERN_HEARTBEAT, sentence);
         if (parser.matches()) {
+            channel.write("$HBT*");
             return decodeHeartbeat(position, channel, remoteAddress, parser);
         }
 
