@@ -39,7 +39,11 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
     }
 
     private static final Pattern PATTERN_LOGIN = new PatternBuilder()
+            .groupBegin()
             .text("$,LGN,MARK,")
+            .or()
+            .text("$LGN,MARK,")
+            .groupEnd()
             .expression("([^,]+)?,")                // vehicle reg no
             .expression("([0-9]+),")                // IMEI
             .expression("([^,]+)?,")                // Software version
@@ -48,13 +52,19 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
             .expression("([NS]),")
             .number("(-?d+.d+),")                   // longitude
             .expression("([EW])")
+            .text("*").optional()
             .any()
             .compile();
 
 
 //    $,Header,MARK,WETRACK_800_11_A1A_D23_R0_V02_WM,351510091150527,5.99%,20%,0.00%,10,10,0010,00,0.1,*,93BA
+//    $HBT,MARK,V0.0.1,351510091197726,54,20,0,10,20,0000,0.1,*
     private static final Pattern PATTERN_HEARTBEAT = new PatternBuilder()
+            .groupBegin()
             .text("$,HBT,")
+            .or()
+            .text("$HBT,")
+            .groupEnd()
             .expression("([A-Z]+),")                // Vendor Id
             .expression("([^,]+)?,")                // Software version
             .expression("([0-9]+),")                // IMEI
@@ -71,7 +81,11 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
             .compile();
 
     private static final Pattern PATTERN = new PatternBuilder()
+            .groupBegin()
             .text("$,")
+            .or()
+            .text("$")
+            .groupEnd()
             .expression("(NRM),")
             .expression("([A-Z]+),")                // Vendor Id
             .expression("([^,]+)?,")                // Software version
@@ -99,7 +113,7 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
             .number("(d+.?d*)?,?")                  // Main input voltage
             .number("(d+.?d*)?,?")                  // internal battery voltage
             .number("(d),")                         // Emergency Status
-//            .expression("(O/C),")                  // Temper alert
+            .expression("([OCN]),").optional()                  // Temper alert
             .number("(d+),")                        // GSM signal strength
             .expression("([^,]+)?,")                // MCC
             .expression("([^,]+)?,")                // MNC
