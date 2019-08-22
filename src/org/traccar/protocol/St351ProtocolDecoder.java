@@ -143,14 +143,16 @@ public class St351ProtocolDecoder extends BaseProtocolDecoder {
             position.set(Position.PREFIX_OUT + i, parser.nextInt(0));
         }
 
-        boolean ignition;
+        boolean ignition = false;
         switch (parser.nextInt()) {
             case 2:
                 ignition = true;
+                break;
             case 3:
                 position.set(Position.KEY_ALARM, Position.ALARM_POWER_CUT);
+                break;
             default:
-                ignition = false;
+                break;
         }
 
         if (ignition) {
@@ -169,7 +171,6 @@ public class St351ProtocolDecoder extends BaseProtocolDecoder {
     protected Object decode(Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
         String sentence = (String) msg;
         Position position = new Position(getProtocolName());
-//        Log.info(String.format("%08X", channel.getId()) + " - St351 HEX: " + sentence);
 
         return decodeNormal(position, channel, remoteAddress, sentence);
     }
