@@ -147,10 +147,13 @@ public class St351ProtocolDecoder extends BaseProtocolDecoder {
         switch (parser.nextInt()) {
             case 2:
                 position.set(Position.KEY_IGNITION, true);
+                break;
             case 3:
                 position.set(Position.KEY_ALARM, Position.ALARM_POWER_CUT);
+                break;
             default:
                 position.set(Position.KEY_IGNITION, false);
+                break;
         }
 
 //        int frameNumber = parser.nextInt(0);
