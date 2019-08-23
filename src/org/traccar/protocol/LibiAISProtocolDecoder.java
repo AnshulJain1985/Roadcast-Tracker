@@ -32,18 +32,15 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.regex.Pattern;
 
-public class GtAISProtocolDecoder extends BaseProtocolDecoder {
+public class LibiAISProtocolDecoder extends BaseProtocolDecoder {
 
-    public GtAISProtocolDecoder(GtAISProtocol protocol) {
+    public LibiAISProtocolDecoder(LibiAISProtocol protocol) {
         super(protocol);
     }
 
     private static final Pattern PATTERN_LOGIN = new PatternBuilder()
-            .groupBegin()
-            .text("$,LGN,MARK,")
-            .or()
-            .text("$LGN,MARK,")
-            .groupEnd()
+            .text("$Header,")
+            .expression("([^,]+)?,")                // Techname
             .expression("([^,]+)?,")                // vehicle reg no
             .expression("([0-9]+),")                // IMEI
             .expression("([^,]+)?,")                // Software version
@@ -60,37 +57,30 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
 //    $,Header,MARK,WETRACK_800_11_A1A_D23_R0_V02_WM,351510091150527,5.99%,20%,0.00%,10,10,0010,00,0.1,*,93BA
 //    $HBT,MARK,V0.0.1,351510091197726,54,20,0,10,20,0000,0.1,*
     private static final Pattern PATTERN_HEARTBEAT = new PatternBuilder()
-            .groupBegin()
-            .text("$,HBT,")
-            .or()
-            .text("$HBT,")
-            .groupEnd()
-            .expression("([A-Z]+),")                // Vendor Id
+            .text("$Header,")
+            .expression("([^,]+)?,")                // Vendor Id
             .expression("([^,]+)?,")                // Software version
             .expression("([0-9]+),")                // IMEI
             .number("(d+.?d*)?%,?")                 // battery percentage
             .number("(d+.?d*)?%,?")                 // low battery threshold
             .number("(d+.?d*)?%,?")                 // memory percentage
+            .number("(d+.?d*)?%,?")                 // memory percentage2
             .number("(d+),")                        // ignition on timer
             .number("(d+),")                        // ignition off timer
             .number("(d)(d)(d)(d),")                // digital Input 4
-            .number("(d)(d),")                      // digital Output 2
-            .number("(d+.?d*)?,?")
+            .number("(d+.?d*)?,")                  // Analog input 1
+            .number("(d+.?d*)?")                  // Analog input 2
             .text("*")
+            .number("[x]+")                   // checksum
             .any()
             .compile();
 
     private static final Pattern PATTERN = new PatternBuilder()
-            .groupBegin()
-            .text("$,")
-            .or()
-            .text("$")
-            .groupEnd()
-            .expression("(NRM),")
-            .expression("([A-Z]+),")                // Vendor Id
+            .text("$Header,")
+            .expression("([^,]+)?,")                // Vendor Id
             .expression("([^,]+)?,")                // Software version
             .expression("([A-Z]+),")                // Packet Type
-            .number("(dd),")                        // Alert ID
+            .number("(d+),")                        // Alert ID
             .expression("([HL]),")                    // Packet Status
             .expression("([0-9]+),")                // IMEI
             .expression("([^,]+)?,")                // vehicle reg no
@@ -102,7 +92,7 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
             .number("(-?d+.d+),")                   // longitude
             .expression("([EW]),")
             .number("(d+.d+),")                     // speed
-            .number("(d+.d+),")                    // course
+            .number("(d+.?d*)?,?")                    // course
             .number("(d+),")                        // No of satellites
             .number("(d+.?d*)?,?")                  // altitude
             .number("(d+.?d*)?,?")                   // pdop
@@ -133,19 +123,19 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
             .expression("([^,]+)?,")                // NMR4 LAC
             .number("(d)(d)(d)(d),")                // digital Input 4
             .number("(d)(d),")                      // digital Output 2
+            .number("(d+),")                        // Frame number
             .number("(d+.?d*)?,")                  // Analog input 1
             .number("(d+.?d*)?,")                  // Analog input 2
-            .number("(d+),")                        // Frame number
-            .expression("[^,]*,")
-            .expression("[^,]*,")
-            .expression("[^,]*,")
-            .number("[x]+,")                   // checksum
+            .expression("[^,]*,")                   //Delta distance
+            .expression("(.*)")                   // OTA response
             .text("*")
+            .number("[x]+")                   // checksum
             .any()
             .compile();
 
     private static final Pattern PATTERN_EMERGENCY = new PatternBuilder()
-            .text("$EPB,MARK,")
+            .text("$Header,")
+            .expression("([^,]+)?,")
             .expression("([A-Z]+),")                // Packet Type
             .expression("([0-9]+),")                // IMEI
             .expression("([A-Z]+),")                    // Packet Status
@@ -162,11 +152,10 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
             .expression("([GN]),")                  // Provider
             .expression("([^,]+)?,")                // vehicle reg no
             .expression("([^,]+)?,")                // reply number
-            .expression("([^,]*)?,")                // MCC
-            .expression("([^,]*)?,")                // MNC
             .expression("([^,]*)?,")                // LAC
+            .expression("([^,]*)?")                // MCC
             .text("*")
-            .number("(xxxxxxxx)")                   // checksum
+            .number("[x]+")                   // checksum
             .compile();
 
 
@@ -247,6 +236,7 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
 
     private Object decodeLogin(Position position, Channel channel, SocketAddress remoteAddress, Parser parser) {
 
+        String techName = parser.next();
         String deviceName = parser.next();
         String imei = parser.next();
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
@@ -263,7 +253,7 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
     }
 
     private Object decodeHeartbeat(Position position, Channel channel, SocketAddress remoteAddress, Parser parser) {
-
+        String techName = parser.next();
         position.set(Position.KEY_VERSION_HW, parser.next());
         position.set(Position.KEY_VERSION_FW, parser.next());
         String imei = parser.next();
@@ -278,6 +268,7 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
 
         double lowBatThreshold = parser.nextDouble();
         double memPercentage = parser.nextDouble();
+        double memPercentage2 = parser.nextDouble();
         int intervalIgnitionOn = parser.nextInt();
         int intervalIngitionOff = parser.nextInt();
 
@@ -288,13 +279,13 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
                 position.set(Position.KEY_DOOR, tempDio == 1);
             }
         }
-        for (int i = 1; i <= 2; i++) {
-            position.set(Position.PREFIX_OUT + i, parser.nextInt(0));
-        }
+        position.set(Position.PREFIX_ADC + 1, parser.nextDouble(0));
+        position.set(Position.PREFIX_ADC + 2, parser.nextDouble(0));
         return position;
     }
 
     private Object decodeEmergency(Position position, Channel channel, SocketAddress remoteAddress, Parser parser) {
+        String techName = parser.next();
         String packetType = parser.next();
         String imei = parser.next();
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
@@ -326,20 +317,18 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
         String replyNumber = parser.next();
 
         Network network = new Network();
-        int mcc = parser.nextInt(0);
-        int mnc = parser.nextInt(0);
         int lac = parser.nextHexInt();
         int cellId = parser.nextHexInt();
 
-        network.addCellTower(CellTower.from(mcc, mnc, lac, cellId));
+        network.addCellTower(CellTower.fromLacCid(lac, cellId));
 
-        String checksum = parser.next();
+//        String checksum = parser.next();
         return position;
     }
 
     private Object decodeNormal(Position position, Channel channel, SocketAddress remoteAddress, Parser parser) {
         String header = parser.next();
-        position.set(Position.KEY_VERSION_HW, parser.next());
+//        position.set(Position.KEY_VERSION_HW, parser.next());
         position.set(Position.KEY_VERSION_FW, parser.next());
         String packetType = parser.next();
         int alertId = parser.nextInt(0);
@@ -395,6 +384,7 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
         for (int i = 1; i <= 2; i++) {
             position.set(Position.PREFIX_OUT + i, parser.nextInt(0));
         }
+        int frameNumber = parser.nextInt(0);
         position.set(Position.PREFIX_ADC + 1, parser.nextDouble(0));
         position.set(Position.PREFIX_ADC + 2, parser.nextDouble(0));
 //        int frameNumber = parser.nextInt(0);
@@ -408,7 +398,7 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
         String sentence = (String) msg;
         Position position = new Position(getProtocolName());
 
-        Log.info(String.format("%08X", channel.getId()) + " - GTAIS HEX: " + sentence);
+        Log.info(String.format("%08X", channel.getId()) + " - LIBIAIS HEX: " + sentence);
 
 
         Parser parser = new Parser(PATTERN_LOGIN, sentence);
