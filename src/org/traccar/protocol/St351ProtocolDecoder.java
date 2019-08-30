@@ -22,7 +22,6 @@ import org.traccar.DeviceSession;
 import org.traccar.helper.DateBuilder;
 import org.traccar.helper.Parser;
 import org.traccar.helper.PatternBuilder;
-import org.traccar.helper.UnitsConverter;
 import org.traccar.model.CellTower;
 import org.traccar.model.Network;
 import org.traccar.model.Position;
@@ -120,8 +119,9 @@ public class St351ProtocolDecoder extends BaseProtocolDecoder {
 
         position.setLatitude(parser.nextCoordinate(Parser.CoordinateFormat.HEM_DEG));
         position.setLongitude(parser.nextCoordinate(Parser.CoordinateFormat.HEM_DEG));
+//        position.setSpeed(UnitsConverter.knotsFromKph(parser.nextDouble(0)));
+        position.setSpeed(parser.nextDouble(0));
         position.setCourse(parser.nextDouble(0));
-        position.setSpeed(UnitsConverter.knotsFromKph(parser.nextDouble(0)));
 
         int noOfSattellites = parser.nextInt(0);
         position.setValid(noOfSattellites > 0);
