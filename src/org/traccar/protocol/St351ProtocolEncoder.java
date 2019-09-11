@@ -48,9 +48,11 @@ public class St351ProtocolEncoder extends StringProtocolEncoder implements Strin
 
         switch (command.getType()) {
             case Command.TYPE_ENGINE_STOP:
-                return formatCommand(command, uniqueId + "AV000");
+                return formatCommand(command, "(" + uniqueId + "AV000" + ")");
             case Command.TYPE_ENGINE_RESUME:
-                return formatCommand(command, uniqueId + "BV000");
+                return formatCommand(command, "(" + uniqueId + "AV001" + ")");
+            case Command.TYPE_CUSTOM:
+                return formatCommand(command, command.getString(Command.KEY_DATA));
             default:
                 return null;
         }
