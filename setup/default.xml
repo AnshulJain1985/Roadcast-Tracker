@@ -311,4 +311,9 @@
     <entry key='gtais.port'>5323</entry>
     <entry key='gtais.timeout'>285</entry>
 
+    <entry key='libiais.port'>5324</entry>
+    <entry key='libiais.timeout'>285</entry>
+    <entry key='gbais.port'>5325</entry>
+    <entry key='gbais.timeout'>285</entry>
+
 </properties>
