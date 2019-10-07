@@ -49,6 +49,10 @@ public class TeltonikaProtocolEncoder extends BaseProtocolEncoder {
     protected Object encodeCommand(Command command) {
 
         switch (command.getType()) {
+            case Command.TYPE_ENGINE_STOP:
+                return encodeContent("setdigout 1");
+            case Command.TYPE_ENGINE_RESUME:
+                return encodeContent("setdigout 0");
             case Command.TYPE_CUSTOM:
                 return encodeContent(command.getString(Command.KEY_DATA));
             default:
