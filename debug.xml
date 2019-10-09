@@ -14,10 +14,55 @@
 
     <entry key='logger.file'>target/tracker-server.log</entry>
 
-    <entry key='database.driver'>org.h2.Driver</entry>
-    <entry key='database.url'>jdbc:h2:./target/database</entry>
-    <entry key='database.user'>sa</entry>
-    <entry key='database.password'></entry>
+    <!--<entry key='database.driver'>org.h2.Driver</entry>-->
+    <!--<entry key='database.url'>jdbc:h2:./target/database</entry>-->
+    <!--<entry key='database.user'>sa</entry>-->
+    <!--<entry key='database.password'></entry>-->
+
+    <entry key='database.driver'>com.mysql.jdbc.Driver</entry>
+    <entry key='database.url'>jdbc:mysql://127.0.0.1:3306/traccar?allowMultiQueries=true&amp;autoReconnect=true&amp;useUnicode=yes&amp;characterEncoding=UTF-8&amp;sessionVariables=sql_mode=''&amp;useSSL=false</entry>
+    <entry key='database.user'>root</entry>
+    <entry key='database.password'>admin</entry>
+    <entry key='database.maxPoolSize'>20</entry>
+
+
+    <entry key='event.enable'>true</entry>
+    <entry key='processing.computedAttributes.enable'>true</entry>
+    <entry key='event.overspeedHandler'>true</entry>
+    <entry key='event.overspeed.minimalDuration'>10</entry>
+    <entry key='event.overspeed.notRepeat'>false</entry>
+    <entry key='event.motionHandler'>false</entry>
+    <entry key='event.geofenceHandler'>true</entry>
+    <entry key='event.alertHandler'>true</entry>
+    <entry key='event.ignitionHandler'>true</entry>
+    <entry key='event.statusHandler'>false</entry>
+    <entry key='event.maintenanceHandler'>false</entry>
+
+
+    <entry key='geofence.polylineDistance'>50</entry>
+
+    <entry key='report.trip.minimalTripDistance'>150</entry>
+    <entry key='report.trip.minimalTripDuration'>90</entry>
+    <entry key='report.trip.minimalParkingDuration'>90</entry>
+    <entry key='report.trip.useIgnition'>true</entry>
+    <entry key='report.ignoreOdometer'>true</entry>
+
+    <entry key='event.forward.enable'>true</entry>
+    <entry key='event.forward.header'>Content-Type:application/json; charset=utf-8</entry>
+    <entry key='event.forward.url'>http://localhost:8080/home</entry>
+
+    <entry key='processing.copyAttributes.enable'>true</entry>
+    <entry key='processing.copyAttributes'>door,ignition,battery,batteryLevel</entry>
+
+    <!--entry key='status.updateDeviceState'>true</entry-->
+
+    <entry key='filter.enable'>true</entry>
+    <entry key='filter.duplicate'>true</entry>
+    <entry key='filter.zero'>true</entry>
+    <entry key='filter.future'>18000</entry>
+    <entry key='filter.skipLimit'>900</entry>
+    <entry key='filter.skipAttributes.enable'>true</entry>
+    <entry key='filter.skipAttributes'>door,power,result,alarm</entry>
 
     <entry key='intellitrac.port'>6037</entry>
 
