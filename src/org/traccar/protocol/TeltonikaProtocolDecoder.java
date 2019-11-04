@@ -162,6 +162,18 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
             case 241:
                 position.set(Position.KEY_OPERATOR, readValue(buf, length, false));
                 break;
+            case 246:
+                if (readValue(buf, length, false) == 1) {
+                    position.set(Position.KEY_ALARM, Position.ALARM_TOW);
+                }
+                break;
+            case 252:
+                if (readValue(buf, length, false) == 1) {
+                    position.set(Position.KEY_ALARM, Position.ALARM_POWER_CUT);
+                } else {
+                    position.set(Position.KEY_ALARM, Position.ALARM_POWER_RESTORED);
+                }
+                break;
             default:
                 position.set(Position.PREFIX_IO + id, readValue(buf, length, false));
                 break;
