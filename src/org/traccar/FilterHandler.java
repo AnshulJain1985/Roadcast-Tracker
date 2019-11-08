@@ -105,7 +105,8 @@ public class FilterHandler extends BaseDataHandler {
     }
 
     private boolean filterDuplicate(Position position, Position last) {
-        if (filterDuplicate && last != null && position.getFixTime().equals(last.getFixTime())) {
+        if (filterDuplicate && last != null && position.getFixTime().equals(last.getFixTime())
+                && position.getSpeed() == last.getSpeed()) {
             for (String key : position.getAttributes().keySet()) {
                 if (!last.getAttributes().containsKey(key)) {
                     return false;
