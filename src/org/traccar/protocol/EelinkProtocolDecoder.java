@@ -131,7 +131,11 @@ public class EelinkProtocolDecoder extends BaseProtocolDecoder {
         position.setNetwork(new Network(CellTower.from(
                 buf.readUnsignedShort(), buf.readUnsignedShort(), buf.readUnsignedShort(), buf.readUnsignedMedium())));
 
-        position.setValid((buf.readUnsignedByte() & 0x01) != 0);
+//        position.setValid((buf.readUnsignedByte() & 0x01) != 0);
+        int status = buf.readUnsignedByte();
+
+        position.set(Position.KEY_IGNITION, BitUtil.check(status, 1));
+        position.setValid(BitUtil.check(status, 0));
 
         if (type == MSG_GPS) {
 
