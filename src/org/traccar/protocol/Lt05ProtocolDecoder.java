@@ -668,7 +668,11 @@ public class Lt05ProtocolDecoder extends BaseProtocolDecoder {
             }
 
             if (type == MSG_GPS_LBS_2 && buf.readableBytes() >= 3 + 6) {
-                position.set(Position.KEY_IGNITION, buf.readUnsignedByte() > 0);
+                int status = buf.readUnsignedByte();
+                position.set(Position.KEY_IGNITION, BitUtil.check(status, 0));
+                position.set(Position.KEY_DOOR, BitUtil.check(status, 1));
+
+//                position.set(Position.KEY_IGNITION, buf.readUnsignedByte() > 0);
                 position.set(Position.KEY_EVENT, buf.readUnsignedByte()); // reason
                 position.set(Position.KEY_ARCHIVE, buf.readUnsignedByte() > 0);
             }
