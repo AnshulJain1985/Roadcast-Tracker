@@ -316,4 +316,7 @@
     <entry key='gbais.port'>5325</entry>
     <entry key='gbais.timeout'>285</entry>
 
+    <entry key='roadcast.port'>6055</entry>
+    <entry key='roadcast.timeout'>180</entry>
+
 </properties>
