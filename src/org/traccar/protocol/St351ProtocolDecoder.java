@@ -39,20 +39,20 @@ public class St351ProtocolDecoder extends BaseProtocolDecoder {
             .text("")
             .expression("(PT|PTH);")              // Header
             .expression("([0-9]+);")              // IMEI
-            .expression("([^,]+)?;")              // Protocol Model
+            .expression("([^;]+)?;")              // Protocol Model
             .number("(dddd)(dd)(dd);")            // date utc (DDMMYYYY)
             .number("(dd):(dd):(dd);")            // time utc (hhmmss)
-            .expression("([^,]+)?,")              // MCC
-            .expression("([^,]+)?,")              // MNC
-            .expression("([^,]+)?,")              // CELLID
-            .expression("([^,]+)?;")              // LAC
+            .expression("([^;]+)?,")              // MCC
+            .expression("([^;]+)?,")              // MNC
+            .expression("([^;]+)?,")              // CELLID
+            .expression("([^;]+)?;")              // LAC
             .number("([+-])(d+.d+);")             // latitude
             .number("([+-])(d+.d+);")             // longitude
             .number("(d+.d+);")                   // course
             .number("(d+.d+);")                   // speed
             .number("(d+);")                      // No of satellites
             .number("(d+);")                      // GSM signal strength
-            .expression("([^,]+)?;")                      // odometer
+            .expression("([^;]+)?;")                      // odometer
             .number("(d+.?d*)?;?")                // Main input voltage
             .number("(d+.?d*)?;?")                // internal battery voltage
             .number("(d)(d)(d)(d)")               // digital Input 4
@@ -120,7 +120,9 @@ public class St351ProtocolDecoder extends BaseProtocolDecoder {
         position.setLatitude(parser.nextCoordinate(Parser.CoordinateFormat.HEM_DEG));
         position.setLongitude(parser.nextCoordinate(Parser.CoordinateFormat.HEM_DEG));
 //        position.setSpeed(UnitsConverter.knotsFromKph(parser.nextDouble(0)));
-        position.setSpeed(parser.nextDouble(0));
+
+        double speed = parser.nextDouble(0);
+        position.setSpeed(speed);
         position.setCourse(parser.nextDouble(0));
 
         int noOfSattellites = parser.nextInt(0);
@@ -155,7 +157,7 @@ public class St351ProtocolDecoder extends BaseProtocolDecoder {
                 break;
         }
 
-        if (ignition) {
+        if (ignition || speed > 1) {
             position.set(Position.KEY_IGNITION, true);
         } else {
             getLastLocation(position, null);
