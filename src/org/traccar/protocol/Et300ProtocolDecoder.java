@@ -281,7 +281,9 @@ public class Et300ProtocolDecoder extends BaseProtocolDecoder {
                 break;
         }
 
-        position.set(Position.KEY_BATTERY, buf.readUnsignedByte());
+        short battery = buf.readUnsignedByte();
+        position.set(Position.KEY_BATTERY, battery);
+        position.set(Position.KEY_BATTERY_LEVEL, ((battery * 100) / 6));
         position.set(Position.KEY_RSSI, buf.readUnsignedByte());
         position.set(Position.KEY_ALARM, decodeAlarm(buf.readUnsignedByte()));
 
