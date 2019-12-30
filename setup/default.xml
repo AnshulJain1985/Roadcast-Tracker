@@ -319,4 +319,7 @@
     <entry key='roadcast.port'>6055</entry>
     <entry key='roadcast.timeout'>180</entry>
 
+    <entry key='dimts.port'>5326</entry>
+    <entry key='dimts.timeout'>180</entry>
+
 </properties>
