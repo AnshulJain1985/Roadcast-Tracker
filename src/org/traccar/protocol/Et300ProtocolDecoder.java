@@ -226,6 +226,7 @@ public class Et300ProtocolDecoder extends BaseProtocolDecoder {
         position.setLongitude(longitude);
 
         if (BitUtil.check(flags, 14)) {
+            position.set(Position.KEY_DOOR, BitUtil.check(flags, 14));
             position.set(Position.KEY_IGNITION, BitUtil.check(flags, 15));
         }
 
