@@ -170,7 +170,7 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
             .compile();
 
 
-    private String decodeAlarm(String value) {
+    private String decodeAlarm(Channel channel, String value) {
 
 //        NR: Normal periodic packet
 //        HP: Health packet
@@ -199,6 +199,9 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
             case "TA":
                 return Position.ALARM_TAMPERING;
             case "EA":
+                if (channel != null) {
+                    channel.write("$Header,MARK,exitsoe#");
+                }
                 return Position.ALARM_SOS;
             case "BR":
                 return Position.ALARM_POWER_RESTORED;
@@ -351,7 +354,7 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
             return null;
         }
         position.setDeviceId(deviceSession.getDeviceId());
-        position.set(Position.KEY_ALARM, decodeAlarm(packetType));
+        position.set(Position.KEY_ALARM, decodeAlarm(channel, packetType));
         position.set(Position.KEY_ORIGINAL, parser.next());
         position.setValid(parser.nextInt(0) == 1);
         DateBuilder dateBuilder = new DateBuilder()
