@@ -228,10 +228,8 @@ public class Et300ProtocolDecoder extends BaseProtocolDecoder {
         position.setLatitude(latitude);
         position.setLongitude(longitude);
 
-        if (BitUtil.check(flags, 14)) {
-            position.set(Position.KEY_DOOR, BitUtil.check(flags, 14));
-            position.set(Position.KEY_IGNITION, BitUtil.check(flags, 15));
-        }
+        position.set(Position.KEY_DOOR, BitUtil.check(flags, 14));
+        position.set(Position.KEY_IGNITION, BitUtil.check(flags, 15));
 
         return true;
     }
@@ -264,6 +262,7 @@ public class Et300ProtocolDecoder extends BaseProtocolDecoder {
         int status = buf.readUnsignedByte();
 
         position.set(Position.KEY_STATUS, status);
+        position.set(Position.KEY_DOOR, BitUtil.check(status, 0));
         position.set(Position.KEY_IGNITION, BitUtil.check(status, 1));
         position.set(Position.KEY_CHARGE, BitUtil.check(status, 2));
         position.set(Position.KEY_BLOCKED, BitUtil.check(status, 7));
