@@ -228,8 +228,11 @@ public class Et300ProtocolDecoder extends BaseProtocolDecoder {
         position.setLatitude(latitude);
         position.setLongitude(longitude);
 
-        position.set(Position.KEY_DOOR, BitUtil.check(flags, 14));
-        position.set(Position.KEY_IGNITION, BitUtil.check(flags, 15));
+        boolean door = BitUtil.check(flags, 14);
+        position.set(Position.KEY_DOOR, door);
+        if (door) {
+            position.set(Position.KEY_IGNITION, BitUtil.check(flags, 15));
+        }
 
         return true;
     }
