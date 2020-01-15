@@ -42,11 +42,11 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
 
-public class Et300ProtocolDecoder extends BaseProtocolDecoder {
+public class Et300ACProtocolDecoder extends BaseProtocolDecoder {
 
     private final Map<Integer, ChannelBuffer> photos = new HashMap<>();
 
-    public Et300ProtocolDecoder(Et300Protocol protocol) {
+    public Et300ACProtocolDecoder(Et300ACProtocol protocol) {
         super(protocol);
     }
 
@@ -226,7 +226,9 @@ public class Et300ProtocolDecoder extends BaseProtocolDecoder {
         position.setLatitude(latitude);
         position.setLongitude(longitude);
 
-        if (BitUtil.check(flags, 14)) {
+        boolean door = BitUtil.check(flags, 14);
+        position.set(Position.KEY_DOOR, door);
+        if (door) {
             position.set(Position.KEY_IGNITION, BitUtil.check(flags, 15));
         }
 
@@ -261,6 +263,7 @@ public class Et300ProtocolDecoder extends BaseProtocolDecoder {
         int status = buf.readUnsignedByte();
 
         position.set(Position.KEY_STATUS, status);
+        position.set(Position.KEY_DOOR, BitUtil.check(status, 0));
         position.set(Position.KEY_IGNITION, BitUtil.check(status, 1));
         position.set(Position.KEY_CHARGE, BitUtil.check(status, 2));
         position.set(Position.KEY_BLOCKED, BitUtil.check(status, 7));
