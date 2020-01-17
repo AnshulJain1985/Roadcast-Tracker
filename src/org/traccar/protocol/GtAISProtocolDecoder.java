@@ -73,13 +73,12 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
             .expression("([A-Z]+),")                // Vendor Id
             .expression("([^,]+)?,")                // Software version
             .expression("([0-9]+),")                // IMEI
-            .number("(d+.?d*)?%,?")                 // battery percentage
-            .number("(d+.?d*)?%,?")                 // low battery threshold
-            .number("(d+.?d*)?%,?")                 // memory percentage
+            .number("(d+.?d*)?,?")                 // battery percentage
+            .number("(d+.?d*)?,?")                 // low battery threshold
+            .number("(d+.?d*)?,?")                 // memory percentage
             .number("(d+),")                        // ignition on timer
             .number("(d+),")                        // ignition off timer
             .number("(d)(d)(d)(d),")                // digital Input 4
-            .number("(d)(d),")                      // digital Output 2
             .number("(d+.?d*)?,?")
             .text("*")
             .any()
@@ -296,9 +295,9 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
                 position.set(Position.KEY_DOOR, tempDio == 1);
             }
         }
-        for (int i = 1; i <= 2; i++) {
-            position.set(Position.PREFIX_OUT + i, parser.nextInt(0));
-        }
+//        for (int i = 1; i <= 2; i++) {
+//            position.set(Position.PREFIX_OUT + i, parser.nextInt(0));
+//        }
         return position;
     }
 
