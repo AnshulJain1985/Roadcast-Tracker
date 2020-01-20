@@ -282,6 +282,9 @@
     <entry key='et300.port'>6123</entry>
     <entry key='et300.language'>true</entry>
     <entry key='et300.timeout'>185</entry>
+    <entry key='et300ac.port'>6423</entry>
+    <entry key='et300ac.language'>false</entry>
+    <entry key='et300ac.timeout'>185</entry>
 
     <entry key='lt05.port'>6223</entry>
     <entry key='lt05.language'>true</entry>
