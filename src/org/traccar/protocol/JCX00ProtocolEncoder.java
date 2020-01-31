@@ -66,9 +66,9 @@ public class JCX00ProtocolEncoder extends BaseProtocolEncoder {
 
         switch (command.getType()) {
             case Command.TYPE_ENGINE_STOP:
-                return encodeContent(command.getDeviceId(), alternative ? "DYD,123456#" : "Relay,1#");
+                return encodeContent(command.getDeviceId(), alternative ? "DYD,123456#" : "RELAY,1#");
             case Command.TYPE_ENGINE_RESUME:
-                return encodeContent(command.getDeviceId(), alternative ? "HFYD,123456#" : "Relay,0#");
+                return encodeContent(command.getDeviceId(), alternative ? "HFYD,123456#" : "RELAY,0#");
             case Command.TYPE_CUSTOM:
                 return encodeContent(command.getDeviceId(), command.getString(Command.KEY_DATA));
             default:
