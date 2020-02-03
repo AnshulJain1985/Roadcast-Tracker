@@ -398,6 +398,9 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
         for (int i = 1; i <= 4; i++) {
             int tempDio = parser.nextInt(0);
             position.set(Position.PREFIX_IN + i, tempDio);
+            if (i == 3) {
+                position.set(Position.KEY_DOOR, tempDio == 1);
+            }
         }
         for (int i = 1; i <= 2; i++) {
             position.set(Position.PREFIX_OUT + i, parser.nextInt(0));
