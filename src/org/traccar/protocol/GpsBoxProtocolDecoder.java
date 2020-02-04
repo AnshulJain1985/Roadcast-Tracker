@@ -157,11 +157,12 @@ public class GpsBoxProtocolDecoder extends BaseProtocolDecoder {
         } else {
             position.set(Position.KEY_DOOR, false);
         }
-        if (parser.nextInt(0) == 1) {
-            position.set(Position.KEY_ALARM, Position.ALARM_SHOCK);
-        }
+        position.set(Position.KEY_STATUS, parser.nextInt(0));
         if (parser.nextInt(0) == 0) {
-            position.set(Position.KEY_ALARM, Position.ALARM_POWER_CUT);
+            Position last = Context.getIdentityManager().getLastPosition(position.getDeviceId());
+            if (last.getBoolean(Position.KEY_CHARGE)) {
+                position.set(Position.KEY_ALARM, Position.ALARM_POWER_CUT);
+            }
             position.set(Position.KEY_CHARGE, false);
         } else {
             position.set(Position.KEY_CHARGE, true);
