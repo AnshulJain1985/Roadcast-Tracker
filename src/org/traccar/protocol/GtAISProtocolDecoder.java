@@ -418,7 +418,7 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
         String sentence = (String) msg;
         Position position = new Position(getProtocolName());
 
-        LOGGER.info(channel.id().asShortText() + " - GTAIS String: " + sentence);
+//        LOGGER.info(channel.id().asShortText() + " - GTAIS String: " + sentence);
 
 
         Parser parser = new Parser(PATTERN_LOGIN, sentence);

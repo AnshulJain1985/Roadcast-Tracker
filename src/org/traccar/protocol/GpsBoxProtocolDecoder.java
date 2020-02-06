@@ -97,7 +97,7 @@ public class GpsBoxProtocolDecoder extends BaseProtocolDecoder {
         String sentence = (String) msg;
 
         if (!sentence.isEmpty()) {
-            LOGGER.info("GPSBOX: " + sentence);
+//            LOGGER.info("GPSBOX: " + sentence);
 
             if (channel != null) {
                 channel.writeAndFlush(new NetworkMessage("+##Received OK", remoteAddress));
