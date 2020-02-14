@@ -1,12 +1,10 @@
 package org.traccar.protocol;
 
-import org.traccar.BaseProtocolEncoder;
 import org.traccar.StringProtocolEncoder;
 import org.traccar.model.Command;
 
 public class RdmAISProtocolEncoder extends StringProtocolEncoder
-        implements StringProtocolEncoder.ValueFormatter
-{
+        implements StringProtocolEncoder.ValueFormatter {
     @Override
     public String formatValue(String key, Object value) {
 

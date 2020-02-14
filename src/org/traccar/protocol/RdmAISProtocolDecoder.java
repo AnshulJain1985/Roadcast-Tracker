@@ -18,8 +18,7 @@ import java.net.SocketAddress;
 import java.util.Date;
 import java.util.regex.Pattern;
 
-public class RdmAISProtocolDecoder extends BaseProtocolDecoder
-{
+public class RdmAISProtocolDecoder extends BaseProtocolDecoder {
     private static final Logger LOGGER = LoggerFactory.getLogger(LibiAISProtocolDecoder.class);
 
     public RdmAISProtocolDecoder(RdmAISProtocol protocol) {

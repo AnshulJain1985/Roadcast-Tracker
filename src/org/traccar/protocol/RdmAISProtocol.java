@@ -7,8 +7,7 @@ import org.traccar.PipelineBuilder;
 import org.traccar.TrackerServer;
 import org.traccar.model.Command;
 
-public class RdmAISProtocol extends BaseProtocol
-{
+public class RdmAISProtocol extends BaseProtocol {
     public RdmAISProtocol() {
         setSupportedDataCommands(
                 Command.TYPE_ENGINE_STOP,

@@ -19,23 +19,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
-import org.traccar.BaseProtocolDecoder;
-import org.traccar.Context;
-import org.traccar.DeviceSession;
-import org.traccar.NetworkMessage;
-import org.traccar.Protocol;
-import org.traccar.helper.BcdUtil;
-import org.traccar.helper.BitUtil;
-import org.traccar.helper.Checksum;
-import org.traccar.helper.DateBuilder;
-import org.traccar.helper.Parser;
-import org.traccar.helper.PatternBuilder;
-import org.traccar.helper.UnitsConverter;
-import org.traccar.model.CellTower;
-import org.traccar.model.Device;
-import org.traccar.model.Network;
-import org.traccar.model.Position;
-import org.traccar.model.WifiAccessPoint;
+import org.traccar.*;
+import org.traccar.helper.*;
+import org.traccar.model.*;
 
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -272,9 +258,9 @@ public class Gt06AssetProtocolDecoder extends BaseProtocolDecoder {
             case 1:
                 position.set(Position.KEY_ALARM, Position.ALARM_SHOCK);
                 break;
-            case 2:
-                position.set(Position.KEY_ALARM, Position.ALARM_POWER_CUT);
-                break;
+//            case 2:
+//                position.set(Position.KEY_ALARM, Position.ALARM_POWER_CUT);
+//                break;
             case 3:
                 position.set(Position.KEY_ALARM, Position.ALARM_LOW_BATTERY);
                 break;
@@ -588,7 +574,7 @@ public class Gt06AssetProtocolDecoder extends BaseProtocolDecoder {
         return null;
     }
 
-    private Object decodeWifi(ByteBuf buf, DeviceSession deviceSession) throws Exception {
+    private Object decodeWifi(ByteBuf buf, DeviceSession deviceSession) {
 
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
@@ -626,7 +612,7 @@ public class Gt06AssetProtocolDecoder extends BaseProtocolDecoder {
     }
 
     private Object decodeBasicOther(Channel channel, ByteBuf buf,
-            DeviceSession deviceSession, int type, int dataLength) throws Exception {
+                                    DeviceSession deviceSession, int type, int dataLength) {
 
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
@@ -730,7 +716,7 @@ public class Gt06AssetProtocolDecoder extends BaseProtocolDecoder {
         return position;
     }
 
-    private Object decodeExtended(Channel channel, SocketAddress remoteAddress, ByteBuf buf) throws Exception {
+    private Object decodeExtended(Channel channel, SocketAddress remoteAddress, ByteBuf buf) {
 
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress);
         if (deviceSession == null) {

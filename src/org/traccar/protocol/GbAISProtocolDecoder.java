@@ -29,6 +29,7 @@ import org.traccar.helper.UnitsConverter;
 import org.traccar.model.CellTower;
 import org.traccar.model.Network;
 import org.traccar.model.Position;
+
 import java.net.SocketAddress;
 import java.util.Date;
 import java.util.regex.Pattern;
@@ -42,11 +43,12 @@ public class GbAISProtocolDecoder extends BaseProtocolDecoder {
     }
 
     private static final Pattern PATTERN_LOGIN = new PatternBuilder()
-            .text("$LGN,")
+            .text("$LG$")
             .expression("([A-Za-z]+),")                // Vendor Id
-            .expression("([^,]+)?,")                // vehicle reg no
+            .text("$")
+            .expression("([^,$]+)?,")                // vehicle reg no
             .expression("([0-9]+),")                // IMEI
-            .expression("([^,]+)?,")                // Software version
+            .expression("([^,$]+)?,")                // Software version
             .expression("([^,]+)?,")                // Hardware version
             .number("(-?d+.d+),")                   // latitude
             .expression("([NS]),")
