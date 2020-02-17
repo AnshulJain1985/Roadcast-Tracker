@@ -48,7 +48,7 @@ public class EelinkProtocolDecoder extends BaseProtocolDecoder {
     public static final int MSG_ALARM = 0x04;
     public static final int MSG_STATE = 0x05;
     public static final int MSG_SMS = 0x06;
-    public static final int MSG_OBD = 0x07;
+    public static final int MSG_HEARTBEAT_EXTENDED = 0x07;
     public static final int MSG_DOWNLINK = 0x80;
     public static final int MSG_DATA = 0x81;
 
@@ -387,6 +387,19 @@ public class EelinkProtocolDecoder extends BaseProtocolDecoder {
                 getLastLocation(position, null);
 
                 decodeStatus(position, buf.readUnsignedShort());
+
+                return position;
+
+            } else if (type == MSG_HEARTBEAT_EXTENDED && buf.readableBytes() >= 2) {
+
+                Position position = new Position(getProtocolName());
+                position.setDeviceId(deviceSession.getDeviceId());
+
+                getLastLocation(position, null);
+
+                decodeStatus(position, buf.readUnsignedShort());
+                position.set(Position.KEY_RSSI, buf.readUnsignedByte());
+                position.set(Position.KEY_BATTERY, buf.readUnsignedByte());
 
                 return position;
 

@@ -402,7 +402,7 @@ public class Gt06AssetProtocolDecoder extends BaseProtocolDecoder {
         return batteryLevel;
     }
 
-    private Object decodeBasic(Channel channel, SocketAddress remoteAddress, ByteBuf buf) throws Exception {
+    private Object decodeBasic(Channel channel, SocketAddress remoteAddress, ByteBuf buf) {
 
         int length = buf.readUnsignedByte();
         int dataLength = length - 5;
