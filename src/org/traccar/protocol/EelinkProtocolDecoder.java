@@ -46,7 +46,7 @@ public class EelinkProtocolDecoder extends BaseProtocolDecoder {
     public static final int MSG_ALARM = 0x04;
     public static final int MSG_STATE = 0x05;
     public static final int MSG_SMS = 0x06;
-    public static final int MSG_OBD = 0x07;
+    public static final int MSG_HEARTBEAT_EXTENDED = 0x07;
     public static final int MSG_DOWNLINK = 0x80;
     public static final int MSG_DATA = 0x81;
 
@@ -129,7 +129,11 @@ public class EelinkProtocolDecoder extends BaseProtocolDecoder {
         position.setNetwork(new Network(CellTower.from(
                 buf.readUnsignedShort(), buf.readUnsignedShort(), buf.readUnsignedShort(), buf.readUnsignedMedium())));
 
-        position.setValid((buf.readUnsignedByte() & 0x01) != 0);
+//        position.setValid((buf.readUnsignedByte() & 0x01) != 0);
+        int status = buf.readUnsignedByte();
+
+        position.set(Position.KEY_IGNITION, BitUtil.check(status, 1));
+        position.setValid(BitUtil.check(status, 0));
 
         if (type == MSG_GPS) {
 
@@ -170,7 +174,7 @@ public class EelinkProtocolDecoder extends BaseProtocolDecoder {
         return position;
     }
 
-    private Position decodeNew(DeviceSession deviceSession, ChannelBuffer buf, int index) {
+    private Position decodeNew(DeviceSession deviceSession, ChannelBuffer buf, int type, int index) {
 
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
@@ -218,7 +222,18 @@ public class EelinkProtocolDecoder extends BaseProtocolDecoder {
             buf.skipBytes(7); // bss2
         }
 
-        if (buf.readableBytes() >= 2) {
+        if (type == MSG_WARNING) {
+
+            position.set(Position.KEY_ALARM, decodeAlarm(buf.readUnsignedByte()));
+
+        } else if (type == MSG_REPORT) {
+
+            buf.readUnsignedByte(); // report type
+
+        }
+
+        if (type == MSG_NORMAL || type == MSG_WARNING || type == MSG_REPORT) {
+
             int status = buf.readUnsignedShort();
             position.setValid(BitUtil.check(status, 0));
             if (BitUtil.check(status, 1)) {
@@ -227,34 +242,38 @@ public class EelinkProtocolDecoder extends BaseProtocolDecoder {
             position.set(Position.KEY_STATUS, status);
         }
 
-        if (buf.readableBytes() >= 2) {
-            position.set(Position.KEY_BATTERY, buf.readUnsignedShort() * 0.001);
-        }
+        if (type == MSG_NORMAL) {
 
-        if (buf.readableBytes() >= 4) {
-            position.set(Position.PREFIX_ADC + 0, buf.readUnsignedShort());
-            position.set(Position.PREFIX_ADC + 1, buf.readUnsignedShort());
-        }
+            if (buf.readableBytes() >= 2) {
+                position.set(Position.KEY_BATTERY, buf.readUnsignedShort() * 0.001);
+            }
 
-        if (buf.readableBytes() >= 4) {
-            position.set(Position.KEY_ODOMETER, buf.readUnsignedInt());
-        }
+            if (buf.readableBytes() >= 4) {
+                position.set(Position.PREFIX_ADC + 0, buf.readUnsignedShort());
+                position.set(Position.PREFIX_ADC + 1, buf.readUnsignedShort());
+            }
 
-        if (buf.readableBytes() >= 4) {
-            buf.readUnsignedShort(); // gsm counter
-            buf.readUnsignedShort(); // gps counter
-        }
+            if (buf.readableBytes() >= 4) {
+                position.set(Position.KEY_ODOMETER, buf.readUnsignedInt());
+            }
 
-        if (buf.readableBytes() >= 4) {
-            position.set(Position.KEY_STEPS, buf.readUnsignedShort());
-            buf.readUnsignedShort(); // walking time
-        }
+            if (buf.readableBytes() >= 4) {
+                buf.readUnsignedShort(); // gsm counter
+                buf.readUnsignedShort(); // gps counter
+            }
 
-        if (buf.readableBytes() >= 12) {
-            position.set(Position.PREFIX_TEMP + 1, buf.readUnsignedShort() / 256.0);
-            position.set("humidity", buf.readUnsignedShort() * 0.1);
-            position.set("illuminance", buf.readUnsignedInt() / 256.0);
-            position.set("co2", buf.readUnsignedInt());
+            if (buf.readableBytes() >= 4) {
+                position.set(Position.KEY_STEPS, buf.readUnsignedShort());
+                buf.readUnsignedShort(); // walking time
+            }
+
+            if (buf.readableBytes() >= 12) {
+                position.set(Position.PREFIX_TEMP + 1, buf.readUnsignedShort() / 256.0);
+                position.set("humidity", buf.readUnsignedShort() * 0.1);
+                position.set("illuminance", buf.readUnsignedInt() / 256.0);
+                position.set("co2", buf.readUnsignedInt());
+            }
+
         }
 
         return position;
@@ -355,7 +374,7 @@ public class EelinkProtocolDecoder extends BaseProtocolDecoder {
 
             } else if (type >= MSG_NORMAL && type <= MSG_OBD_CODE) {
 
-                return decodeNew(deviceSession, buf, index);
+                return decodeNew(deviceSession, buf, type, index);
 
             } else if (type == MSG_HEARTBEAT && buf.readableBytes() >= 2) {
 
@@ -365,6 +384,19 @@ public class EelinkProtocolDecoder extends BaseProtocolDecoder {
                 getLastLocation(position, null);
 
                 decodeStatus(position, buf.readUnsignedShort());
+
+                return position;
+
+            } else if (type == MSG_HEARTBEAT_EXTENDED && buf.readableBytes() >= 2) {
+
+                Position position = new Position(getProtocolName());
+                position.setDeviceId(deviceSession.getDeviceId());
+
+                getLastLocation(position, null);
+
+                decodeStatus(position, buf.readUnsignedShort());
+                position.set(Position.KEY_RSSI, buf.readUnsignedByte());
+                position.set(Position.KEY_BATTERY, buf.readUnsignedByte());
 
                 return position;
 
