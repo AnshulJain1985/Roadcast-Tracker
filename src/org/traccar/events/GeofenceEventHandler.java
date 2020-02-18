@@ -24,15 +24,20 @@ import org.traccar.model.Device;
 import org.traccar.model.Event;
 import org.traccar.model.Position;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 @ChannelHandler.Sharable
 public class GeofenceEventHandler extends BaseEventHandler {
 
     private GeofenceManager geofenceManager;
+    private static final Logger LOGGER = LoggerFactory.getLogger(GeofenceEventHandler.class);
 
     public GeofenceEventHandler() {
         geofenceManager = Context.getGeofenceManager();
@@ -54,8 +59,17 @@ public class GeofenceEventHandler extends BaseEventHandler {
             oldGeofences.addAll(device.getGeofenceIds());
         }
         List<Long> newGeofences = new ArrayList<>(currentGeofences);
+
+        if (device.getId() == 13350) {
+            LOGGER.info("GeoFix position: " + position.getLatitude() + ' ' + position.getLongitude());
+            LOGGER.info("GeoFix currentGeofences: " + Arrays.toString(currentGeofences.toArray()));
+            LOGGER.info("GeoFix oldGeofences: " + Arrays.toString(oldGeofences.toArray()));
+        }
+
         newGeofences.removeAll(oldGeofences);
         oldGeofences.removeAll(currentGeofences);
+
+
 
         device.setGeofenceIds(currentGeofences);
 
