@@ -15,9 +15,9 @@
  */
 package org.traccar.model;
 
-import java.util.Date;
-
 import org.traccar.database.QueryIgnore;
+
+import java.util.Date;
 
 public class Position extends Message {
 
@@ -131,6 +131,7 @@ public class Position extends Message {
     public static final String ALARM_OIL_LEAK = "oilLeak";
     public static final String ALARM_TAMPERING = "tampering";
     public static final String ALARM_REMOVING = "removing";
+    public static final String KEY_HEART_RATE = "heartRate";
 
     public Position() {
     }

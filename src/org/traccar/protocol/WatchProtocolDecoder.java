@@ -20,11 +20,7 @@ import org.jboss.netty.channel.Channel;
 import org.traccar.BaseProtocolDecoder;
 import org.traccar.Context;
 import org.traccar.DeviceSession;
-import org.traccar.helper.BitUtil;
-import org.traccar.helper.DistanceCalculator;
-import org.traccar.helper.Parser;
-import org.traccar.helper.PatternBuilder;
-import org.traccar.helper.UnitsConverter;
+import org.traccar.helper.*;
 import org.traccar.model.CellTower;
 import org.traccar.model.Network;
 import org.traccar.model.Position;
@@ -76,26 +72,25 @@ public class WatchProtocolDecoder extends BaseProtocolDecoder {
     }
 
     private String decodeAlarm(int status) {
-        if (BitUtil.check(status, 0)) {
-            return Position.ALARM_LOW_BATTERY;
-        } else if (BitUtil.check(status, 1)) {
-            return Position.ALARM_GEOFENCE_EXIT;
-        } else if (BitUtil.check(status, 2)) {
-            return Position.ALARM_GEOFENCE_ENTER;
-        } else if (BitUtil.check(status, 3)) {
-            return Position.ALARM_OVERSPEED;
-        } else if (BitUtil.check(status, 16)) {
-            return Position.ALARM_SOS;
-        } else if (BitUtil.check(status, 17)) {
-            return Position.ALARM_LOW_BATTERY;
-        } else if (BitUtil.check(status, 18)) {
-            return Position.ALARM_GEOFENCE_EXIT;
-        } else if (BitUtil.check(status, 19)) {
-            return Position.ALARM_GEOFENCE_ENTER;
+        if (BitUtil.check(status, 21)) {
+            return Position.ALARM_FALL_DOWN;
         } else if (BitUtil.check(status, 20)) {
             return Position.ALARM_REMOVING;
-        } else if (BitUtil.check(status, 21)) {
-            return Position.ALARM_FALL_DOWN;
+        } else if (BitUtil.check(status, 19)) {
+            return Position.ALARM_GEOFENCE_ENTER;
+        } else if (BitUtil.check(status, 17)) {
+            return Position.ALARM_LOW_BATTERY;
+        } else if (BitUtil.check(status, 16)) {
+            return Position.ALARM_SOS;
+        } else if (BitUtil.check(status, 3)) {
+//            return Position.ALARM_OVERSPEED;
+            return null;
+        } else if (BitUtil.check(status, 2)) {
+            return Position.ALARM_GEOFENCE_ENTER;
+        } else if (BitUtil.check(status, 1)) {
+            return Position.ALARM_GEOFENCE_EXIT;
+        } else if (BitUtil.check(status, 0)) {
+            return Position.ALARM_LOW_BATTERY;
         }
         return null;
     }
@@ -142,7 +137,9 @@ public class WatchProtocolDecoder extends BaseProtocolDecoder {
 
         position.set(Position.KEY_SATELLITES, parser.nextInt(0));
         position.set(Position.KEY_RSSI, parser.nextInt(0));
-        position.set(Position.KEY_BATTERY_LEVEL, parser.nextInt(0));
+        int batteryLevel = parser.nextInt(0);
+        position.set(Position.KEY_BATTERY_LEVEL, batteryLevel);
+        position.set(Position.KEY_POWER, batteryLevel);
 
         position.set(Position.KEY_STEPS, parser.nextInt(0));
 
@@ -257,7 +254,9 @@ public class WatchProtocolDecoder extends BaseProtocolDecoder {
 
                     getLastLocation(position, null);
 
-                    position.set(Position.KEY_BATTERY_LEVEL, Integer.parseInt(values[2]));
+                    int batteryLevel = Integer.parseInt(values[2]);
+                    position.set(Position.KEY_BATTERY_LEVEL, batteryLevel);
+                    position.set(Position.KEY_POWER, batteryLevel);
 
                     return position;
                 }
@@ -269,7 +268,7 @@ public class WatchProtocolDecoder extends BaseProtocolDecoder {
             Position position = decodePosition(deviceSession, buf.toString(StandardCharsets.US_ASCII));
 
             if (type.equals("AL")) {
-                if (position != null) {
+                if (position != null && position.getString(Position.KEY_ALARM) == null) {
                     position.set(Position.KEY_ALARM, Position.ALARM_SOS);
                 }
                 sendResponse(channel, id, index, "AL");
@@ -289,6 +288,7 @@ public class WatchProtocolDecoder extends BaseProtocolDecoder {
                 position.setDeviceId(deviceSession.getDeviceId());
 
                 getLastLocation(position, new Date());
+                position.set(Position.KEY_POWER, 0);
 
                 String[] values = buf.toString(StandardCharsets.US_ASCII).split(",");
                 int valueIndex = 0;
@@ -297,7 +297,7 @@ public class WatchProtocolDecoder extends BaseProtocolDecoder {
                     position.set("pressureHigh", values[valueIndex++]);
                     position.set("pressureLow", values[valueIndex++]);
                 }
-                position.set("pulse", values[valueIndex]);
+                position.set(Position.KEY_HEART_RATE, Integer.parseInt(values[valueIndex]));
 
                 return position;
 
@@ -312,6 +312,7 @@ public class WatchProtocolDecoder extends BaseProtocolDecoder {
 
             int timeIndex = buf.indexOf(buf.readerIndex(), buf.writerIndex(), (byte) ',');
             buf.readerIndex(timeIndex + 12 + 2);
+            position.set(Position.KEY_POWER, 0);
             position.set(Position.KEY_IMAGE, Context.getMediaManager().writeFile(id, buf, "jpg"));
 
             return position;
@@ -322,7 +323,7 @@ public class WatchProtocolDecoder extends BaseProtocolDecoder {
             position.setDeviceId(deviceSession.getDeviceId());
 
             getLastLocation(position, null);
-
+            position.set(Position.KEY_POWER, 0);
             position.set(Position.KEY_AUDIO, Context.getMediaManager().writeFile(id, buf, "amr"));
 
             return position;
