@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Anton Tananaev (anton@traccar.org)
+ * Copyright 2017 - 2020 Anton Tananaev (anton@traccar.org)
  * Copyright 2017 Andrey Kunitsyn (andrey@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,15 +16,15 @@
  */
 package org.traccar.database;
 
-import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.traccar.Context;
 import org.traccar.model.Group;
+
+import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class GroupsManager extends BaseObjectManager<Group> implements ManagableObjects {
 
@@ -50,7 +50,7 @@ public class GroupsManager extends BaseObjectManager<Group> implements Managable
         }
     }
 
-    public void updateGroupCache(boolean force) throws SQLException {
+    public void updateGroupCache(boolean force) {
         long lastUpdate = groupsLastUpdate.get();
         if ((force || System.currentTimeMillis() - lastUpdate > dataRefreshDelay)
                 && groupsLastUpdate.compareAndSet(lastUpdate, System.currentTimeMillis())) {
@@ -95,8 +95,7 @@ public class GroupsManager extends BaseObjectManager<Group> implements Managable
 
     @Override
     public Set<Long> getManagedItems(long userId) {
-        Set<Long> result = new HashSet<>();
-        result.addAll(getUserItems(userId));
+        Set<Long> result = getUserItems(userId);
         for (long managedUserId : Context.getUsersManager().getUserItems(userId)) {
             result.addAll(getUserItems(managedUserId));
         }

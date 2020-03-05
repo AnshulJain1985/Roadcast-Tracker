@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Anton Tananaev (anton@traccar.org)
+ * Copyright 2017 - 2020 Anton Tananaev (anton@traccar.org)
  * Copyright 2017 Andrey Kunitsyn (andrey@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,23 +16,19 @@
  */
 package org.traccar.database;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.traccar.BaseProtocol;
 import org.traccar.Context;
 import org.traccar.model.Command;
-import org.traccar.model.Typed;
 import org.traccar.model.Position;
+import org.traccar.model.Typed;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class CommandsManager  extends ExtendedObjectManager<Command> {
 
@@ -106,18 +102,22 @@ public class CommandsManager  extends ExtendedObjectManager<Command> {
     }
 
     public Collection<Typed> getCommandTypes(long deviceId, boolean textChannel) {
-        List<Typed> result = new ArrayList<>();
         Position lastPosition = Context.getIdentityManager().getLastPosition(deviceId);
         if (lastPosition != null) {
-            BaseProtocol protocol = Context.getServerManager().getProtocol(lastPosition.getProtocol());
+            return getCommandTypes(lastPosition.getProtocol(), textChannel);
+        } else {
+            return Collections.singletonList(new Typed(Command.TYPE_CUSTOM));
+        }
+    }
+
+    public Collection<Typed> getCommandTypes(String protocolName, boolean textChannel) {
+        List<Typed> result = new ArrayList<>();
+        BaseProtocol protocol = Context.getServerManager().getProtocol(protocolName);
             Collection<String> commands;
             commands = textChannel ? protocol.getSupportedTextCommands() : protocol.getSupportedDataCommands();
             for (String commandKey : commands) {
                 result.add(new Typed(commandKey));
             }
-        } else {
-            result.add(new Typed(Command.TYPE_CUSTOM));
-        }
         return result;
     }
 
@@ -137,14 +137,33 @@ public class CommandsManager  extends ExtendedObjectManager<Command> {
     }
 
     private Queue<Command> getDeviceQueue(long deviceId) {
-        if (!deviceQueues.containsKey(deviceId)) {
-            deviceQueues.put(deviceId, new ConcurrentLinkedQueue<Command>());
+        Queue<Command> deviceQueue;
+        try {
+            readLock();
+            deviceQueue = deviceQueues.get(deviceId);
+        } finally {
+            readUnlock();
         }
-        return deviceQueues.get(deviceId);
+        if (deviceQueue != null) {
+            return deviceQueue;
+        } else {
+            try {
+                writeLock();
+                return deviceQueues.computeIfAbsent(deviceId, key -> new ConcurrentLinkedQueue<>());
+            } finally {
+                writeUnlock();
+        }
+        }
     }
 
     public void sendQueuedCommands(ActiveDevice activeDevice) {
-        Queue<Command> deviceQueue = deviceQueues.get(activeDevice.getDeviceId());
+        Queue<Command> deviceQueue;
+        try {
+            readLock();
+            deviceQueue = deviceQueues.get(activeDevice.getDeviceId());
+        } finally {
+            readUnlock();
+        }
         if (deviceQueue != null) {
             Command command = deviceQueue.poll();
             while (command != null) {

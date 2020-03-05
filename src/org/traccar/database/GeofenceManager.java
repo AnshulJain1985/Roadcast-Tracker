@@ -15,19 +15,23 @@
  */
 package org.traccar.database;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.traccar.Context;
 import org.traccar.model.Device;
 import org.traccar.model.Geofence;
 import org.traccar.model.Position;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class GeofenceManager extends ExtendedObjectManager<Geofence> {
 
     public GeofenceManager(DataManager dataManager) {
         super(dataManager, Geofence.class);
     }
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(GeofenceManager.class);
 
     @Override
     public final void refreshExtendedPermissions() {
@@ -38,6 +42,10 @@ public class GeofenceManager extends ExtendedObjectManager<Geofence> {
     public List<Long> getCurrentDeviceGeofences(Position position) {
         List<Long> result = new ArrayList<>();
         for (long geofenceId : getAllDeviceItems(position.getDeviceId())) {
+            if (position.getDeviceId() == 13350) {
+                LOGGER.info("GeoFix Manager: " + geofenceId + ' ' + position.getLatitude()
+                        + ' ' + position.getLongitude());
+            }
             Geofence geofence = getById(geofenceId);
             if (geofence != null && geofence.getGeometry()
                     .containsPoint(position.getLatitude(), position.getLongitude())) {
@@ -48,8 +56,12 @@ public class GeofenceManager extends ExtendedObjectManager<Geofence> {
     }
 
     public void recalculateDevicesGeofences() {
+        LOGGER.info("GeoFix Manager: Inside recalculateDevicesGeofences");
         for (Device device : Context.getDeviceManager().getAllDevices()) {
             List<Long> deviceGeofenceIds = device.getGeofenceIds();
+            if (device.getId() == 13350) {
+                LOGGER.info("GeoFix Manager: Clearing for deviceid" + device.getId());
+            }
             if (deviceGeofenceIds == null) {
                 deviceGeofenceIds = new ArrayList<>();
             } else {

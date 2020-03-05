@@ -16,12 +16,11 @@
  */
 package org.traccar.database;
 
-import java.util.HashSet;
+import org.traccar.model.User;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.traccar.model.User;
 
 public class UsersManager extends SimpleObjectManager<User> {
 
@@ -73,8 +72,7 @@ public class UsersManager extends SimpleObjectManager<User> {
 
     @Override
     public Set<Long> getManagedItems(long userId) {
-        Set<Long> result = new HashSet<>();
-        result.addAll(getUserItems(userId));
+        Set<Long> result = getUserItems(userId);
         result.add(userId);
         return result;
     }

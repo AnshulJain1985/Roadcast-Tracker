@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Anton Tananaev (anton@traccar.org)
+ * Copyright 2017 - 2020 Anton Tananaev (anton@traccar.org)
  * Copyright 2017 Andrey Kunitsyn (andrey@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,21 +16,21 @@
  */
 package org.traccar.database;
 
-import java.sql.SQLException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.traccar.model.BaseModel;
 
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 public class BaseObjectManager<T extends BaseModel> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseObjectManager.class);
+
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     private final DataManager dataManager;
 
@@ -43,6 +43,22 @@ public class BaseObjectManager<T extends BaseModel> {
         refreshItems();
     }
 
+    protected final void readLock() {
+        lock.readLock().lock();
+    }
+
+    protected final void readUnlock() {
+        lock.readLock().unlock();
+    }
+
+    protected final void writeLock() {
+        lock.writeLock().lock();
+    }
+
+    protected final void writeUnlock() {
+        lock.writeLock().unlock();
+    }
+
     protected final DataManager getDataManager() {
         return dataManager;
     }
@@ -52,12 +68,18 @@ public class BaseObjectManager<T extends BaseModel> {
     }
 
     public T getById(long itemId) {
-        return items.get(itemId);
+        try {
+            readLock();
+            return items.get(itemId);
+        } finally {
+            readUnlock();
+        }
     }
 
     public void refreshItems() {
         if (dataManager != null) {
             try {
+                writeLock();
                 Collection<T> databaseItems = dataManager.getObjects(baseClass);
                 if (items == null) {
                     items = new ConcurrentHashMap<>(databaseItems.size());
@@ -78,12 +100,19 @@ public class BaseObjectManager<T extends BaseModel> {
                 }
             } catch (SQLException error) {
                 LOGGER.warn("Error refreshing items", error);
+            } finally {
+                writeUnlock();
             }
         }
     }
 
     protected void addNewItem(T item) {
-        items.put(item.getId(), item);
+        try {
+            writeLock();
+            items.put(item.getId(), item);
+        } finally {
+            writeUnlock();
+        }
     }
 
     public void addItem(T item) throws SQLException {
@@ -92,7 +121,12 @@ public class BaseObjectManager<T extends BaseModel> {
     }
 
     protected void updateCachedItem(T item) {
-        items.put(item.getId(), item);
+        try {
+            writeLock();
+            items.put(item.getId(), item);
+        } finally {
+            writeUnlock();
+        }
     }
 
     public void updateItem(T item) throws SQLException {
@@ -101,7 +135,12 @@ public class BaseObjectManager<T extends BaseModel> {
     }
 
     protected void removeCachedItem(long itemId) {
-        items.remove(itemId);
+        try {
+            writeLock();
+            items.remove(itemId);
+        } finally {
+            writeUnlock();
+        }
     }
 
     public void removeItem(long itemId) throws SQLException {
@@ -121,7 +160,12 @@ public class BaseObjectManager<T extends BaseModel> {
     }
 
     public Set<Long> getAllItems() {
-        return items.keySet();
+        try {
+            readLock();
+            return items.keySet();
+        } finally {
+            readUnlock();
+        }
     }
 
 }
