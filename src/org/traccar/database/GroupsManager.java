@@ -62,11 +62,7 @@ public class GroupsManager extends BaseObjectManager<Group> implements Managable
     public Set<Long> getAllItems() {
         Set<Long> result = super.getAllItems();
         if (result.isEmpty()) {
-            try {
-                updateGroupCache(true);
-            } catch (SQLException e) {
-                LOGGER.warn("Update group cache error", e);
-            }
+            updateGroupCache(true);
             result = super.getAllItems();
         }
         return result;

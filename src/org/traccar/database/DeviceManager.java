@@ -131,11 +131,7 @@ public class DeviceManager extends BaseObjectManager<Device> implements Identity
     public Set<Long> getAllItems() {
         Set<Long> result = super.getAllItems();
         if (result.isEmpty()) {
-            try {
-                updateDeviceCache(true);
-            } catch (SQLException e) {
-                LOGGER.warn("Update device cache error", e);
-            }
+            updateDeviceCache(true);
             result = super.getAllItems();
         }
         return result;
