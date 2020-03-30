@@ -101,6 +101,13 @@ public class RoadcastProtocolDecoder extends BaseProtocolDecoder {
         if (!parser.matches()) {
             return null;
         }
+
+        if (!sentence.isEmpty()) {
+            if (channel != null) {
+                channel.writeAndFlush(new NetworkMessage("ON", remoteAddress));
+            }
+        }
+
         String imei = parser.next();
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
         if (deviceSession == null) {
@@ -132,12 +139,6 @@ public class RoadcastProtocolDecoder extends BaseProtocolDecoder {
             Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
 
         String sentence = (String) msg;
-
-        if (!sentence.isEmpty()) {
-            if (channel != null) {
-                channel.writeAndFlush(new NetworkMessage("ON", remoteAddress));
-            }
-        }
 
         return decodeRegular(channel, remoteAddress, sentence);
     }
