@@ -123,7 +123,7 @@ public class RoadcastProtocolDecoder extends BaseProtocolDecoder {
         position.setLatitude(parser.nextDouble());
         position.setCourse(parser.nextDouble());
         position.setAccuracy(parser.nextDouble());
-        position.set(Position.KEY_BATTERY, parser.nextDouble());
+        position.set(Position.KEY_BATTERY_LEVEL, parser.nextDouble());
         position.setSpeed(UnitsConverter.knotsFromKph(parser.nextDouble()));
 
         position.setTime(new Date(parser.nextLong() * 1000));
