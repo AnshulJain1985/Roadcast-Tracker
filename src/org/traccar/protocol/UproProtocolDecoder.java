@@ -36,10 +36,6 @@ import java.util.regex.Pattern;
 
 public class UproProtocolDecoder extends BaseProtocolDecoder {
 
-    public UproProtocolDecoder(Protocol protocol) {
-        super(protocol);
-    }
-
     private static final Pattern PATTERN_HEADER = new PatternBuilder()
             .text("*")
             .expression("(..20)")                // head
@@ -49,7 +45,6 @@ public class UproProtocolDecoder extends BaseProtocolDecoder {
             .expression("(.)")                   // subtype
             .any()
             .compile();
-
     private static final Pattern PATTERN_LOCATION = new PatternBuilder()
             .number("(dd)(dd)(dd)")              // time (hhmmss)
             .number("(dd)(dd)(dddd)")            // latitude
@@ -60,12 +55,17 @@ public class UproProtocolDecoder extends BaseProtocolDecoder {
             .number("(dd)(dd)(dd)")              // date (ddmmyy)
             .compile();
 
+    public UproProtocolDecoder(Protocol protocol) {
+        super(protocol);
+    }
+
     private void decodeLocation(Position position, String data) {
         Parser parser = new Parser(PATTERN_LOCATION, data);
         if (parser.matches()) {
 
             DateBuilder dateBuilder = new DateBuilder()
-                    .setTime(parser.nextInt(0), parser.nextInt(0), parser.nextInt(0));
+                    .setTime(parser.nextInt(0), parser.nextInt(0),
+                            parser.nextInt(0));
 
             position.setValid(true);
             position.setLatitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_MIN_MIN));
@@ -83,7 +83,8 @@ public class UproProtocolDecoder extends BaseProtocolDecoder {
             position.setSpeed(parser.nextInt(0) * 2);
             position.setCourse(parser.nextInt(0) * 10);
 
-            dateBuilder.setDateReverse(parser.nextInt(0), parser.nextInt(0), parser.nextInt(0));
+            dateBuilder.setDateReverse(parser.nextInt(0), parser.nextInt(0),
+                    parser.nextInt(0));
             position.setTime(dateBuilder.getDate());
 
         }
@@ -101,53 +102,52 @@ public class UproProtocolDecoder extends BaseProtocolDecoder {
             Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
 
         ByteBuf buf = (ByteBuf) msg;
-
         if (buf.getByte(buf.readerIndex()) != '*') {
             return null;
         }
-
         int headerIndex = buf.indexOf(buf.readerIndex(), buf.writerIndex(), (byte) '&');
         if (headerIndex < 0) {
             headerIndex = buf.writerIndex();
         }
         String header = buf.readSlice(headerIndex - buf.readerIndex()).toString(StandardCharsets.US_ASCII);
-
         Parser parser = new Parser(PATTERN_HEADER, header);
         if (!parser.matches()) {
             return null;
         }
-
         String head = parser.next();
         boolean reply = parser.next().equals("1");
-
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, parser.next());
         if (deviceSession == null) {
             return null;
         }
-
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
-
         String type = parser.next();
         String subtype = parser.next();
-
         if (reply && channel != null) {
             channel.writeAndFlush(new NetworkMessage("*" + head + "Y" + type + subtype + "#", remoteAddress));
         }
 
+        decodePosition(buf, head, position);
+
+        if (position.getLatitude() == 0 || position.getLongitude() == 0) {
+            if (position.getAttributes().isEmpty()) {
+                return null;
+            }
+            getLastLocation(position, position.getDeviceTime());
+        }
+        return position;
+    }
+
+    private void decodePosition(ByteBuf buf, String head, Position position) {
         while (buf.isReadable()) {
-
             buf.readByte(); // skip delimiter
-
             byte dataType = buf.readByte();
-
             int delimiterIndex = buf.indexOf(buf.readerIndex(), buf.writerIndex(), (byte) '&');
             if (delimiterIndex < 0) {
                 delimiterIndex = buf.writerIndex();
             }
-
             ByteBuf data = buf.readSlice(delimiterIndex - buf.readerIndex());
-
             switch (dataType) {
                 case 'A':
                     decodeLocation(position, data.toString(StandardCharsets.US_ASCII));
@@ -207,11 +207,11 @@ public class UproProtocolDecoder extends BaseProtocolDecoder {
                     break;
                 case 'P':
                     if (data.readableBytes() >= 16) {
-                    position.setNetwork(new Network(CellTower.from(
-                            Integer.parseInt(data.readSlice(4).toString(StandardCharsets.US_ASCII)),
-                            Integer.parseInt(data.readSlice(4).toString(StandardCharsets.US_ASCII)),
-                            Integer.parseInt(data.readSlice(4).toString(StandardCharsets.US_ASCII), 16),
-                            Integer.parseInt(data.readSlice(4).toString(StandardCharsets.US_ASCII), 16))));
+                        position.setNetwork(new Network(CellTower.from(
+                                Integer.parseInt(data.readSlice(4).toString(StandardCharsets.US_ASCII)),
+                                Integer.parseInt(data.readSlice(4).toString(StandardCharsets.US_ASCII)),
+                                Integer.parseInt(data.readSlice(4).toString(StandardCharsets.US_ASCII), 16),
+                                Integer.parseInt(data.readSlice(4).toString(StandardCharsets.US_ASCII), 16))));
                     }
                     break;
                 case 'Q':
@@ -268,15 +268,6 @@ public class UproProtocolDecoder extends BaseProtocolDecoder {
             }
 
         }
-
-        if (position.getLatitude() == 0 || position.getLongitude() == 0) {
-            if (position.getAttributes().isEmpty()) {
-                return null;
-            }
-            getLastLocation(position, position.getDeviceTime());
-        }
-
-            return position;
-        }
+    }
 
 }
