@@ -21,6 +21,7 @@ import org.jboss.netty.handler.codec.string.StringEncoder;
 import org.traccar.BaseProtocol;
 import org.traccar.CharacterDelimiterFrameDecoder;
 import org.traccar.TrackerServer;
+import org.traccar.model.Command;
 
 import java.util.List;
 
@@ -28,7 +29,12 @@ public class UproProtocol extends BaseProtocol {
 
     public UproProtocol() {
         super("upro");
+        setSupportedDataCommands(
+                Command.TYPE_CUSTOM,
+                Command.TYPE_ENGINE_STOP,
+                Command.TYPE_ENGINE_RESUME);
     }
+
 
     @Override
     public void initTrackerServers(List<TrackerServer> serverList) {
@@ -37,6 +43,7 @@ public class UproProtocol extends BaseProtocol {
             protected void addSpecificHandlers(ChannelPipeline pipeline) {
                 pipeline.addLast("frameDecoder", new CharacterDelimiterFrameDecoder(1024, '#'));
                 pipeline.addLast("stringEncoder", new StringEncoder());
+                pipeline.addLast("objectEncoder", new UproProtocolEncoder());
                 pipeline.addLast("objectDecoder", new UproProtocolDecoder(UproProtocol.this));
             }
         });
