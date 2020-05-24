@@ -20,15 +20,21 @@ import org.traccar.BaseProtocol;
 import org.traccar.CharacterDelimiterFrameDecoder;
 import org.traccar.PipelineBuilder;
 import org.traccar.TrackerServer;
+import org.traccar.model.Command;
 
 public class UproProtocol extends BaseProtocol {
 
     public UproProtocol() {
+        setSupportedDataCommands(
+                Command.TYPE_CUSTOM,
+                Command.TYPE_ENGINE_STOP,
+                Command.TYPE_ENGINE_RESUME);
         addServer(new TrackerServer(false, getName()) {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new CharacterDelimiterFrameDecoder(1024, '#'));
                 pipeline.addLast(new StringEncoder());
+                pipeline.addLast(new UproProtocolEncoder());
                 pipeline.addLast(new UproProtocolDecoder(UproProtocol.this));
             }
         });

@@ -153,7 +153,7 @@ public class UproProtocolDecoder extends BaseProtocolDecoder {
                     decodeLocation(position, data.toString(StandardCharsets.US_ASCII));
                     break;
                 case 'B':
-                    position.set(Position.KEY_STATUS, data.toString(StandardCharsets.US_ASCII));
+                    statusDecode(data, position);
                     break;
                 case 'C':
                     long odometer = 0;
@@ -239,25 +239,7 @@ public class UproProtocolDecoder extends BaseProtocolDecoder {
                             decodeAlarm(Integer.parseInt(data.readSlice(2).toString(StandardCharsets.US_ASCII))));
                     break;
                 case 'X':
-                    Network network = new Network();
-                    int mcc = 0, mnc = 0;
-                    String[] cells = data.toString(StandardCharsets.US_ASCII).split(";");
-                    if (!cells[0].startsWith("(")) {
-                        for (int i = 0; i < cells.length; i++) {
-                            String[] values = cells[i].split(",");
-                            int index = 0;
-                            if (i == 0) {
-                                mcc = Integer.parseInt(values[index++]);
-                                mnc = Integer.parseInt(values[index++]);
-                            }
-                            network.addCellTower(CellTower.from(
-                                    mcc, mnc,
-                                    Integer.parseInt(values[index++]),
-                                    Integer.parseInt(values[index++]),
-                                    Integer.parseInt(values[index])));
-                        }
-                        position.setNetwork(network);
-                    }
+                    networkDecode(data, position);
                     break;
                 case 'Y':
                     position.set(Position.KEY_POWER,
@@ -266,8 +248,50 @@ public class UproProtocolDecoder extends BaseProtocolDecoder {
                 default:
                     break;
             }
-
         }
+
+        if (position.getLatitude() == 0 || position.getLongitude() == 0) {
+            if (!position.getAttributes().isEmpty()) {
+                getLastLocation(position, position.getDeviceTime());
+            }
+        }
+    }
+
+    private void networkDecode(ByteBuf data, Position position) {
+        Network network = new Network();
+        int mcc = 0, mnc = 0;
+        String[] cells = data.toString(StandardCharsets.US_ASCII).split(";");
+        if (!cells[0].startsWith("(")) {
+            for (int i = 0; i < cells.length; i++) {
+                String[] values = cells[i].split(",");
+                int index = 0;
+                if (i == 0) {
+                    mcc = Integer.parseInt(values[index++]);
+                    mnc = Integer.parseInt(values[index++]);
+                }
+                network.addCellTower(CellTower.from(
+                        mcc, mnc,
+                        Integer.parseInt(values[index++]),
+                        Integer.parseInt(values[index++]),
+                        Integer.parseInt(values[index])));
+            }
+            position.setNetwork(network);
+        }
+    }
+
+    private void statusDecode(ByteBuf data, Position position) {
+        int flagS0 = data.readUnsignedByte();
+        int flagS1 = data.readUnsignedByte();
+        int flagS2 = data.readUnsignedByte();
+        int flagS3 = data.readUnsignedByte();
+        int flagS4 = data.readUnsignedByte();
+        int flagA0 = data.readUnsignedByte();
+        int flagA1 = data.readUnsignedByte();
+        int flagA2 = data.readUnsignedByte();
+        int flagA3 = data.readUnsignedByte();
+        int flagA4 = data.readUnsignedByte();
+        position.set(Position.KEY_IGNITION, BitUtil.check(flagS1, 0));
+        position.set(Position.KEY_STATUS, data.toString(StandardCharsets.US_ASCII));
     }
 
 }
