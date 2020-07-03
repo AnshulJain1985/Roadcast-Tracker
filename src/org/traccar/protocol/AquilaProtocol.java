@@ -21,16 +21,22 @@ import io.netty.handler.codec.string.StringEncoder;
 import org.traccar.BaseProtocol;
 import org.traccar.PipelineBuilder;
 import org.traccar.TrackerServer;
+import org.traccar.model.Command;
 
 public class AquilaProtocol extends BaseProtocol {
 
     public AquilaProtocol() {
+        setSupportedDataCommands(
+                Command.TYPE_ENGINE_STOP,
+                Command.TYPE_ENGINE_RESUME,
+                Command.TYPE_CUSTOM);
         addServer(new TrackerServer(false, getName()) {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new LineBasedFrameDecoder(1024));
                 pipeline.addLast(new StringDecoder());
                 pipeline.addLast(new StringEncoder());
+                pipeline.addLast(new AquilaProtocolEncoder());
                 pipeline.addLast(new AquilaProtocolDecoder(AquilaProtocol.this));
             }
         });
