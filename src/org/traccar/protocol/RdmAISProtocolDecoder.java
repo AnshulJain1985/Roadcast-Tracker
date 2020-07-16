@@ -59,12 +59,12 @@ public class RdmAISProtocolDecoder extends BaseProtocolDecoder {
 
 
     private static final Pattern PATTERN = new PatternBuilder()
-            .text("$")
-            .expression("([^,]+)?")                // packet header
+            .text("$,")
+            .expression("([^,]+)?,")                // packet header
             .expression("([^,]+)?,")                // Vendor Id
             .expression("([^,]+)?,")                // Software version
             .expression("([A-Z]+),")                // Packet Type
-            .number("(dd),")                        // Alert ID
+            .number("(d+),")                        // Alert ID
             .expression("([HL]),")                  // Packet Status
             .expression("([0-9]+),")                // IMEI
             .expression("([^,]+)?,")                // vehicle reg no
@@ -74,13 +74,13 @@ public class RdmAISProtocolDecoder extends BaseProtocolDecoder {
             .number("(-?d+.d+),")                   // latitude
             .expression("([NS]),")                  // latitude direction
             .number("(-?d+.d+),")                   // longitude
-            .expression("([EW])")                   // longitude direction
-            .number("(ddd.d),")                     // speed
+            .expression("([EW]),")                   // longitude direction
+            .number("(d+.?d*)?,?")                     // speed
             .number("(d+.?d*)?,?")                  // Head Degree
             .number("(d+),")                        // No of satellites
             .number("(d+.?d*)?,?")                  // altitude
-            .number("(ddd.d),")                     // pdop
-            .number("(ddd.d),")                     // hdop
+            .number("(d+.?d*)?,?")                     // pdop
+            .number("(d+.?d*)?,?")                     // hdop
             .expression("([^,]+)?,")                // Operator Name
             .number("(d),")                         // Ignition
             .number("(d),")                         // Mains power status
@@ -92,14 +92,26 @@ public class RdmAISProtocolDecoder extends BaseProtocolDecoder {
             .expression("([^,]+)?,")                // MNC
             .expression("([^,]+)?,")                // LAC
             .expression("([^,]+)?,")                // CELLID
+            .expression("([^,]+)?,")                // NMR1 signal strength
             .expression("([^,]+)?,")                // NMR1 CellID
+            .expression("([^,]+)?,")                // NMR1 LAC
+            .expression("([^,]+)?,")                // NMR2 signal strength
+            .expression("([^,]+)?,")                // NMR2 CellID
+            .expression("([^,]+)?,")                // NMR2 LAC
+            .expression("([^,]+)?,")                // NMR3 signal strength
+            .expression("([^,]+)?,")                // NMR3 CellID
+            .expression("([^,]+)?,")                // NMR3 LAC
+            .expression("([^,]+)?,")                // NMR4 signal strength
+            .expression("([^,]+)?,")                // NMR4 CellID
+            .expression("([^,]+)?,")                // NMR4 LAC
             .number("(d)(d)(d)(d),")                // digital Input 4
             .number("(d)(d),")                      // digital Output 2
             .number("(d+.?d*)?,")                   // Analog input 1
-            .number("(d+.?d*)?")                    // Analog input 2
+            .number("(d+.?d*)?,")                    // Analog input 2
             .number("(d+),")                        // Frame number
             .number("(xx),")                        // checksum
             .text("*")
+            .any()
             .compile();
 
     private static final Pattern PATTERN_HEARTBEAT = new PatternBuilder()
@@ -117,7 +129,7 @@ public class RdmAISProtocolDecoder extends BaseProtocolDecoder {
             .number("(d+),")                        // ignition off timer
             .number("(d)(d)(d)(d),")                // digital Input 4
             .number("(d)(d),")                      // digital Output 2
-            .number("(d+.?d*)?,")                  // Analog input 1
+            .number("(d+.?d*)?")                  // Analog input 1
             .text("*")
             .any()
             .compile();
@@ -369,10 +381,9 @@ public class RdmAISProtocolDecoder extends BaseProtocolDecoder {
         for (int i = 1; i <= 2; i++) {
             position.set(Position.PREFIX_OUT + i, parser.nextInt(0));
         }
-        int frameNumber = parser.nextInt(0);
         position.set(Position.PREFIX_ADC + 1, parser.nextDouble(0));
         position.set(Position.PREFIX_ADC + 2, parser.nextDouble(0));
-//        int frameNumber = parser.nextInt(0);
+        int frameNumber = parser.nextInt(0);
 //        String checksum = parser.next();
 
         return position;
