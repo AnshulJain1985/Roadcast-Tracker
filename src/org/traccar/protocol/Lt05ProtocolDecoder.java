@@ -248,8 +248,8 @@ public class Lt05ProtocolDecoder extends BaseProtocolDecoder {
         position.setNetwork(new Network(CellTower.from(
                 BitUtil.to(mcc, 15), mnc, buf.readUnsignedShort(), buf.readUnsignedMedium())));
 
-        if (length > 0) {
-            buf.skipBytes(length - (hasLength ? 9 : 8));
+        if (length > 9) {
+            buf.skipBytes(length - 9);
         }
 
         return true;
@@ -310,6 +310,21 @@ public class Lt05ProtocolDecoder extends BaseProtocolDecoder {
                 return Position.ALARM_LOW_BATTERY;
             case 0x11:
                 return Position.ALARM_POWER_OFF;
+            case 0x13:
+                return Position.ALARM_TAMPERING;
+            case 0x14:
+                return Position.ALARM_DOOR;
+            case 0x29:
+                return Position.ALARM_ACCELERATION;
+            case 0x30:
+                return Position.ALARM_BRAKING;
+            case 0x2A:
+            case 0x2B:
+                return Position.ALARM_CORNERING;
+            case 0x2C:
+                return Position.ALARM_ACCIDENT;
+            case 0x23:
+                return Position.ALARM_FALL_DOWN;
             default:
                 return null;
         }
@@ -349,7 +364,7 @@ public class Lt05ProtocolDecoder extends BaseProtocolDecoder {
             .text("Course:").number("(d+.d+),")  // course
             .text("Speed:").number("(d+.d+),")   // speed
             .text("DateTime:")
-            .number("(dddd)-(dd)-(dd)  ")        // date
+            .number("(dddd)-(dd)-(dd) +")        // date
             .number("(dd):(dd):(dd)")            // time
             .compile();
 
@@ -462,7 +477,37 @@ public class Lt05ProtocolDecoder extends BaseProtocolDecoder {
             content.writeByte(calendar.get(Calendar.SECOND));
             sendResponse(channel, false, MSG_TIME_REQUEST, 0, content);
 
-        } else if (type == MSG_X1_GPS) {
+        } else if (type == MSG_X1_GPS || type == MSG_X1_PHOTO_INFO) {
+
+            return decodeX1(channel, buf, deviceSession, type);
+
+        } else if (type == MSG_WIFI || type == MSG_WIFI_2) {
+
+            return decodeWifi(buf, deviceSession);
+
+        } else if (type == MSG_INFO) {
+
+            Position position = new Position(getProtocolName());
+            position.setDeviceId(deviceSession.getDeviceId());
+
+            getLastLocation(position, null);
+
+            position.set(Position.KEY_POWER, buf.readShort() * 0.01);
+
+            return position;
+
+        } else {
+
+            return decodeBasicOther(channel, buf, deviceSession, type, dataLength);
+
+        }
+
+        return null;
+    }
+
+    private Object decodeX1(Channel channel, ChannelBuffer buf, DeviceSession deviceSession, int type) {
+
+        if (type == MSG_X1_GPS) {
 
             Position position = new Position(getProtocolName());
             position.setDeviceId(deviceSession.getDeviceId());
@@ -478,6 +523,14 @@ public class Lt05ProtocolDecoder extends BaseProtocolDecoder {
             position.setNetwork(new Network(CellTower.from(
                     buf.readUnsignedShort(), buf.readUnsignedByte(),
                     buf.readUnsignedShort(), buf.readUnsignedInt())));
+
+            long driverId = buf.readUnsignedInt();
+            if (driverId > 0) {
+                position.set(Position.KEY_DRIVER_UNIQUE_ID, String.valueOf(driverId));
+            }
+
+            position.set(Position.KEY_BATTERY, buf.readUnsignedShort() * 0.01);
+            position.set(Position.KEY_POWER, buf.readUnsignedShort() * 0.01);
 
             return position;
 
@@ -495,14 +548,6 @@ public class Lt05ProtocolDecoder extends BaseProtocolDecoder {
             int pictureId = buf.readInt();
             photos.put(pictureId, photo);
             sendPhotoRequest(channel, pictureId);
-
-        } else if (type == MSG_WIFI || type == MSG_WIFI_2) {
-
-            return decodeWifi(buf, deviceSession);
-
-        } else {
-
-            return decodeBasicOther(channel, buf, deviceSession, type, dataLength);
 
         }
 
@@ -621,14 +666,20 @@ public class Lt05ProtocolDecoder extends BaseProtocolDecoder {
             }
 
             if (type == MSG_GPS_LBS_2 && buf.readableBytes() >= 3 + 6) {
-                position.set(Position.KEY_IGNITION, buf.readUnsignedByte() > 0);
+                int status = buf.readUnsignedByte();
+                position.set(Position.KEY_IGNITION, BitUtil.check(status, 0));
+                position.set(Position.KEY_DOOR, BitUtil.check(status, 1));
+
+//                position.set(Position.KEY_IGNITION, buf.readUnsignedByte() > 0);
                 position.set(Position.KEY_EVENT, buf.readUnsignedByte()); // reason
                 position.set(Position.KEY_ARCHIVE, buf.readUnsignedByte() > 0);
             }
 
         } else {
 
+            if (dataLength > 0) {
             buf.skipBytes(dataLength);
+            }
             if (type != MSG_COMMAND_0 && type != MSG_COMMAND_1 && type != MSG_COMMAND_2) {
                 sendResponse(channel, false, type, buf.getShort(buf.writerIndex() - 6), null);
             }
