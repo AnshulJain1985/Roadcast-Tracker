@@ -72,7 +72,7 @@ public class UproProtocolDecoder extends BaseProtocolDecoder {
             position.setLongitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_MIN_MIN));
 
             int flags = parser.nextInt(0);
-            position.setValid(BitUtil.check(flags, 0));
+            position.setValid(!BitUtil.check(flags, 0));
             if (!BitUtil.check(flags, 1)) {
                 position.setLatitude(-position.getLatitude());
             }
@@ -247,12 +247,6 @@ public class UproProtocolDecoder extends BaseProtocolDecoder {
                     break;
                 default:
                     break;
-            }
-        }
-
-        if (position.getLatitude() == 0 || position.getLongitude() == 0) {
-            if (!position.getAttributes().isEmpty()) {
-                getLastLocation(position, position.getDeviceTime());
             }
         }
     }

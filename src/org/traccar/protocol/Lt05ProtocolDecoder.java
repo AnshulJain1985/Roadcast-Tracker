@@ -697,6 +697,13 @@ public class Lt05ProtocolDecoder extends BaseProtocolDecoder {
             position.set(Position.KEY_GEOFENCE, buf.readUnsignedByte());
         }
 
+        if (position.getLatitude() == 0 || position.getLongitude() == 0) {
+            if (position.getAttributes().isEmpty()) {
+                return null;
+            }
+            getLastLocation(position, position.getDeviceTime());
+        }
+
         sendResponse(channel, false, type, buf.getShort(buf.writerIndex() - 6), null);
 
         return position;
