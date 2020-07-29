@@ -22,9 +22,10 @@ import org.jboss.netty.channel.socket.DatagramChannel;
 import org.traccar.BaseProtocolDecoder;
 import org.traccar.DeviceSession;
 import org.traccar.helper.BitUtil;
-import org.traccar.helper.Parser;
+import org.traccar.helper.Log;
 import org.traccar.helper.PatternBuilder;
 import org.traccar.helper.UnitsConverter;
+import org.traccar.helper.Parser;
 import org.traccar.model.CellTower;
 import org.traccar.model.Network;
 import org.traccar.model.Position;
@@ -71,8 +72,8 @@ public class EelinkProtocolDecoder extends BaseProtocolDecoder {
         switch (value) {
             case 0x01:
                 return Position.ALARM_POWER_OFF;
-            case 0x02:
-                return Position.ALARM_SOS;
+//            case 0x02:
+//                return Position.ALARM_SOS;
             case 0x03:
                 return Position.ALARM_LOW_BATTERY;
             case 0x04:
@@ -169,6 +170,15 @@ public class EelinkProtocolDecoder extends BaseProtocolDecoder {
                 }
             }
 
+        }
+
+        if (position.getLatitude() == 0 || position.getLongitude() == 0) {
+            if (position.getAttributes().isEmpty()) {
+                return null;
+            }
+            getLastLocation(position, null);
+            Log.info(position.getDeviceTime().toString() + "--"
+                    + position.getFixTime().toString());
         }
 
         return position;
@@ -276,6 +286,13 @@ public class EelinkProtocolDecoder extends BaseProtocolDecoder {
 
         }
 
+        if (position.getLatitude() == 0 || position.getLongitude() == 0) {
+            if (position.getAttributes().isEmpty()) {
+                return null;
+            }
+            getLastLocation(position, null);
+        }
+
         return position;
     }
 
@@ -325,6 +342,13 @@ public class EelinkProtocolDecoder extends BaseProtocolDecoder {
 
             position.set(Position.KEY_RESULT, sentence);
 
+        }
+
+        if (position.getLatitude() == 0 || position.getLongitude() == 0) {
+            if (position.getAttributes().isEmpty()) {
+                return null;
+            }
+            getLastLocation(position, null);
         }
 
         return position;

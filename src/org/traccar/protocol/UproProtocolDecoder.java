@@ -129,6 +129,18 @@ public class UproProtocolDecoder extends BaseProtocolDecoder {
             channel.write("*" + head + "Y" + type + subtype + "#");
         }
 
+        decodePosition(buf, head, position);
+
+        if (position.getLatitude() == 0 || position.getLongitude() == 0) {
+            if (position.getAttributes().isEmpty()) {
+                return null;
+            }
+            getLastLocation(position, position.getDeviceTime());
+        }
+        return position;
+    }
+
+    private void decodePosition(ChannelBuffer buf, String head, Position position) {
         while (buf.readable()) {
             buf.readByte(); // skip delimiter
             byte dataType = buf.readByte();
@@ -238,14 +250,6 @@ public class UproProtocolDecoder extends BaseProtocolDecoder {
                     break;
             }
         }
-
-        if (position.getLatitude() == 0 || position.getLongitude() == 0) {
-            if (position.getAttributes().isEmpty()) {
-                return null;
-            }
-            getLastLocation(position, position.getDeviceTime());
-        }
-        return position;
     }
 
     private void networkDecode(ChannelBuffer data, Position position) {

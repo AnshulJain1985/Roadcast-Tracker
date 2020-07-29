@@ -554,7 +554,7 @@ public class Lt05ProtocolDecoder extends BaseProtocolDecoder {
         return null;
     }
 
-    private Object decodeWifi(ChannelBuffer buf, DeviceSession deviceSession) throws Exception {
+    private Object decodeWifi(ChannelBuffer buf, DeviceSession deviceSession) {
 
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
@@ -592,7 +592,7 @@ public class Lt05ProtocolDecoder extends BaseProtocolDecoder {
     }
 
     private Object decodeBasicOther(Channel channel, ChannelBuffer buf,
-            DeviceSession deviceSession, int type, int dataLength) throws Exception {
+            DeviceSession deviceSession, int type, int dataLength) {
 
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
@@ -697,10 +697,17 @@ public class Lt05ProtocolDecoder extends BaseProtocolDecoder {
 
         sendResponse(channel, false, type, buf.getShort(buf.writerIndex() - 6), null);
 
+        if (position.getLatitude() == 0 || position.getLongitude() == 0) {
+            if (position.getAttributes().isEmpty()) {
+                return null;
+            }
+            getLastLocation(position, position.getDeviceTime());
+        }
+
         return position;
     }
 
-    private Object decodeExtended(Channel channel, SocketAddress remoteAddress, ChannelBuffer buf) throws Exception {
+    private Object decodeExtended(Channel channel, SocketAddress remoteAddress, ChannelBuffer buf) {
 
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress);
         if (deviceSession == null) {
