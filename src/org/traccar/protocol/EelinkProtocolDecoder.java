@@ -73,8 +73,8 @@ public class EelinkProtocolDecoder extends BaseProtocolDecoder {
         switch (value) {
             case 0x01:
                 return Position.ALARM_POWER_OFF;
-            case 0x02:
-                return Position.ALARM_SOS;
+//            case 0x02:
+//                return Position.ALARM_SOS;
             case 0x03:
                 return Position.ALARM_LOW_BATTERY;
             case 0x04:
@@ -171,6 +171,13 @@ public class EelinkProtocolDecoder extends BaseProtocolDecoder {
                 }
             }
 
+        }
+
+        if (position.getLatitude() == 0 || position.getLongitude() == 0) {
+            if (position.getAttributes().isEmpty()) {
+                return null;
+            }
+            getLastLocation(position, null);
         }
 
         return position;
@@ -279,6 +286,13 @@ public class EelinkProtocolDecoder extends BaseProtocolDecoder {
 
         }
 
+        if (position.getLatitude() == 0 || position.getLongitude() == 0) {
+            if (position.getAttributes().isEmpty()) {
+                return null;
+            }
+            getLastLocation(position, null);
+        }
+
         return position;
     }
 
@@ -328,6 +342,13 @@ public class EelinkProtocolDecoder extends BaseProtocolDecoder {
 
             position.set(Position.KEY_RESULT, sentence);
 
+        }
+
+        if (position.getLatitude() == 0 || position.getLongitude() == 0) {
+            if (position.getAttributes().isEmpty()) {
+                return null;
+            }
+            getLastLocation(position, null);
         }
 
         return position;
