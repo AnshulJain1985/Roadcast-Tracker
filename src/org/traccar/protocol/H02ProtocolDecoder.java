@@ -190,7 +190,7 @@ public class H02ProtocolDecoder extends BaseProtocolDecoder {
             .number("(d+)(dd.d+),")              // longitude
             .groupEnd()
             .expression("([EW]),")
-            .number("(d+.?d*),")                 // speed
+            .expression("([^,]+)?,")                 // speed
             .number("(d+.?d*)?,")                // course
             .number("(?:d+,)?")                  // battery
             .number("(?:(dd)(dd)(dd))?")         // date (ddmmyy)
@@ -328,7 +328,8 @@ public class H02ProtocolDecoder extends BaseProtocolDecoder {
             position.setLongitude(parser.nextCoordinate());
         }
 
-        position.setSpeed(parser.nextDouble(0));
+        String speed = parser.next().replace(" ", "");
+        position.setSpeed(Double.parseDouble(speed));
         position.setCourse(parser.nextDouble(0));
 
         if (parser.hasNext(3)) {
