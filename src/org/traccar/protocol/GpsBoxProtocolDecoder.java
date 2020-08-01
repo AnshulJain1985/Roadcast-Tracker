@@ -160,7 +160,7 @@ public class GpsBoxProtocolDecoder extends BaseProtocolDecoder {
         position.set(Position.KEY_STATUS, parser.nextInt(0));
         if (parser.nextInt(0) == 0) {
             Position last = Context.getIdentityManager().getLastPosition(position.getDeviceId());
-            if (last.getBoolean(Position.KEY_CHARGE)) {
+            if (last != null && last.getBoolean(Position.KEY_CHARGE)) {
                 position.set(Position.KEY_ALARM, Position.ALARM_POWER_CUT);
             }
             position.set(Position.KEY_CHARGE, false);
