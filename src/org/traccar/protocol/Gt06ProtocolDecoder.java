@@ -314,8 +314,8 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
                 return Position.ALARM_POWER_OFF;
             case 0x13:
                 return Position.ALARM_TAMPERING;
-            case 0x14:
-                return Position.ALARM_DOOR;
+//            case 0x14:
+//                return Position.ALARM_DOOR;
             case 0x29:
                 return Position.ALARM_ACCELERATION;
             case 0x30:
@@ -556,7 +556,7 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
         return null;
     }
 
-    private Object decodeWifi(ByteBuf buf, DeviceSession deviceSession) throws Exception {
+    private Object decodeWifi(ByteBuf buf, DeviceSession deviceSession) {
 
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
@@ -594,7 +594,7 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
     }
 
     private Object decodeBasicOther(Channel channel, ByteBuf buf,
-            DeviceSession deviceSession, int type, int dataLength) throws Exception {
+            DeviceSession deviceSession, int type, int dataLength) {
 
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
@@ -698,7 +698,7 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
         return position;
     }
 
-    private Object decodeExtended(Channel channel, SocketAddress remoteAddress, ByteBuf buf) throws Exception {
+    private Object decodeExtended(Channel channel, SocketAddress remoteAddress, ByteBuf buf) {
 
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress);
         if (deviceSession == null) {
@@ -807,9 +807,9 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
                     case 0xA4:
                         position.set(Position.KEY_ALARM, Position.ALARM_GENERAL);
                         break;
-                    case 0xA5:
-                        position.set(Position.KEY_ALARM, Position.ALARM_DOOR);
-                        break;
+//                    case 0xA5:
+//                        position.set(Position.KEY_ALARM, Position.ALARM_DOOR);
+//                        break;
                     default:
                         break;
                 }
