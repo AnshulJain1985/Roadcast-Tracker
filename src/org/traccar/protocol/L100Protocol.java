@@ -18,18 +18,34 @@ package org.traccar.protocol;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import org.traccar.BaseProtocol;
+import org.traccar.CharacterDelimiterFrameDecoder;
 import org.traccar.PipelineBuilder;
 import org.traccar.TrackerServer;
+import org.traccar.model.Command;
 
 public class L100Protocol extends BaseProtocol {
 
     public L100Protocol() {
+        setSupportedDataCommands(
+                Command.TYPE_CUSTOM,
+                Command.TYPE_ENGINE_STOP,
+                Command.TYPE_ENGINE_RESUME);
         addServer(new TrackerServer(false, getName()) {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
-                pipeline.addLast(new L100FrameDecoder());
+                pipeline.addLast(new CharacterDelimiterFrameDecoder(2048, false, "\r\n", "\n", ";", "*"));
                 pipeline.addLast(new StringEncoder());
                 pipeline.addLast(new StringDecoder());
+                pipeline.addLast(new L100ProtocolEncoder());
+                pipeline.addLast(new L100ProtocolDecoder(L100Protocol.this));
+            }
+        });
+        addServer(new TrackerServer(true, getName()) {
+            @Override
+            protected void addProtocolHandlers(PipelineBuilder pipeline) {
+                pipeline.addLast(new StringEncoder());
+                pipeline.addLast(new StringDecoder());
+                pipeline.addLast(new L100ProtocolEncoder());
                 pipeline.addLast(new L100ProtocolDecoder(L100Protocol.this));
             }
         });

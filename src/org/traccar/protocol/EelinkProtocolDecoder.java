@@ -72,7 +72,7 @@ public class EelinkProtocolDecoder extends BaseProtocolDecoder {
     private String decodeAlarm(Short value) {
         switch (value) {
             case 0x01:
-                return Position.ALARM_POWER_OFF;
+                return Position.ALARM_POWER_CUT;
 //            case 0x02:
 //                return Position.ALARM_SOS;
             case 0x03:
