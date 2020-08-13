@@ -387,7 +387,7 @@ public class Et300ProtocolDecoder extends BaseProtocolDecoder {
         return position;
     }
 
-    private Object decodeBasic(Channel channel, SocketAddress remoteAddress, ByteBuf buf) throws Exception {
+    private Position decodeBasic(Channel channel, SocketAddress remoteAddress, ByteBuf buf) throws Exception {
 
         int length = buf.readUnsignedByte();
         int dataLength = length - 5;
@@ -508,7 +508,7 @@ public class Et300ProtocolDecoder extends BaseProtocolDecoder {
         return null;
     }
 
-    private Object decodeX1(Channel channel, ByteBuf buf, DeviceSession deviceSession, int type) {
+    private Position decodeX1(Channel channel, ByteBuf buf, DeviceSession deviceSession, int type) {
 
         if (type == MSG_X1_GPS) {
 
@@ -557,7 +557,7 @@ public class Et300ProtocolDecoder extends BaseProtocolDecoder {
         return null;
     }
 
-    private Object decodeWifi(ByteBuf buf, DeviceSession deviceSession) throws Exception {
+    private Position decodeWifi(ByteBuf buf, DeviceSession deviceSession) {
 
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
@@ -594,8 +594,8 @@ public class Et300ProtocolDecoder extends BaseProtocolDecoder {
         return position;
     }
 
-    private Object decodeBasicOther(Channel channel, ByteBuf buf,
-                                    DeviceSession deviceSession, int type, int dataLength) throws Exception {
+    private Position decodeBasicOther(Channel channel, ByteBuf buf,
+                                    DeviceSession deviceSession, int type, int dataLength) {
 
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
@@ -699,7 +699,7 @@ public class Et300ProtocolDecoder extends BaseProtocolDecoder {
         return position;
     }
 
-    private Object decodeExtended(Channel channel, SocketAddress remoteAddress, ByteBuf buf) throws Exception {
+    private Position decodeExtended(Channel channel, SocketAddress remoteAddress, ByteBuf buf) {
 
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress);
         if (deviceSession == null) {
@@ -835,13 +835,24 @@ public class Et300ProtocolDecoder extends BaseProtocolDecoder {
 
         int header = buf.readShort();
 
+        Position returnPosition = null;
+
         if (header == 0x7878) {
-            return decodeBasic(channel, remoteAddress, buf);
+            returnPosition = decodeBasic(channel, remoteAddress, buf);
         } else if (header == 0x7979) {
-            return decodeExtended(channel, remoteAddress, buf);
+            returnPosition = decodeExtended(channel, remoteAddress, buf);
         }
 
-        return null;
+        if (returnPosition != null) {
+            if (returnPosition.getLatitude() == 0 || returnPosition.getLongitude() == 0) {
+                if (returnPosition.getAttributes().isEmpty()) {
+                    return null;
+                }
+                getLastLocation(returnPosition, null);
+            }
+        }
+
+        return returnPosition;
     }
 
 }
