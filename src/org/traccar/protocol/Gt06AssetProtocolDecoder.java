@@ -284,9 +284,9 @@ public class Gt06AssetProtocolDecoder extends BaseProtocolDecoder {
             case 3:
                 position.set(Position.KEY_ALARM, Position.ALARM_LOW_BATTERY);
                 break;
-            case 4:
-                position.set(Position.KEY_ALARM, Position.ALARM_SOS);
-                break;
+//            case 4:
+//                position.set(Position.KEY_ALARM, Position.ALARM_SOS);
+//                break;
             case 7:
                 position.set(Position.KEY_ALARM, Position.ALARM_REMOVING);
                 break;
@@ -595,7 +595,7 @@ public class Gt06AssetProtocolDecoder extends BaseProtocolDecoder {
         return null;
     }
 
-    private Object decodeWifi(ChannelBuffer buf, DeviceSession deviceSession) throws Exception {
+    private Object decodeWifi(ChannelBuffer buf, DeviceSession deviceSession) {
 
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
@@ -633,7 +633,7 @@ public class Gt06AssetProtocolDecoder extends BaseProtocolDecoder {
     }
 
     private Object decodeBasicOther(Channel channel, ChannelBuffer buf,
-            DeviceSession deviceSession, int type, int dataLength) throws Exception {
+            DeviceSession deviceSession, int type, int dataLength) {
 
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
@@ -737,7 +737,7 @@ public class Gt06AssetProtocolDecoder extends BaseProtocolDecoder {
         return position;
     }
 
-    private Object decodeExtended(Channel channel, SocketAddress remoteAddress, ChannelBuffer buf) throws Exception {
+    private Object decodeExtended(Channel channel, SocketAddress remoteAddress, ChannelBuffer buf) {
 
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress);
         if (deviceSession == null) {
