@@ -303,10 +303,9 @@ public class Gt06AssetProtocolDecoder extends BaseProtocolDecoder {
 
     private String decodeAlarm(short value) {
         switch (value) {
-            case 0x01:
-                return Position.ALARM_SOS;
             case 0x02:
                 return Position.ALARM_POWER_CUT;
+            case 0x01:
             case 0x03:
             case 0x09:
                 return Position.ALARM_VIBRATION;
@@ -425,7 +424,7 @@ public class Gt06AssetProtocolDecoder extends BaseProtocolDecoder {
         return batteryLevel;
     }
 
-    private Object decodeBasic(Channel channel, SocketAddress remoteAddress, ChannelBuffer buf) throws Exception {
+    private Object decodeBasic(Channel channel, SocketAddress remoteAddress, ChannelBuffer buf) {
 
         int length = buf.readUnsignedByte();
         int dataLength = length - 5;
