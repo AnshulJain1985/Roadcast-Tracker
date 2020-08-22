@@ -27,9 +27,9 @@ public class L100ProtocolEncoder extends StringProtocolEncoder {
             case Command.TYPE_CUSTOM:
                 return formatCommand(command, "$MSG,{%s}<6906>&", Command.KEY_DATA);
             case Command.TYPE_ENGINE_STOP:
-                return formatCommand(command, "$MSG,{%s}<6906>&", "ARM");
+                return formatCommand(command, "$MSG,ARM<6906>&");
             case Command.TYPE_ENGINE_RESUME:
-                return formatCommand(command, "$MSG,{%s}<6906>&", "DISARM");
+                return formatCommand(command, "$MSG,DISARM<6906>&");
             default:
                 return null;
         }
