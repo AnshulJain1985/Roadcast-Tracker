@@ -20,7 +20,6 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.traccar.BaseProtocolDecoder;
 import org.traccar.DeviceSession;
-import org.traccar.Protocol;
 import org.traccar.helper.BitUtil;
 import org.traccar.helper.Checksum;
 import org.traccar.helper.UnitsConverter;
@@ -41,6 +40,7 @@ public class Minifinder2ProtocolDecoder extends BaseProtocolDecoder {
 
     public static final int MSG_DATA = 0x01;
     public static final int MSG_RESPONSE = 0x7F;
+    public static final int MSG_DEVICE_CONFIGURATION = 0x02;
 
     private String decodeAlarm(int code) {
         if (BitUtil.check(code, 0)) {

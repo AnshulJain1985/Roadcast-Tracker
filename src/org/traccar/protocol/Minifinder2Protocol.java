@@ -29,6 +29,8 @@ public class Minifinder2Protocol extends BaseProtocol {
 
     public Minifinder2Protocol() {
         super("minifinder2");
+        setSupportedDataCommands(
+                Command.TYPE_CUSTOM);
     }
 
     @Override
@@ -37,7 +39,8 @@ public class Minifinder2Protocol extends BaseProtocol {
         TrackerServer server = new TrackerServer(new ServerBootstrap(), getName()) {
             @Override
             protected void addSpecificHandlers(ChannelPipeline pipeline) {
-                pipeline.addLast("frameDecoder", new LengthFieldBasedFrameDecoder(4*1024, 2, 2, 4, 0, true));
+                pipeline.addLast("frameDecoder", new LengthFieldBasedFrameDecoder(1024, 2, 2, 4, 0, true));
+                pipeline.addLast("objectEncoder", new Minifinder2ProtocolEncoder());
                 pipeline.addLast("objectDecoder", new Minifinder2ProtocolDecoder(Minifinder2Protocol.this));
             }
         };
