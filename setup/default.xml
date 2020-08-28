@@ -15,7 +15,7 @@
     <entry key='geocoder.type'>google</entry>
 
     <entry key='logger.enable'>true</entry>
-    <entry key='logger.level'>all</entry>
+    <entry key='logger.level'>TRACE</entry>
     <entry key='logger.file'>./logs/tracker-server.log</entry>
 
     <entry key='event.enable'>true</entry>
@@ -134,6 +134,7 @@
     <entry key='stl060.port'>5060</entry>
     <entry key='cartrack.port'>5061</entry>
     <entry key='minifinder.port'>5062</entry>
+    <entry key='minifinder2.port'>5187</entry>
     <entry key='haicom.port'>5063</entry>
     <entry key='eelink.port'>5064</entry>
     <entry key='box.port'>5065</entry>
