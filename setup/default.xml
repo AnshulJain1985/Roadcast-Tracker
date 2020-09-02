@@ -262,6 +262,7 @@
     <entry key='smartsole.port'>5178</entry>
     <entry key='its.port'>5179</entry>
     <entry key='xrb28.port'>5180</entry>
+    <entry key='minifinder2.port'>5187</entry>
 
     <entry key='gpsbox.port'>5200</entry>
     <entry key='gpsbox.timeout'>600</entry>
