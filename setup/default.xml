@@ -261,6 +261,10 @@
     <entry key='gt06asset.language'>true</entry>
     <entry key='gt06asset.timeout'>185</entry>
 
+    <entry key='wanway.port'>6623</entry>
+    <entry key='wanway.language'>true</entry>
+    <entry key='wanway.timeout'>185</entry>
+
     <entry key='gt012.port'>6323</entry>
     <entry key='gt012.language'>true</entry>
     <entry key='gt012.timeout'>185</entry>
