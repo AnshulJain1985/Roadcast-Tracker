@@ -191,7 +191,7 @@ public class WanwayProtocolDecoder extends BaseProtocolDecoder {
         return true;
     }
 
-    private boolean decodeStatus(Position position, ChannelBuffer buf) {
+    private boolean decodeStatus(Position position, ChannelBuffer buf, int type) {
 
         int status = buf.readUnsignedByte();
 
@@ -217,7 +217,9 @@ public class WanwayProtocolDecoder extends BaseProtocolDecoder {
         position.set(Position.KEY_BATTERY, battery);
         position.set(Position.KEY_BATTERY_LEVEL, battery * 100 / 6);
         position.set(Position.KEY_RSSI, buf.readUnsignedByte());
-        position.set(Position.KEY_ALARM, decodeAlarm(buf.readUnsignedByte()));
+        if (type != MSG_STATUS) {
+            position.set(Position.KEY_ALARM, decodeAlarm(buf.readUnsignedByte()));
+        }
 
         return true;
     }
@@ -446,7 +448,7 @@ public class WanwayProtocolDecoder extends BaseProtocolDecoder {
             }
 
             if (hasStatus(type)) {
-                decodeStatus(position, buf);
+                decodeStatus(position, buf, type);
             }
 
             if (type == MSG_GPS_LBS_2 && buf.readableBytes() >= 3 + 6) {
