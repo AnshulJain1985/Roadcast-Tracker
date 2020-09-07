@@ -22,6 +22,7 @@ import io.netty.channel.Channel;
 import org.traccar.BaseProtocolDecoder;
 import org.traccar.DeviceSession;
 import org.traccar.NetworkMessage;
+import org.traccar.Protocol;
 import org.traccar.helper.BitUtil;
 import org.traccar.helper.Checksum;
 import org.traccar.helper.UnitsConverter;
@@ -36,7 +37,7 @@ import java.util.Date;
 
 public class Minifinder2ProtocolDecoder extends BaseProtocolDecoder {
 
-    public Minifinder2ProtocolDecoder(Minifinder2Protocol protocol) {
+    public Minifinder2ProtocolDecoder(Protocol protocol) {
         super(protocol);
     }
 
@@ -72,9 +73,9 @@ public class Minifinder2ProtocolDecoder extends BaseProtocolDecoder {
 
         buf.readUnsignedByte(); // header
         int flags = buf.readUnsignedByte();
-        buf.readUnsignedShort(); // length
-        buf.readUnsignedShort(); // checksum
-        int index = buf.readUnsignedShort();
+        buf.readUnsignedShortLE(); // length
+        buf.readUnsignedShortLE(); // checksum
+        int index = buf.readUnsignedShortLE();
         int type = buf.readUnsignedByte();
 
         if (BitUtil.check(flags, 4) && channel != null) {
@@ -106,31 +107,31 @@ public class Minifinder2ProtocolDecoder extends BaseProtocolDecoder {
                 switch (key) {
                     case 0x01:
                         DeviceSession deviceSession = getDeviceSession(
-                                channel, remoteAddress, buf.readBytes(15).toString(StandardCharsets.US_ASCII));
+                                channel, remoteAddress, buf.readCharSequence(15, StandardCharsets.US_ASCII).toString());
                         if (deviceSession == null) {
                             return null;
                         }
                         position.setDeviceId(deviceSession.getDeviceId());
                         break;
                     case 0x02:
-                        position.set(Position.KEY_ALARM, decodeAlarm(buf.readInt()));
+                        position.set(Position.KEY_ALARM, decodeAlarm(buf.readIntLE()));
                         break;
                     case 0x14:
                         position.set(Position.KEY_BATTERY_LEVEL, buf.readUnsignedByte());
-                        position.set(Position.KEY_BATTERY, buf.readUnsignedShort() * 0.001);
+                        position.set(Position.KEY_BATTERY, buf.readUnsignedShortLE() * 0.001);
                         break;
                     case 0x20:
-                        position.setLatitude(buf.readInt() * 0.0000001);
-                        position.setLongitude(buf.readInt() * 0.0000001);
-                        position.setSpeed(UnitsConverter.knotsFromKph(buf.readUnsignedShort()));
-                        position.setCourse(buf.readUnsignedShort());
-                        position.setAltitude(buf.readShort());
-                        position.setValid(buf.readUnsignedShort() > 0);
-                        position.set(Position.KEY_ODOMETER, buf.readUnsignedInt());
+                        position.setLatitude(buf.readIntLE() * 0.0000001);
+                        position.setLongitude(buf.readIntLE() * 0.0000001);
+                        position.setSpeed(UnitsConverter.knotsFromKph(buf.readUnsignedShortLE()));
+                        position.setCourse(buf.readUnsignedShortLE());
+                        position.setAltitude(buf.readShortLE());
+                        position.setValid(buf.readUnsignedShortLE() > 0);
+                        position.set(Position.KEY_ODOMETER, buf.readUnsignedIntLE());
                         position.set(Position.KEY_SATELLITES, buf.readUnsignedByte());
                         break;
                     case 0x21:
-                        int mcc = buf.readUnsignedShort();
+                        int mcc = buf.readUnsignedShortLE();
                         int mnc = buf.readUnsignedByte();
                         if (position.getNetwork() == null) {
                             position.setNetwork(new Network());
@@ -138,7 +139,7 @@ public class Minifinder2ProtocolDecoder extends BaseProtocolDecoder {
                         while (buf.readerIndex() < endIndex) {
                             int rssi = buf.readByte();
                             position.getNetwork().addCellTower(CellTower.from(
-                                    mcc, mnc, buf.readUnsignedShort(), buf.readUnsignedShort(), rssi));
+                                    mcc, mnc, buf.readUnsignedShortLE(), buf.readUnsignedShortLE(), rssi));
                         }
                         break;
                     case 0x22:
@@ -147,7 +148,7 @@ public class Minifinder2ProtocolDecoder extends BaseProtocolDecoder {
                         }
                         while (buf.readerIndex() < endIndex) {
                             int rssi = buf.readByte();
-                            String mac = ByteBufUtil.hexDump(buf.readBytes(6)).replaceAll("(..)", "$1:");
+                            String mac = ByteBufUtil.hexDump(buf.readSlice(6)).replaceAll("(..)", "$1:");
                             position.getNetwork().addWifiAccessPoint(WifiAccessPoint.from(
                                     mac.substring(0, mac.length() - 1), rssi));
                         }
@@ -157,18 +158,22 @@ public class Minifinder2ProtocolDecoder extends BaseProtocolDecoder {
                             buf.skipBytes(6); // mac
                         }
                         if (endIndex > buf.readerIndex()) {
-                            position.setLatitude(buf.readInt() * 0.0000001);
-                            position.setLongitude(buf.readInt() * 0.0000001);
+                            position.setLatitude(buf.readIntLE() * 0.0000001);
+                            position.setLongitude(buf.readIntLE() * 0.0000001);
                         }
                         break;
                     case 0x24:
-                        position.setTime(new Date(buf.readUnsignedInt() * 1000));
-                        long status = buf.readUnsignedInt();
+                        position.setTime(new Date(buf.readUnsignedIntLE() * 1000));
+                        long status = buf.readUnsignedIntLE();
                         position.set(Position.KEY_BATTERY_LEVEL, BitUtil.from(status, 24));
                         position.set(Position.KEY_STATUS, status);
                         break;
-                    case 0x40:
+                    case 0x30:
                         buf.readUnsignedInt(); // timestamp
+                        position.set(Position.KEY_STEPS, buf.readUnsignedInt());
+                        break;
+                    case 0x40:
+                        buf.readUnsignedIntLE(); // timestamp
                         int heartRate = buf.readUnsignedByte();
                         if (heartRate > 1) {
                             position.set(Position.KEY_HEART_RATE, heartRate);

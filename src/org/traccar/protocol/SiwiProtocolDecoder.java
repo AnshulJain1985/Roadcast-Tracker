@@ -17,6 +17,7 @@ package org.traccar.protocol;
 
 import io.netty.channel.Channel;
 import org.traccar.BaseProtocolDecoder;
+import org.traccar.Context;
 import org.traccar.DeviceSession;
 import org.traccar.Protocol;
 import org.traccar.helper.Parser;
@@ -25,6 +26,7 @@ import org.traccar.helper.UnitsConverter;
 import org.traccar.model.Position;
 
 import java.net.SocketAddress;
+import java.util.Date;
 import java.util.regex.Pattern;
 
 public class SiwiProtocolDecoder extends BaseProtocolDecoder {
@@ -75,7 +77,8 @@ public class SiwiProtocolDecoder extends BaseProtocolDecoder {
         position.setDeviceId(deviceSession.getDeviceId());
 
         position.set(Position.KEY_EVENT, parser.next());
-        position.set(Position.KEY_IGNITION, parser.next().equals("1"));
+        boolean isIgnition = parser.next().equals("1");
+        position.set(Position.KEY_IGNITION, isIgnition);
         position.set(Position.KEY_ODOMETER, parser.nextInt(0));
 
         position.setSpeed(UnitsConverter.knotsFromKph(parser.nextInt(0)));
@@ -90,7 +93,35 @@ public class SiwiProtocolDecoder extends BaseProtocolDecoder {
 
         position.setTime(parser.nextDateTime(Parser.DateTimeFormat.HMS_DMY, "IST"));
 
+        if (!isIgnition) {
+            getLastLocation(position, position.getDeviceTime());
+        }
+
         return position;
+    }
+
+    public void getLastLocation(Position position, Date deviceTime) {
+        if (position.getDeviceId() != 0) {
+            position.setOutdated(true);
+
+            Position last = Context.getIdentityManager().getLastPosition(position.getDeviceId());
+            if (last != null) {
+                position.setFixTime(last.getFixTime());
+                position.setValid(last.getValid());
+                position.setLatitude(last.getLatitude());
+                position.setLongitude(last.getLongitude());
+                position.setAltitude(last.getAltitude());
+                position.setSpeed(last.getSpeed());
+                position.setCourse(last.getCourse());
+                position.setAccuracy(last.getAccuracy());
+            }
+
+            if (deviceTime != null) {
+                position.setDeviceTime(deviceTime);
+            } else {
+                position.setDeviceTime(new Date());
+            }
+        }
     }
 
 }
