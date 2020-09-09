@@ -553,6 +553,7 @@ public class H02ProtocolDecoder extends BaseProtocolDecoder {
     protected Object decode(
             Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
 
+        Position position;
         ChannelBuffer buf = (ChannelBuffer) msg;
         String marker = buf.toString(0, 1, StandardCharsets.US_ASCII);
 
@@ -572,27 +573,44 @@ public class H02ProtocolDecoder extends BaseProtocolDecoder {
                             if (channel != null) {
                                 channel.write(sentence);
                             }
-                            return null;
+                            position = null;
+                            break;
                         case "NBR":
-                            return decodeLbs(sentence, channel, remoteAddress);
+                            position = decodeLbs(sentence, channel, remoteAddress);
+                            break;
                         case "LINK":
-                            return decodeLink(sentence, channel, remoteAddress);
+                            position = decodeLink(sentence, channel, remoteAddress);
+                            break;
                         case "V3":
-                            return decodeV3(sentence, channel, remoteAddress);
+                            position = decodeV3(sentence, channel, remoteAddress);
+                            break;
                         case "VP1":
-                            return decodeVp1(sentence, channel, remoteAddress);
+                            position = decodeVp1(sentence, channel, remoteAddress);
+                            break;
                         default:
-                            return decodeText(sentence, channel, remoteAddress);
+                            position = decodeText(sentence, channel, remoteAddress);
+                            break;
                     }
                 } else {
-                    return null;
+                    position = null;
                 }
+                break;
             case "$":
-                return decodeBinary(buf, channel, remoteAddress);
+                position = decodeBinary(buf, channel, remoteAddress);
+                break;
             case "X":
             default:
-                return null;
+                position = null;
+                break;
         }
+
+        if (position != null && (position.getLatitude() == 0 || position.getLongitude() == 0)) {
+            if (position.getAttributes().isEmpty()) {
+                return null;
+            }
+            getLastLocation(position, position.getDeviceTime());
+        }
+        return position;
     }
 
 }

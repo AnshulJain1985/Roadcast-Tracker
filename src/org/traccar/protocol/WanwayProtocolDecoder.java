@@ -27,6 +27,7 @@ import org.traccar.helper.DateBuilder;
 import org.traccar.helper.Parser;
 import org.traccar.helper.PatternBuilder;
 import org.traccar.helper.UnitsConverter;
+import org.traccar.helper.Log;
 import org.traccar.model.CellTower;
 import org.traccar.model.Network;
 import org.traccar.model.Position;
@@ -199,18 +200,20 @@ public class WanwayProtocolDecoder extends BaseProtocolDecoder {
         position.set(Position.KEY_IGNITION, BitUtil.check(status, 1));
         position.set(Position.KEY_CHARGE, BitUtil.check(status, 2));
 
-        switch (BitUtil.between(status, 3, 6)) {
-            case 1:
-                position.set(Position.KEY_ALARM, Position.ALARM_SHOCK);
-                break;
-            case 2:
-                position.set(Position.KEY_ALARM, Position.ALARM_POWER_CUT);
-                break;
-            case 3:
-                position.set(Position.KEY_ALARM, Position.ALARM_LOW_BATTERY);
-                break;
-            default:
-                break;
+        if (type != MSG_STATUS) {
+            switch (BitUtil.between(status, 3, 6)) {
+                case 1:
+                    position.set(Position.KEY_ALARM, Position.ALARM_SHOCK);
+                    break;
+                case 2:
+                    position.set(Position.KEY_ALARM, Position.ALARM_POWER_CUT);
+                    break;
+                case 3:
+                    position.set(Position.KEY_ALARM, Position.ALARM_LOW_BATTERY);
+                    break;
+                default:
+                    break;
+            }
         }
 
         short battery = buf.readUnsignedByte();
@@ -557,6 +560,8 @@ public class WanwayProtocolDecoder extends BaseProtocolDecoder {
             Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
 
         ChannelBuffer buf = (ChannelBuffer) msg;
+
+        Log.info(String.format("%08X", channel.getId()) + " - Wanw HEX: " + ChannelBuffers.hexDump(buf));
 
         int header = buf.readShort();
 
