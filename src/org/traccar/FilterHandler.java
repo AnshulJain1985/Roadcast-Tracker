@@ -136,6 +136,12 @@ public class FilterHandler extends BaseDataHandler {
     private boolean filterDistance(Position position, Position last) {
         if (filterDistance != 0 && last != null
                 && (last.getBoolean(Position.KEY_IGNITION) == position.getBoolean(Position.KEY_IGNITION))) {
+            if (position.getProtocol().equals("teltonika")
+                    && ((last.getLong(Position.PREFIX_ADC + 1) != position.getLong(Position.PREFIX_ADC + 1))
+                    || (last.getLong("di1") != position.getLong("di1"))
+                    || (last.getLong("di2") != position.getLong("di2")))) {
+                return false;
+            }
             return position.getDouble(Position.KEY_DISTANCE) < filterDistance;
         }
         return false;
