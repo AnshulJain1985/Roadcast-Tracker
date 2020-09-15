@@ -604,13 +604,28 @@ public class H02ProtocolDecoder extends BaseProtocolDecoder {
                 break;
         }
 
-        if (position != null && (position.getLatitude() == 0 || position.getLongitude() == 0)) {
+        if (position != null && (position.getLatitude() == 0 || position.getLongitude() == 0)
+                && checkValidPosition(position)) {
             if (position.getAttributes().isEmpty()) {
                 return null;
             }
             getLastLocation(position, position.getDeviceTime());
         }
         return position;
+    }
+
+    private boolean checkValidPosition(Position position) {
+
+        if (!position.getValid()
+                || position.getLatitude() > 90 || position.getLongitude() > 180
+                || position.getLatitude() < -90 || position.getLongitude() < -180) {
+            return true;
+        }
+
+        if (!position.getValid() && position.getAttributes().containsKey(Position.KEY_DISTANCE)) {
+            return position.getDouble(Position.KEY_DISTANCE) > 500000;
+        }
+        return false;
     }
 
 }
