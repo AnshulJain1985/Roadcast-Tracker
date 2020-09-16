@@ -15,7 +15,6 @@
  */
 package org.traccar.web;
 
-import org.eclipse.jetty.http.HttpCookie;
 import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.proxy.AsyncProxyServlet;
@@ -23,7 +22,6 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
-import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -43,7 +41,6 @@ import org.traccar.api.resource.ServerResource;
 
 import javax.servlet.DispatcherType;
 import javax.servlet.ServletException;
-import javax.servlet.SessionCookieConfig;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -74,8 +71,12 @@ public class WebServer {
 
         ServletContextHandler servletHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
 
+        int sessionTimeout = config.getInteger("web.sessionTimeout");
+        if (sessionTimeout > 0) {
+            servletHandler.getSessionHandler().setMaxInactiveInterval(sessionTimeout);
+        }
+
         initApi(config, servletHandler);
-        initSessionConfig(config, servletHandler);
 
         if (config.getBoolean("web.console")) {
             servletHandler.addServlet(new ServletHolder(new ConsoleServlet()), "/console/*");
@@ -87,7 +88,7 @@ public class WebServer {
             @Override
             protected void handleErrorPage(
                     HttpServletRequest request, Writer writer, int code, String message) throws IOException {
-                writer.write("<!DOCTYPE><html><head><title>Error</title></head><html><body>"
+                writer.write("<!DOCTYPE<html><head><title>Error</title></head><html><body>"
                         + code + " - " + HttpStatus.getMessage(code) + "</body></html>");
             }
         });
@@ -95,7 +96,6 @@ public class WebServer {
         HandlerList handlers = new HandlerList();
         initClientProxy(config, handlers);
         handlers.addHandler(servletHandler);
-        handlers.addHandler(new GzipHandler());
         server.setHandler(handlers);
     }
 
@@ -151,32 +151,6 @@ public class WebServer {
         resourceConfig.registerClasses(SecurityRequestFilter.class, CorsResponseFilter.class);
         resourceConfig.packages(ServerResource.class.getPackage().getName());
         servletHandler.addServlet(new ServletHolder(new ServletContainer(resourceConfig)), "/api/*");
-    }
-
-    private void initSessionConfig(Config config, ServletContextHandler servletHandler) {
-        int sessionTimeout = config.getInteger("web.sessionTimeout");
-        if (sessionTimeout > 0) {
-            servletHandler.getSessionHandler().setMaxInactiveInterval(sessionTimeout);
-        }
-
-        String sameSiteCookie = config.getString("web.sameSiteCookie");
-        if (sameSiteCookie != null) {
-            SessionCookieConfig sessionCookieConfig = servletHandler.getServletContext().getSessionCookieConfig();
-            switch (sameSiteCookie.toLowerCase()) {
-                case "lax":
-                    sessionCookieConfig.setComment(HttpCookie.SAME_SITE_LAX_COMMENT);
-                    break;
-                case "strict":
-                    sessionCookieConfig.setComment(HttpCookie.SAME_SITE_STRICT_COMMENT);
-                    break;
-                case "none":
-                    sessionCookieConfig.setSecure(true);
-                    sessionCookieConfig.setComment(HttpCookie.SAME_SITE_NONE_COMMENT);
-                    break;
-                default:
-                    break;
-            }
-        }
     }
 
     public void start() {
