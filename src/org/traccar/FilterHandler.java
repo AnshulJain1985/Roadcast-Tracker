@@ -167,13 +167,13 @@ public class FilterHandler extends BaseDataHandler {
                 }
             }
         }
-        if (position.getProtocol().equals("teltonika")
+        if (last != null && position.getProtocol().equals("teltonika")
                 && ((last.getLong(Position.PREFIX_ADC + 1) != position.getLong(Position.PREFIX_ADC + 1))
                 || (last.getLong("di1") != position.getLong("di1"))
                 || (last.getLong("di2") != position.getLong("di2")))) {
             return true;
         }
-        if (position.getAttributes().containsKey(Position.KEY_POWER)
+        if (last != null && position.getAttributes().containsKey(Position.KEY_POWER)
                 && position.getDouble(Position.KEY_POWER) != last.getDouble(Position.KEY_POWER)) {
             return true;
         }
