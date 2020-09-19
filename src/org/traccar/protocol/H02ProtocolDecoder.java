@@ -352,7 +352,8 @@ public class H02ProtocolDecoder extends BaseProtocolDecoder {
             position.setLongitude(parser.nextCoordinate());
         }
 
-        position.setSpeed(parser.nextDouble(0));
+        String speed = parser.next().replace(" ", "");
+        position.setSpeed(Double.parseDouble(speed));
         position.setCourse(parser.nextDouble(0));
 
         if (parser.hasNext(3)) {
@@ -604,12 +605,36 @@ public class H02ProtocolDecoder extends BaseProtocolDecoder {
                 break;
         }
 
-        if (position != null && (position.getLatitude() == 0 || position.getLongitude() == 0)
-                && checkValidPosition(position)) {
+        if (position != null && (position.getLatitude() == 0 || position.getLongitude() == 0
+                || checkValidPosition(position))) {
             if (position.getAttributes().isEmpty()) {
-                return null;
+                return position;
             }
-            getLastLocation(position, position.getDeviceTime());
+
+            Position last = Context.getIdentityManager().getLastPosition(position.getDeviceId());
+            if (last == null) {
+                return position;
+            }
+
+            if (position.getDeviceId() != 0) {
+                position.setOutdated(true);
+                if (last != null) {
+                    position.setFixTime(last.getFixTime());
+                    position.setValid(last.getValid());
+                    position.setLatitude(last.getLatitude());
+                    position.setLongitude(last.getLongitude());
+                    position.setAltitude(last.getAltitude());
+                    position.setSpeed(last.getSpeed());
+                    position.setCourse(last.getCourse());
+                    position.setAccuracy(last.getAccuracy());
+                } else {
+                    position.setFixTime(new Date(0));
+                }
+
+                if (position.getDeviceTime() == null) {
+                    position.setDeviceTime(new Date());
+            }
+            }
         }
         return position;
     }
