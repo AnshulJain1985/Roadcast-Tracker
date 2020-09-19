@@ -159,27 +159,23 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
         }
     }
 
-    private Position decodeNormalPacket(Channel channel, SocketAddress remoteAddress, ByteBuf buf, Position position) {
+    private void decodeNormalPacket(Channel channel, SocketAddress remoteAddress, ByteBuf buf, Position position) {
         String imei = buf.readSlice(15).toString(StandardCharsets.US_ASCII);
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
         if (deviceSession == null) {
             sendResponse(channel, HttpResponseStatus.BAD_REQUEST);
-            return null;
         }
         position.setDeviceId(deviceSession.getDeviceId());
 
         decodeCommon(buf, position);
-
-        return position;
     }
 
 
-    private Object decodeBatchPacket(Channel channel, SocketAddress remoteAddress, ByteBuf buf, Position position) {
+    private void decodeBatchPacket(Channel channel, SocketAddress remoteAddress, ByteBuf buf, Position position) {
         String imei = buf.readSlice(15).toString(StandardCharsets.US_ASCII);
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
         if (deviceSession == null) {
             sendResponse(channel, HttpResponseStatus.BAD_REQUEST);
-            return null;
         }
         position.setDeviceId(deviceSession.getDeviceId());
 
@@ -188,19 +184,16 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
         for (int i = 0; i < batchLogCount; i++) {
             decodeCommon(buf, position);
         }
-
-        return position;
     }
 
 
-    private Object decodeHealthPacket(Channel channel, SocketAddress remoteAddress, ByteBuf buf, Position position) {
+    private void decodeHealthPacket(Channel channel, SocketAddress remoteAddress, ByteBuf buf, Position position) {
         String vendorId =  buf.readSlice(6).toString(StandardCharsets.US_ASCII);
         position.set(Position.KEY_VERSION_FW, buf.readSlice(6).toString(StandardCharsets.US_ASCII));
         String imei = buf.readSlice(15).toString(StandardCharsets.US_ASCII);
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
         if (deviceSession == null) {
             sendResponse(channel, HttpResponseStatus.BAD_REQUEST);
-            return null;
         }
         position.setDeviceId(deviceSession.getDeviceId());
 
@@ -226,8 +219,6 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
         dateBuilder.addMinute(DATETIMECORRECTION);
 
         getLastLocation(position, dateBuilder.getDate());
-
-        return position;
     }
 
 
@@ -253,15 +244,18 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
                 case "CRT":
                 case "ALT":
                 case "FUL":
-                    return  decodeNormalPacket(channel, remoteAddress, buf, position);
+                    decodeNormalPacket(channel, remoteAddress, buf, position);
+                    break;
                 case "BTH":
-                    return  decodeBatchPacket(channel, remoteAddress, buf, position);
+                    decodeBatchPacket(channel, remoteAddress, buf, position);
+                    break;
                 case "HLM":
-                    return  decodeHealthPacket(channel, remoteAddress, buf, position);
+                    decodeHealthPacket(channel, remoteAddress, buf, position);
+                    break;
                 case "ACK":
                 case "LGN":
                 default:
-                    return null;
+                    break;
             }
         }
 

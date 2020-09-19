@@ -22,6 +22,7 @@ import org.traccar.BaseProtocolDecoder;
 import org.traccar.DeviceSession;
 import org.traccar.NetworkMessage;
 import org.traccar.Protocol;
+import org.traccar.Context;
 import org.traccar.helper.BcdUtil;
 import org.traccar.helper.BitUtil;
 import org.traccar.helper.DateBuilder;
@@ -483,6 +484,7 @@ public class H02ProtocolDecoder extends BaseProtocolDecoder {
     protected Object decode(
             Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
 
+        Position position;
         ByteBuf buf = (ByteBuf) msg;
         String marker = buf.toString(0, 1, StandardCharsets.US_ASCII);
 
@@ -495,23 +497,76 @@ public class H02ProtocolDecoder extends BaseProtocolDecoder {
                     String type = sentence.substring(typeStart, typeEnd);
                     switch (type) {
                         case "NBR":
-                            return decodeLbs(sentence, channel, remoteAddress);
+                            position = decodeLbs(sentence, channel, remoteAddress);
+                            break;
                         case "LINK":
-                            return decodeLink(sentence, channel, remoteAddress);
+                            position = decodeLink(sentence, channel, remoteAddress);
+                            break;
                         case "V3":
                             return decodeV3(sentence, channel, remoteAddress);
                         default:
-                            return decodeText(sentence, channel, remoteAddress);
+                            position = decodeText(sentence, channel, remoteAddress);
+                            break;
                     }
                 } else {
-                    return null;
+                    position = null;
                 }
+                break;
             case "$":
-                return decodeBinary(buf, channel, remoteAddress);
+                position = decodeBinary(buf, channel, remoteAddress);
+                break;
             case "X":
             default:
-                return null;
+                position = null;
+                break;
         }
+
+        if (position != null && (position.getLatitude() == 0 || position.getLongitude() == 0
+                || checkValidPosition(position))) {
+            if (position.getAttributes().isEmpty()) {
+                return position;
+            }
+
+            Position last = Context.getIdentityManager().getLastPosition(position.getDeviceId());
+            if (last == null) {
+                return position;
+            }
+
+            if (position.getDeviceId() != 0) {
+                position.setOutdated(true);
+                if (last != null) {
+                    position.setFixTime(last.getFixTime());
+                    position.setValid(last.getValid());
+                    position.setLatitude(last.getLatitude());
+                    position.setLongitude(last.getLongitude());
+                    position.setAltitude(last.getAltitude());
+                    position.setSpeed(last.getSpeed());
+                    position.setCourse(last.getCourse());
+                    position.setAccuracy(last.getAccuracy());
+                } else {
+                    position.setFixTime(new Date(0));
+                }
+
+                if (position.getDeviceTime() == null) {
+                    position.setDeviceTime(new Date());
+                }
+            }
+        }
+        return position;
+    }
+
+    private boolean checkValidPosition(Position position) {
+
+        if (!position.getValid()
+                || position.getLatitude() > 90 || position.getLongitude() > 180
+                || position.getLatitude() < -90 || position.getLongitude() < -180) {
+            return true;
+        }
+
+        if (!position.getValid() && position.getAttributes().containsKey(Position.KEY_DISTANCE)) {
+            return position.getDouble(Position.KEY_DISTANCE) > 500000;
+        }
+        return false;
     }
 
 }

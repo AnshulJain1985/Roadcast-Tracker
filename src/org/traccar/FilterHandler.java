@@ -175,7 +175,7 @@ public class FilterHandler extends BaseDataHandler {
         return false;
     }
 
-    private boolean skipAttributes(Position position) {
+    private boolean skipAttributes(Position position, Position last) {
         if (skipAttributes) {
             String attributesString = Context.getIdentityManager().lookupAttributeString(
                     position.getDeviceId(), "filter.skipAttributes", "", true);
@@ -185,7 +185,14 @@ public class FilterHandler extends BaseDataHandler {
                 }
             }
         }
-        return false;
+        if (last != null && position.getProtocol().equals("teltonika")
+                && ((last.getLong(Position.PREFIX_ADC + 1) != position.getLong(Position.PREFIX_ADC + 1))
+                || (last.getLong("di1") != position.getLong("di1"))
+                || (last.getLong("di2") != position.getLong("di2")))) {
+            return true;
+        }
+        return last != null && position.getAttributes().containsKey(Position.KEY_POWER)
+                && position.getDouble(Position.KEY_POWER) != last.getDouble(Position.KEY_POWER);
     }
 
     private boolean filter(Position position) {
@@ -197,7 +204,7 @@ public class FilterHandler extends BaseDataHandler {
             last = Context.getIdentityManager().getLastPosition(position.getDeviceId());
         }
 
-        if (skipAttributes(position)) {
+        if (skipAttributes(position, last)) {
             return false;
         }
 

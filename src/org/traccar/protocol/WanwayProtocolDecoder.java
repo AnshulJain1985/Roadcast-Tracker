@@ -258,8 +258,8 @@ public class WanwayProtocolDecoder extends BaseProtocolDecoder {
             case 0x2A:
             case 0x2B:
                 return Position.ALARM_CORNERING;
-            case 0x2C:
-                return Position.ALARM_ACCIDENT;
+//            case 0x2C:
+//                return Position.ALARM_ACCIDENT; //Commented for bharat tracking client
             case 0x23:
                 return Position.ALARM_FALL_DOWN;
             default:
