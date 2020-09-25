@@ -17,10 +17,9 @@ package org.traccar.protocol;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import org.traccar.BaseHttpProtocolDecoder;
+import org.traccar.BaseProtocolDecoder;
 import org.traccar.DeviceSession;
+import org.traccar.NetworkMessage;
 import org.traccar.Protocol;
 import org.traccar.helper.DateBuilder;
 import org.traccar.helper.UnitsConverter;
@@ -30,12 +29,14 @@ import org.traccar.model.Position;
 
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
-public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
+public class CdacAIS2ProtocolDecoder extends BaseProtocolDecoder {
 
     private static final int DATETIMECORRECTION = -330;
 
-    public CdacAISProtocolDecoder(Protocol protocol) {
+    public CdacAIS2ProtocolDecoder(Protocol protocol) {
         super(protocol);
     }
 
@@ -113,9 +114,9 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
         position.setSpeed(UnitsConverter.knotsFromKph(Double.parseDouble(
                 buf.readSlice(6).toString(StandardCharsets.US_ASCII))));
         position.setCourse(Double.parseDouble(buf.readSlice(6).toString(StandardCharsets.US_ASCII)));
-        position.set(Position.KEY_SATELLITES, Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
-        position.set(Position.KEY_HDOP, Double.parseDouble(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
-        position.set(Position.KEY_RSSI, Double.parseDouble(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
+        position.set(Position.KEY_SATELLITES, Integer.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
+        position.set(Position.KEY_HDOP, Double.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
+        position.set(Position.KEY_RSSI, Double.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
 
         position.set(Position.KEY_IGNITION,
                 Integer.parseInt(buf.readSlice(1).toString(StandardCharsets.US_ASCII)) == 1);
@@ -133,7 +134,7 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
             position.set(Position.KEY_VERSION_FW, buf.readSlice(6).toString(StandardCharsets.US_ASCII));
             String vehicleRegNo =  buf.readSlice(16).toString(StandardCharsets.US_ASCII);
             position.setAltitude(Double.parseDouble(buf.readSlice(7).toString(StandardCharsets.US_ASCII)));
-            position.set(Position.KEY_PDOP, Double.parseDouble(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
+            position.set(Position.KEY_PDOP, Double.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
             position.set(Position.KEY_OPERATOR, buf.readSlice(6).toString(StandardCharsets.US_ASCII));
 
             for (int i = 0; i < 4; i++) {
@@ -145,9 +146,8 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
             position.setNetwork(network);
 
             position.set(Position.KEY_EXTERNAL_BATTERY,
-                    Double.parseDouble(buf.readSlice(5).toString(StandardCharsets.US_ASCII)));
-            position.set(Position.KEY_BATTERY,
-                    Double.parseDouble(buf.readSlice(5).toString(StandardCharsets.US_ASCII)));
+                    Double.valueOf(buf.readSlice(5).toString(StandardCharsets.US_ASCII)));
+            position.set(Position.KEY_BATTERY, Double.valueOf(buf.readSlice(5).toString(StandardCharsets.US_ASCII)));
 
             String tamper =  buf.readSlice(1).toString(StandardCharsets.US_ASCII);
 
@@ -165,7 +165,6 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
         String imei = buf.readSlice(15).toString(StandardCharsets.US_ASCII);
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
         if (deviceSession == null) {
-            sendResponse(channel, HttpResponseStatus.BAD_REQUEST);
             return;
         }
         position.setDeviceId(deviceSession.getDeviceId());
@@ -178,7 +177,6 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
         String imei = buf.readSlice(15).toString(StandardCharsets.US_ASCII);
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
         if (deviceSession == null) {
-            sendResponse(channel, HttpResponseStatus.BAD_REQUEST);
             return;
         }
         position.setDeviceId(deviceSession.getDeviceId());
@@ -197,7 +195,6 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
         String imei = buf.readSlice(15).toString(StandardCharsets.US_ASCII);
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
         if (deviceSession == null) {
-            sendResponse(channel, HttpResponseStatus.BAD_REQUEST);
             return;
         }
         position.setDeviceId(deviceSession.getDeviceId());
@@ -230,17 +227,19 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
     protected Object decode(
             Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
 
-        FullHttpRequest request = (FullHttpRequest) msg;
-
-        ByteBuf buf = request.content();
-        String parameter = buf.readSlice(7).toString(StandardCharsets.US_ASCII);
-        buf.skipBytes(1);
+//        FullHttpRequest request = (FullHttpRequest) msg;
+//
+//        ByteBuf buf = request.content();
+        ByteBuf buf = (ByteBuf) msg;
+//        String parameter = buf.readSlice(7).toString(StandardCharsets.US_ASCII);
+//        buf.skipBytes(1);
 //        String data = buf.toString(StandardCharsets.US_ASCII);
 
         Position position = new Position(getProtocolName());
 
-        if (parameter.equals("vltdata")) {
         String header = buf.readSlice(3).toString(StandardCharsets.US_ASCII);
+        String imei;
+        DeviceSession deviceSession;
 
         switch (header) {
             case "NRM":
@@ -258,16 +257,32 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
                 break;
             case "ACK":
             case "LGN":
+                imei = buf.readSlice(15).toString(StandardCharsets.US_ASCII);
+                deviceSession = getDeviceSession(channel, remoteAddress, imei);
+                if (deviceSession != null) {
+                    position.setDeviceId(deviceSession.getDeviceId());
+                    position.setTime(new Date());
+                    String currentDate = new SimpleDateFormat("ddMMyyyyHHmmss").format(new Date());
+                    channel.writeAndFlush(new NetworkMessage("$LGN," + currentDate + "*", remoteAddress));
+                }
+                break;
+            case "HBT":
+                imei = buf.readSlice(15).toString(StandardCharsets.US_ASCII);
+                deviceSession = getDeviceSession(channel, remoteAddress, imei);
+                if (deviceSession != null) {
+                    position.setDeviceId(deviceSession.getDeviceId());
+                    position.setTime(new Date());
+                }
+                break;
             default:
                 break;
         }
-        }
-
         if (position.getDeviceId() != 0) {
-            sendResponse(channel, HttpResponseStatus.OK);
+            if (!header.equals("LGN")) {
+                channel.writeAndFlush(new NetworkMessage("$" + header + ",OK*", remoteAddress));
+            }
             return position;
         } else {
-            sendResponse(channel, HttpResponseStatus.BAD_REQUEST);
             return null;
         }
     }

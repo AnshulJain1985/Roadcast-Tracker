@@ -339,6 +339,8 @@
 
     <entry key='cdacais.port'>5329</entry>
     <entry key='cdacais.timeout'>300</entry>
+    <entry key='cdacais2.port'>5330</entry>
+    <entry key='cdacais2.timeout'>300</entry>
 
     <entry key='tk103st.port'>6002</entry>
     <entry key='tk103st.timeout'>300</entry>

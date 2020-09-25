@@ -15,23 +15,22 @@
  */
 package org.traccar.protocol;
 
-import io.netty.handler.codec.http.HttpObjectAggregator;
-import io.netty.handler.codec.http.HttpRequestDecoder;
-import io.netty.handler.codec.http.HttpResponseEncoder;
+import io.netty.handler.codec.string.StringEncoder;
 import org.traccar.BaseProtocol;
 import org.traccar.PipelineBuilder;
 import org.traccar.TrackerServer;
 
-public class CdacAISProtocol extends BaseProtocol {
+public class CdacAIS2Protocol extends BaseProtocol {
 
-    public CdacAISProtocol() {
+    public CdacAIS2Protocol() {
         addServer(new TrackerServer(false, getName()) {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
-                pipeline.addLast(new HttpResponseEncoder());
-                pipeline.addLast(new HttpRequestDecoder());
-                pipeline.addLast(new HttpObjectAggregator(65535));
-                pipeline.addLast(new CdacAISProtocolDecoder(CdacAISProtocol.this));
+//                pipeline.addLast(new HttpResponseEncoder());
+//                pipeline.addLast(new HttpRequestDecoder());
+//                pipeline.addLast(new HttpObjectAggregator(65535));
+                pipeline.addLast(new StringEncoder());
+                pipeline.addLast(new CdacAIS2ProtocolDecoder(CdacAIS2Protocol.this));
             }
         });
     }

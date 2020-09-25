@@ -79,8 +79,8 @@ public class TrackingProAISProtocolDecoder extends BaseProtocolDecoder {
             .expression("([0-9]+),")                // IMEI
             .expression("([^,]+)?,")                // vehicle reg no
             .number("(d+),")                        // GPS Fix
-            .number("(dd)(dd)(dddd),")                // date utc (DDMMYYYY)
-            .number("(dd)(dd)(dd),")                // time utc (hhmmss)
+            .number("(dd),(dd),(dddd),")                // date utc (DDMMYYYY)
+            .number("(dd),(dd),(dd),")                // time utc (hhmmss)
             .number("(-?d+.d+),")                   // latitude
             .expression("([NS]),")
             .number("(-?d+.d+),")                   // longitude
@@ -128,8 +128,8 @@ public class TrackingProAISProtocolDecoder extends BaseProtocolDecoder {
             .expression("([A-Z]+),")                // Packet Type
             .expression("([0-9]+),")                // IMEI
             .expression("([A-Z]+),")                    // Packet Status
-            .number("(dd)(dd)(dddd)")                // date utc (DDMMYYYY)
-            .number("(dd)(dd)(dd),")                // time utc (hhmmss)
+            .number("(dd),(dd),(dddd),")                // date utc (DDMMYYYY)
+            .number("(dd),(dd),(dd),")                // time utc (hhmmss)
             .number("([VA]),")                        // GPS Fix
             .number("(-?d+.d+),")                   // latitude
             .expression("([NS]),")
