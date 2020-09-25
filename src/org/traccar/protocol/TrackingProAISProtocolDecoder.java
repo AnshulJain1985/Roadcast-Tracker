@@ -16,9 +16,8 @@
 package org.traccar.protocol;
 
 import io.netty.channel.Channel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.traccar.BaseProtocolDecoder;
+import org.traccar.Protocol;
 import org.traccar.Context;
 import org.traccar.DeviceSession;
 import org.traccar.NetworkMessage;
@@ -35,9 +34,7 @@ import java.util.regex.Pattern;
 
 public class TrackingProAISProtocolDecoder extends BaseProtocolDecoder {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TrackingProAISProtocolDecoder.class);
-
-    public TrackingProAISProtocolDecoder(TrackingProAISProtocol protocol) {
+    public TrackingProAISProtocolDecoder(Protocol protocol) {
         super(protocol);
     }
 
@@ -241,6 +238,7 @@ public class TrackingProAISProtocolDecoder extends BaseProtocolDecoder {
         }
         position.setDeviceId(deviceSession.getDeviceId());
         position.set(Position.KEY_VERSION_FW, firmwareVersion);
+        position.setTime(new Date());
         return position;
     }
 
@@ -383,9 +381,6 @@ public class TrackingProAISProtocolDecoder extends BaseProtocolDecoder {
     protected Object decode(Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
         String sentence = (String) msg;
         Position position = new Position(getProtocolName());
-
-//        LOGGER.info(channel.id().asShortText() + " - GTAIS String: " + sentence);
-
 
         Parser parser = new Parser(PATTERN_LOGIN, sentence);
         if (parser.matches()) {

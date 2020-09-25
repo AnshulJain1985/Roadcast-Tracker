@@ -17,10 +17,9 @@ package org.traccar.protocol;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import org.traccar.BaseHttpProtocolDecoder;
+import org.traccar.BaseProtocolDecoder;
 import org.traccar.DeviceSession;
+import org.traccar.NetworkMessage;
 import org.traccar.Protocol;
 import org.traccar.helper.DateBuilder;
 import org.traccar.helper.UnitsConverter;
@@ -30,8 +29,10 @@ import org.traccar.model.Position;
 
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
-public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
+public class CdacAISProtocolDecoder extends BaseProtocolDecoder {
 
     private static final int DATETIMECORRECTION = -330;
 
@@ -77,7 +78,7 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
     }
 
     private static double decodeCoordinate(ByteBuf buf) {
-        double degrees = Double.valueOf(buf.readSlice(10).toString(StandardCharsets.US_ASCII));
+        double degrees = Double.parseDouble(buf.readSlice(10).toString(StandardCharsets.US_ASCII));
         String hemisphere = buf.readSlice(1).toString(StandardCharsets.US_ASCII);
         if (hemisphere.equals("S") || hemisphere.equals("W")) {
             degrees = -degrees;
@@ -93,32 +94,33 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
         position.setValid(buf.readSlice(1).toString(StandardCharsets.US_ASCII).equals("1"));
 
         DateBuilder dateBuilder = new DateBuilder()
-                .setDateReverse(Integer.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)),
-                        Integer.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)),
-                        Integer.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
-        dateBuilder.setTime(Integer.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)),
-                Integer.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)),
-                Integer.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
+                .setDateReverse(Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)),
+                        Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)),
+                        Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
+        dateBuilder.setTime(Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)),
+                Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)),
+                Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
         dateBuilder.addMinute(DATETIMECORRECTION);
         position.setTime(dateBuilder.getDate());
         position.setLatitude(decodeCoordinate(buf));
         position.setLongitude(decodeCoordinate(buf));
 
         Network network = new Network();
-        int mcc = Integer.valueOf(buf.readSlice(3).toString(StandardCharsets.US_ASCII));
-        int mnc = Integer.valueOf(buf.readSlice(3).toString(StandardCharsets.US_ASCII));
+        int mcc = Integer.parseInt(buf.readSlice(3).toString(StandardCharsets.US_ASCII));
+        int mnc = Integer.parseInt(buf.readSlice(3).toString(StandardCharsets.US_ASCII));
         int lac = Integer.parseInt(buf.readSlice(4).toString(StandardCharsets.US_ASCII), 16);
         int cellId = Integer.parseInt(buf.readSlice(9).toString(StandardCharsets.US_ASCII), 16);
 
-        position.setSpeed(UnitsConverter.knotsFromKph(Double.valueOf(
+        position.setSpeed(UnitsConverter.knotsFromKph(Double.parseDouble(
                 buf.readSlice(6).toString(StandardCharsets.US_ASCII))));
-        position.setCourse(Double.valueOf(buf.readSlice(6).toString(StandardCharsets.US_ASCII)));
+        position.setCourse(Double.parseDouble(buf.readSlice(6).toString(StandardCharsets.US_ASCII)));
         position.set(Position.KEY_SATELLITES, Integer.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
         position.set(Position.KEY_HDOP, Double.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
         position.set(Position.KEY_RSSI, Double.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
 
-        position.set(Position.KEY_IGNITION, Integer.valueOf(buf.readSlice(1).toString(StandardCharsets.US_ASCII)) == 1);
-        position.set(Position.KEY_CHARGE, Integer.valueOf(buf.readSlice(1).toString(StandardCharsets.US_ASCII)) == 1);
+        position.set(Position.KEY_IGNITION,
+                Integer.parseInt(buf.readSlice(1).toString(StandardCharsets.US_ASCII)) == 1);
+        position.set(Position.KEY_CHARGE, Integer.parseInt(buf.readSlice(1).toString(StandardCharsets.US_ASCII)) == 1);
         position.set(Position.KEY_MOTION, buf.readSlice(1).toString(StandardCharsets.US_ASCII).equals("M"));
 
 
@@ -131,12 +133,12 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
             String vendorId =  buf.readSlice(6).toString(StandardCharsets.US_ASCII);
             position.set(Position.KEY_VERSION_FW, buf.readSlice(6).toString(StandardCharsets.US_ASCII));
             String vehicleRegNo =  buf.readSlice(16).toString(StandardCharsets.US_ASCII);
-            position.setAltitude(Double.valueOf(buf.readSlice(7).toString(StandardCharsets.US_ASCII)));
+            position.setAltitude(Double.parseDouble(buf.readSlice(7).toString(StandardCharsets.US_ASCII)));
             position.set(Position.KEY_PDOP, Double.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
             position.set(Position.KEY_OPERATOR, buf.readSlice(6).toString(StandardCharsets.US_ASCII));
 
             for (int i = 0; i < 4; i++) {
-                int rssiN = Integer.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII));
+                int rssiN = Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII));
                 int lacN = Integer.parseInt(buf.readSlice(4).toString(StandardCharsets.US_ASCII), 16);
                 int cellIdN = Integer.parseInt(buf.readSlice(9).toString(StandardCharsets.US_ASCII), 16);
                 network.addCellTower(CellTower.from(mcc, mnc, lacN, cellIdN, rssiN));
@@ -150,7 +152,7 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
             String tamper =  buf.readSlice(1).toString(StandardCharsets.US_ASCII);
 
             for (int i = 1; i <= 4; i++) {
-                int tempDio = Integer.valueOf(buf.readSlice(1).toString(StandardCharsets.US_ASCII));
+                int tempDio = Integer.parseInt(buf.readSlice(1).toString(StandardCharsets.US_ASCII));
                 position.set(Position.PREFIX_IN + i, tempDio);
             }
 
@@ -163,7 +165,7 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
         String imei = buf.readSlice(15).toString(StandardCharsets.US_ASCII);
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
         if (deviceSession == null) {
-            sendResponse(channel, HttpResponseStatus.BAD_REQUEST);
+            return;
         }
         position.setDeviceId(deviceSession.getDeviceId());
 
@@ -175,11 +177,11 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
         String imei = buf.readSlice(15).toString(StandardCharsets.US_ASCII);
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
         if (deviceSession == null) {
-            sendResponse(channel, HttpResponseStatus.BAD_REQUEST);
+            return;
         }
         position.setDeviceId(deviceSession.getDeviceId());
 
-        int batchLogCount = Integer.valueOf(buf.readSlice(3).toString(StandardCharsets.US_ASCII));
+        int batchLogCount = Integer.parseInt(buf.readSlice(3).toString(StandardCharsets.US_ASCII));
 
         for (int i = 0; i < batchLogCount; i++) {
             decodeCommon(buf, position);
@@ -193,79 +195,94 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
         String imei = buf.readSlice(15).toString(StandardCharsets.US_ASCII);
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
         if (deviceSession == null) {
-            sendResponse(channel, HttpResponseStatus.BAD_REQUEST);
+            return;
         }
         position.setDeviceId(deviceSession.getDeviceId());
 
-        int ignitonOnUpdateRate = Integer.valueOf(buf.readSlice(3).toString(StandardCharsets.US_ASCII));
-        int ignitonOffUpdateRate = Integer.valueOf(buf.readSlice(3).toString(StandardCharsets.US_ASCII));
-        double batteryPerc = Double.valueOf(buf.readSlice(3).toString(StandardCharsets.US_ASCII));
-        double lowBatteryThr = Double.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII));
-        double memoryPerc = Double.valueOf(buf.readSlice(3).toString(StandardCharsets.US_ASCII));
+        int ignitonOnUpdateRate = Integer.parseInt(buf.readSlice(3).toString(StandardCharsets.US_ASCII));
+        int ignitonOffUpdateRate = Integer.parseInt(buf.readSlice(3).toString(StandardCharsets.US_ASCII));
+        double batteryPerc = Double.parseDouble(buf.readSlice(3).toString(StandardCharsets.US_ASCII));
+        double lowBatteryThr = Double.parseDouble(buf.readSlice(2).toString(StandardCharsets.US_ASCII));
+        double memoryPerc = Double.parseDouble(buf.readSlice(3).toString(StandardCharsets.US_ASCII));
 
         for (int i = 1; i <= 4; i++) {
-            int tempDio = Integer.valueOf(buf.readSlice(1).toString(StandardCharsets.US_ASCII));
+            int tempDio = Integer.parseInt(buf.readSlice(1).toString(StandardCharsets.US_ASCII));
             position.set(Position.PREFIX_IN + i, tempDio);
         }
-        double analogInput = Double.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII));
+        double analogInput = Double.parseDouble(buf.readSlice(2).toString(StandardCharsets.US_ASCII));
 
         DateBuilder dateBuilder = new DateBuilder()
-                .setDateReverse(Integer.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)),
-                        Integer.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)),
-                        Integer.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
-        dateBuilder.setTime(Integer.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)),
-                Integer.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)),
-                Integer.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
+                .setDateReverse(Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)),
+                        Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)),
+                        Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
+        dateBuilder.setTime(Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)),
+                Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)),
+                Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
         dateBuilder.addMinute(DATETIMECORRECTION);
 
         getLastLocation(position, dateBuilder.getDate());
     }
 
-
     @Override
     protected Object decode(
             Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
 
-        FullHttpRequest request = (FullHttpRequest) msg;
-
-        ByteBuf buf = request.content();
-        String parameter = buf.readSlice(7).toString(StandardCharsets.US_ASCII);
-        buf.skipBytes(1);
+//        FullHttpRequest request = (FullHttpRequest) msg;
+//
+//        ByteBuf buf = request.content();
+        ByteBuf buf = (ByteBuf) msg;
+//        String parameter = buf.readSlice(7).toString(StandardCharsets.US_ASCII);
+//        buf.skipBytes(1);
 //        String data = buf.toString(StandardCharsets.US_ASCII);
 
         Position position = new Position(getProtocolName());
 
-        if (parameter.equals("vltdata")) {
-            String header = buf.readSlice(3).toString(StandardCharsets.US_ASCII);
+        String header = buf.readSlice(3).toString(StandardCharsets.US_ASCII);
+        String imei;
+        DeviceSession deviceSession;
 
-            switch (header) {
-                case "NRM":
-                case "EPB":
-                case "CRT":
-                case "ALT":
-                case "FUL":
-                    decodeNormalPacket(channel, remoteAddress, buf, position);
-                    break;
-                case "BTH":
-                    decodeBatchPacket(channel, remoteAddress, buf, position);
-                    break;
-                case "HLM":
-                    decodeHealthPacket(channel, remoteAddress, buf, position);
-                    break;
-                case "ACK":
-                case "LGN":
-                default:
-                    break;
-            }
+        switch (header) {
+            case "NRM":
+            case "EPB":
+            case "CRT":
+            case "ALT":
+            case "FUL":
+                decodeNormalPacket(channel, remoteAddress, buf, position);
+                break;
+            case "BTH":
+                decodeBatchPacket(channel, remoteAddress, buf, position);
+                break;
+            case "HLM":
+                decodeHealthPacket(channel, remoteAddress, buf, position);
+                break;
+            case "ACK":
+            case "LGN":
+                imei = buf.readSlice(15).toString(StandardCharsets.US_ASCII);
+                deviceSession = getDeviceSession(channel, remoteAddress, imei);
+                if (deviceSession != null) {
+                    position.setDeviceId(deviceSession.getDeviceId());
+                    position.setTime(new Date());
+                    String currentDate = new SimpleDateFormat("ddMMyyyyHHmmss").format(new Date());
+                    channel.writeAndFlush(new NetworkMessage("$LGN," + currentDate + "*", remoteAddress));
+                }
+                break;
+            case "HBT":
+                imei = buf.readSlice(15).toString(StandardCharsets.US_ASCII);
+                deviceSession = getDeviceSession(channel, remoteAddress, imei);
+                if (deviceSession != null) {
+                    position.setDeviceId(deviceSession.getDeviceId());
+                }
+                break;
+            default:
+                break;
         }
-
         if (position.getDeviceId() != 0) {
-            sendResponse(channel, HttpResponseStatus.OK);
+            if (!header.equals("LGN")) {
+                channel.writeAndFlush(new NetworkMessage("$" + header + ",OK*", remoteAddress));
+            }
             return position;
         } else {
-            sendResponse(channel, HttpResponseStatus.BAD_REQUEST);
             return null;
         }
     }
-
 }
