@@ -30,6 +30,8 @@ import org.traccar.model.Position;
 
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedList;
+import java.util.List;
 
 public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
 
@@ -85,7 +87,7 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
         return degrees;
     }
 
-    private void decodeCommon(ByteBuf buf, Position position) {
+    private void decodeCommon(ByteBuf buf, Position position, boolean isGeofenceId, boolean isBatch) {
         String alertId = buf.readSlice(2).toString(StandardCharsets.US_ASCII);
         position.set(Position.KEY_ALARM, decodeAlertId(alertId));
 
@@ -123,11 +125,11 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
         position.set(Position.KEY_MOTION, buf.readSlice(1).toString(StandardCharsets.US_ASCII).equals("M"));
 
 
-        if (buf.readableBytes() == 5) {
+        if (buf.readableBytes() == 5 || isGeofenceId) {
             String geofenceId =  buf.readSlice(5).toString(StandardCharsets.US_ASCII);
         }
 
-        if (buf.readableBytes() > 5) {
+        if (buf.readableBytes() > 5 && !isBatch) {
 //            Full Packet parsing
             String vendorId =  buf.readSlice(6).toString(StandardCharsets.US_ASCII);
             position.set(Position.KEY_VERSION_FW, buf.readSlice(6).toString(StandardCharsets.US_ASCII));
@@ -170,24 +172,27 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
         }
         position.setDeviceId(deviceSession.getDeviceId());
 
-        decodeCommon(buf, position);
+        decodeCommon(buf, position, false, false);
     }
 
 
-    private void decodeBatchPacket(Channel channel, SocketAddress remoteAddress, ByteBuf buf, Position position) {
+    private List<Position> decodeBatchPacket(Channel channel, SocketAddress remoteAddress, ByteBuf buf) {
+        List<Position> positions = new LinkedList<>();
         String imei = buf.readSlice(15).toString(StandardCharsets.US_ASCII);
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
         if (deviceSession == null) {
             sendResponse(channel, HttpResponseStatus.BAD_REQUEST);
-            return;
+            return null;
         }
-        position.setDeviceId(deviceSession.getDeviceId());
-
         int batchLogCount = Integer.parseInt(buf.readSlice(3).toString(StandardCharsets.US_ASCII));
 
         for (int i = 0; i < batchLogCount; i++) {
-            decodeCommon(buf, position);
+            Position position = new Position(getProtocolName());
+            position.setDeviceId(deviceSession.getDeviceId());
+            decodeCommon(buf, position, buf.readableBytes() / batchLogCount > 78, true);
+            positions.add(position);
         }
+        return positions;
     }
 
 
@@ -251,8 +256,7 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
                 decodeNormalPacket(channel, remoteAddress, buf, position);
                 break;
             case "BTH":
-                decodeBatchPacket(channel, remoteAddress, buf, position);
-                break;
+                return decodeBatchPacket(channel, remoteAddress, buf);
             case "HLM":
                 decodeHealthPacket(channel, remoteAddress, buf, position);
                 break;
