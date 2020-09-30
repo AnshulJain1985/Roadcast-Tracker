@@ -260,7 +260,6 @@ public class CdacAIS2ProtocolDecoder extends BaseProtocolDecoder {
             case "HLM":
                 decodeHealthPacket(channel, remoteAddress, buf, position);
                 break;
-            case "ACK":
             case "LGN":
                 imei = buf.readSlice(15).toString(StandardCharsets.US_ASCII);
                 deviceSession = getDeviceSession(channel, remoteAddress, imei);
@@ -271,6 +270,7 @@ public class CdacAIS2ProtocolDecoder extends BaseProtocolDecoder {
                     channel.writeAndFlush(new NetworkMessage("$LGN," + currentDate + "*", remoteAddress));
                 }
                 break;
+            case "ACK":
             case "HBT":
                 imei = buf.readSlice(15).toString(StandardCharsets.US_ASCII);
                 deviceSession = getDeviceSession(channel, remoteAddress, imei);

@@ -37,13 +37,13 @@ public class HuabaoProtocolEncoder extends BaseProtocolEncoder {
 
             switch (command.getType()) {
                 case Command.TYPE_ENGINE_STOP:
-                    data.writeByte(0x01);
-                    data.writeBytes(time);
-                    return HuabaoProtocolDecoder.formatMessage(HuabaoProtocolDecoder.MSG_OIL_CONTROL, id, data);
+                        data.writeByte(0xf0);
+                        return HuabaoProtocolDecoder.formatMessage(
+                                HuabaoProtocolDecoder.MSG_TERMINAL_CONTROL, id, false, data);
                 case Command.TYPE_ENGINE_RESUME:
-                    data.writeByte(0x00);
-                    data.writeBytes(time);
-                    return HuabaoProtocolDecoder.formatMessage(HuabaoProtocolDecoder.MSG_OIL_CONTROL, id, data);
+                        data.writeByte(0xf1);
+                        return HuabaoProtocolDecoder.formatMessage(
+                                HuabaoProtocolDecoder.MSG_TERMINAL_CONTROL, id, false, data);
                 default:
                     return null;
             }

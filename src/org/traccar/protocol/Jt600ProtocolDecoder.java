@@ -86,32 +86,11 @@ public class Jt600ProtocolDecoder extends BaseProtocolDecoder {
 
     }
 
-    private List<Position> decodeBinary(ByteBuf buf, Channel channel, SocketAddress remoteAddress) {
-
-        List<Position> positions = new LinkedList<>();
-
-        buf.readByte(); // header
-
-        boolean longFormat = buf.getUnsignedByte(buf.readerIndex()) == 0x75;
-
-        String id = String.valueOf(Long.parseLong(ByteBufUtil.hexDump(buf.readSlice(5))));
-        DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, id);
-        if (deviceSession == null) {
-            return null;
+    static boolean isLongFormat(ByteBuf buf, int flagIndex) {
+        return buf.getUnsignedByte(flagIndex) >> 4 == 0x7;
         }
 
-        int protocolVersion = 0;
-        if (longFormat) {
-            protocolVersion = buf.readUnsignedByte();
-        }
-
-        int version = BitUtil.from(buf.readUnsignedByte(), 4);
-        buf.readUnsignedShort(); // length
-
-        while (buf.readableBytes() > 1) {
-
-            Position position = new Position(getProtocolName());
-            position.setDeviceId(deviceSession.getDeviceId());
+    static void decodeBinaryLocation(ByteBuf buf, Position position) {
 
             DateBuilder dateBuilder = new DateBuilder()
                     .setDay(BcdUtil.readInteger(buf, 2))
@@ -138,6 +117,36 @@ public class Jt600ProtocolDecoder extends BaseProtocolDecoder {
 
             position.setSpeed(BcdUtil.readInteger(buf, 2));
             position.setCourse(buf.readUnsignedByte() * 2.0);
+    }
+
+    private List<Position> decodeBinary(ByteBuf buf, Channel channel, SocketAddress remoteAddress) {
+
+        List<Position> positions = new LinkedList<>();
+
+        buf.readByte(); // header
+
+        boolean longFormat = isLongFormat(buf, buf.readerIndex());
+
+        String id = String.valueOf(Long.parseLong(ByteBufUtil.hexDump(buf.readSlice(5))));
+        DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, id);
+        if (deviceSession == null) {
+            return null;
+        }
+
+        int protocolVersion = 0;
+        if (longFormat) {
+            protocolVersion = buf.readUnsignedByte();
+        }
+
+        int version = BitUtil.from(buf.readUnsignedByte(), 4);
+        buf.readUnsignedShort(); // length
+
+        while (buf.readableBytes() > 1) {
+
+            Position position = new Position(getProtocolName());
+            position.setDeviceId(deviceSession.getDeviceId());
+
+            decodeBinaryLocation(buf, position);
 
             if (longFormat) {
 
@@ -170,6 +179,7 @@ public class Jt600ProtocolDecoder extends BaseProtocolDecoder {
                 if (protocolVersion == 0x17) {
                     buf.readUnsignedByte(); // geofence id
                     buf.skipBytes(3); // reserved
+                    buf.skipBytes(buf.readableBytes() - 1);
                 }
 
             } else if (version == 1) {

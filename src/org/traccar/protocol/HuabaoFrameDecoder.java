@@ -31,8 +31,17 @@ public class HuabaoFrameDecoder extends BaseFrameDecoder {
             return null;
         }
 
+        if (buf.getByte(buf.readerIndex()) == '(') {
+
+            int index = buf.indexOf(buf.readerIndex() + 1, buf.writerIndex(), (byte) ')');
+            if (index >= 0) {
+                return buf.readRetainedSlice(index + 1);
+            }
+
+        } else {
+
         int index = buf.indexOf(buf.readerIndex() + 1, buf.writerIndex(), (byte) 0x7e);
-        if (index != -1) {
+            if (index >= 0) {
             ByteBuf result = Unpooled.buffer(index + 1 - buf.readerIndex());
 
             while (buf.readerIndex() <= index) {
@@ -50,6 +59,8 @@ public class HuabaoFrameDecoder extends BaseFrameDecoder {
             }
 
             return result;
+        }
+
         }
 
         return null;
