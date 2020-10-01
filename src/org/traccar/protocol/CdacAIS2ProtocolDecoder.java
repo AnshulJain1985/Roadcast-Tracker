@@ -256,6 +256,7 @@ public class CdacAIS2ProtocolDecoder extends BaseProtocolDecoder {
                 decodeNormalPacket(channel, remoteAddress, buf, position);
                 break;
             case "BTH":
+                channel.writeAndFlush(new NetworkMessage("$" + header + ",OK*", remoteAddress));
                 return decodeBatchPacket(channel, remoteAddress, buf);
             case "HLM":
                 decodeHealthPacket(channel, remoteAddress, buf, position);
