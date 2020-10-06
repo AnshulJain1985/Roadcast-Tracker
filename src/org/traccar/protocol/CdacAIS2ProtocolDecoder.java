@@ -186,10 +186,12 @@ public class CdacAIS2ProtocolDecoder extends BaseProtocolDecoder {
         int batchLogCount = Integer.parseInt(buf.readSlice(3).toString(StandardCharsets.US_ASCII));
 
         for (int i = 0; i < batchLogCount; i++) {
-            Position position = new Position(getProtocolName());
-            position.setDeviceId(deviceSession.getDeviceId());
-            decodeCommon(buf, position, buf.readableBytes() / batchLogCount > 78, true);
-            positions.add(position);
+            if (buf.readableBytes() >= 78) {
+                Position position = new Position(getProtocolName());
+                position.setDeviceId(deviceSession.getDeviceId());
+                decodeCommon(buf, position, buf.readableBytes() / batchLogCount > 78, true);
+                positions.add(position);
+            }
         }
         return positions;
     }
