@@ -173,8 +173,11 @@ public class FilterHandler extends BaseDataHandler {
                 || (last.getLong("di2") != position.getLong("di2")))) {
             return true;
         }
-        if (last != null && position.getAttributes().containsKey(Position.KEY_POWER)
-                && position.getDouble(Position.KEY_POWER) != last.getDouble(Position.KEY_POWER)) {
+        if (last != null && (
+                (position.getAttributes().containsKey(Position.KEY_POWER)
+                && position.getDouble(Position.KEY_POWER) != last.getDouble(Position.KEY_POWER))
+                || (position.getAttributes().containsKey(Position.KEY_BATTERY_LEVEL)
+                && position.getDouble(Position.KEY_BATTERY_LEVEL) != last.getDouble(Position.KEY_BATTERY_LEVEL)))) {
             return true;
         }
         return false;

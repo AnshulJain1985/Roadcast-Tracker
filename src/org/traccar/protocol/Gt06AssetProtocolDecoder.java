@@ -28,6 +28,7 @@ import org.traccar.helper.DateBuilder;
 import org.traccar.helper.Parser;
 import org.traccar.helper.PatternBuilder;
 import org.traccar.helper.UnitsConverter;
+import org.traccar.helper.Log;
 import org.traccar.model.CellTower;
 import org.traccar.model.Device;
 import org.traccar.model.Network;
@@ -253,7 +254,8 @@ public class Gt06AssetProtocolDecoder extends BaseProtocolDecoder {
         }
 
         int mcc = buf.readUnsignedShort();
-        int mnc = BitUtil.check(mcc, 15) ? buf.readUnsignedShort() : buf.readUnsignedByte();
+//        int mnc = BitUtil.check(mcc, 15) ? buf.readUnsignedShort() : buf.readUnsignedByte();
+        int mnc = buf.readUnsignedByte();
 
         position.setNetwork(new Network(CellTower.from(
                 BitUtil.to(mcc, 15), mnc, buf.readUnsignedShort(), buf.readUnsignedMedium())));
@@ -869,6 +871,8 @@ public class Gt06AssetProtocolDecoder extends BaseProtocolDecoder {
             Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
 
         ChannelBuffer buf = (ChannelBuffer) msg;
+
+        Log.info(String.format("%08X", channel.getId()) + " - GT06A HEX: " + ChannelBuffers.hexDump(buf));
 
         int header = buf.readShort();
 
