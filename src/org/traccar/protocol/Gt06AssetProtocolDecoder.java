@@ -267,7 +267,7 @@ public class Gt06AssetProtocolDecoder extends BaseProtocolDecoder {
         return true;
     }
 
-    private boolean decodeStatus(Position position, ChannelBuffer buf) {
+    private boolean decodeStatus(Position position, ChannelBuffer buf, int type) {
 
         int status = buf.readUnsignedByte();
 
@@ -298,16 +298,19 @@ public class Gt06AssetProtocolDecoder extends BaseProtocolDecoder {
 
         position.set(Position.KEY_BATTERY_LEVEL, buf.readUnsignedByte() * 100 / 6);
         position.set(Position.KEY_RSSI, buf.readUnsignedByte());
-        position.set(Position.KEY_ALARM, decodeAlarm(buf.readUnsignedByte()));
+        if (type != MSG_STATUS) {
+            position.set(Position.KEY_ALARM, decodeAlarm(buf.readUnsignedByte()));
+        }
 
         return true;
     }
 
     private String decodeAlarm(short value) {
         switch (value) {
+            case 0x01:
+                return Position.ALARM_SOS;
             case 0x02:
                 return Position.ALARM_POWER_CUT;
-            case 0x01:
             case 0x03:
             case 0x09:
                 return Position.ALARM_VIBRATION;
@@ -634,7 +637,7 @@ public class Gt06AssetProtocolDecoder extends BaseProtocolDecoder {
     }
 
     private Object decodeBasicOther(Channel channel, ChannelBuffer buf,
-            DeviceSession deviceSession, int type, int dataLength) {
+                                    DeviceSession deviceSession, int type, int dataLength) {
 
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
@@ -700,7 +703,7 @@ public class Gt06AssetProtocolDecoder extends BaseProtocolDecoder {
             }
 
             if (hasStatus(type)) {
-                decodeStatus(position, buf);
+                decodeStatus(position, buf, type);
             }
 
             if (type == MSG_GPS_LBS_1 && buf.readableBytes() >= 4 + 6) {
