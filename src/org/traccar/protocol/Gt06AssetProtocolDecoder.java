@@ -259,7 +259,7 @@ public class Gt06AssetProtocolDecoder extends BaseProtocolDecoder {
         return true;
     }
 
-    private boolean decodeStatus(Position position, ByteBuf buf) {
+    private boolean decodeStatus(Position position, ByteBuf buf, int type) {
 
         int status = buf.readUnsignedByte();
 
@@ -278,16 +278,18 @@ public class Gt06AssetProtocolDecoder extends BaseProtocolDecoder {
             case 3:
                 position.set(Position.KEY_ALARM, Position.ALARM_LOW_BATTERY);
                 break;
-            case 4:
-                position.set(Position.KEY_ALARM, Position.ALARM_SOS);
-                break;
+//            case 4:
+//                position.set(Position.KEY_ALARM, Position.ALARM_SOS);
+//                break;
             default:
                 break;
         }
 
         position.set(Position.KEY_BATTERY, buf.readUnsignedByte() * 0.01);
         position.set(Position.KEY_RSSI, buf.readUnsignedByte());
-        position.set(Position.KEY_ALARM, decodeAlarm(buf.readUnsignedByte()));
+        if (type != MSG_STATUS) {
+            position.set(Position.KEY_ALARM, decodeAlarm(buf.readUnsignedByte()));
+        }
 
         return true;
     }
@@ -692,7 +694,7 @@ public class Gt06AssetProtocolDecoder extends BaseProtocolDecoder {
             }
 
             if (hasStatus(type)) {
-                decodeStatus(position, buf);
+                decodeStatus(position, buf, type);
             }
 
             if (type == MSG_GPS_LBS_1 && buf.readableBytes() >= 4 + 6) {

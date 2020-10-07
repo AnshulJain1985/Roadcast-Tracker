@@ -133,6 +133,21 @@ public class AquilaProtocolDecoder extends BaseProtocolDecoder {
             .number("xx")                        // checksum
             .compile();
 
+    private String decodeAlertId(int alertId) {
+
+        switch (alertId) {
+            case 3:
+                return Position.ALARM_POWER_CUT;
+            case 13:
+                return Position.ALARM_LOW_BATTERY;
+            case 12:
+                return Position.ALARM_TAMPERING;
+            default:
+                return null;
+        }
+
+    }
+
     @Override
     protected Object decode(
             Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
@@ -150,8 +165,9 @@ public class AquilaProtocolDecoder extends BaseProtocolDecoder {
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
 
-        position.set(Position.KEY_EVENT, parser.nextInt(0));
+        int event = parser.nextInt(0);
 
+        position.set(Position.KEY_EVENT, event);
         position.setLatitude(parser.nextDouble(0));
         position.setLongitude(parser.nextDouble(0));
 
@@ -169,7 +185,7 @@ public class AquilaProtocolDecoder extends BaseProtocolDecoder {
 
             position.set(Position.KEY_FUEL_LEVEL, parser.nextInt());
             position.set(Position.PREFIX_IN + 1, parser.next());
-            position.set(Position.KEY_CHARGE, parser.next().equals("1"));
+            position.set(Position.KEY_CHARGE, parser.next().equals("0"));
             position.set(Position.PREFIX_IN + 2, parser.next());
 
             position.set(Position.KEY_IGNITION, parser.nextInt(0) == 1);
@@ -184,7 +200,7 @@ public class AquilaProtocolDecoder extends BaseProtocolDecoder {
 
             position.setCourse(parser.nextInt(0));
 
-            position.set(Position.KEY_CHARGE, parser.next().equals("1"));
+            position.set(Position.KEY_CHARGE, parser.next().equals("0"));
             position.set(Position.KEY_IGNITION, parser.nextInt(0) == 1);
             position.set(Position.KEY_POWER, parser.nextInt(0));
             position.set(Position.KEY_BATTERY, parser.nextInt(0));
@@ -203,7 +219,7 @@ public class AquilaProtocolDecoder extends BaseProtocolDecoder {
             position.set(Position.KEY_HDOP, parser.nextDouble(0));
             position.set(Position.PREFIX_ADC + 1, parser.nextInt(0));
             position.set(Position.PREFIX_IN + 1, parser.nextInt(0));
-            position.set(Position.KEY_CHARGE, parser.next().equals("1"));
+            position.set(Position.KEY_CHARGE, parser.next().equals("0"));
             position.set(Position.PREFIX_IN + 2, parser.nextInt(0));
             position.set(Position.KEY_IGNITION, parser.nextInt(0) == 1);
             position.set(Position.KEY_POWER, parser.nextDouble(0) / 1000);
@@ -260,6 +276,8 @@ public class AquilaProtocolDecoder extends BaseProtocolDecoder {
             }
 
         }
+
+        position.set(Position.KEY_ALARM, decodeAlertId(event));
 
         if (position.getLatitude() == 0.0 && position.getLongitude() == 0.0) {
             getLastLocation(position);
