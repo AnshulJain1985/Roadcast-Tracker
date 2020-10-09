@@ -269,7 +269,7 @@ public class CdacAIS2ProtocolDecoder extends BaseProtocolDecoder {
                 if (deviceSession != null) {
                     position.setDeviceId(deviceSession.getDeviceId());
                     position.setTime(new Date());
-                    String currentDate = new SimpleDateFormat("ddMMyyyyHHmmss").format(new Date());
+                    String currentDate = new SimpleDateFormat("ddMMyyHHmmss").format(new Date());
                     channel.writeAndFlush(new NetworkMessage("$LGN," + currentDate + "*", remoteAddress));
                 }
                 break;
