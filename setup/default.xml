@@ -14,6 +14,7 @@
     <entry key='web.port'>8082</entry>
     <entry key='web.path'>./web</entry>
     <entry key='web.cacheControl'>max-age=3600,public</entry>
+    <entry key='web.sameSiteCookie'>__SAME_SITE_NONE__</entry>
 
     <entry key='geocoder.enable'>false</entry>
     <entry key='geocoder.type'>google</entry>
@@ -22,21 +23,61 @@
     <entry key='geolocation.type'>unwired</entry>
     <entry key='geolocation.url'>http://bugs.roadcast.co.in:8288/location</entry>
     <entry key='geolocation.key'>roadcast</entry>
-    <entry key='geolocation.processInvalidPositions'>true</entry>
+    <entry key='geolocation.processInvalidPositions'>false</entry>
 
     <entry key='logger.enable'>true</entry>
     <entry key='logger.level'>info</entry>
     <entry key='logger.file'>./logs/tracker-server.log</entry>
 
-    <entry key='filter.enable'>true</entry>
-    <entry key='filter.future'>86400</entry>
-
     <entry key='event.enable'>true</entry>
-    <entry key='event.ignoreDuplicateAlerts'>true</entry>
     <entry key='processing.computedAttributes.enable'>true</entry>
+    <entry key='event.overspeedHandler'>true</entry>
+    <entry key='event.overspeed.notRepeat'>false</entry>
+    <entry key='event.motionHandler'>false</entry>
+    <entry key='event.geofenceHandler'>true</entry>
+    <entry key='event.alertHandler'>true</entry>
+    <entry key='event.ignitionHandler'>true</entry>
+    <entry key='event.statusHandler'>false</entry>
+    <entry key='event.maintenanceHandler'>false</entry>
+
+
+    <entry key='report.trip.minimalTripDistance'>50</entry>
+    <entry key='report.trip.minimalTripDuration'>60</entry>
+    <entry key='report.trip.minimalParkingDuration'>90</entry>
+    <entry key='report.trip.useIgnition'>true</entry>
+    <entry key='report.ignoreOdometer'>true</entry>
+
+    <entry key='event.forward.enable'>true</entry>
+    <entry key='event.forward.header'>Content-Type:application/json; charset=utf-8</entry>
+    <entry key='event.forward.url'>http://10.139.148.198:3000/home</entry>
+    <!--entry key='event.forward.url'>http://localhost:8080/home</entry-->
+
+    <entry key='forward.enable'>true</entry>
+    <entry key='forward.json'>true</entry>
+    <!--entry key='forward.url'>http://68.183.244.137:8084</entry-->
+    <entry key='forward.url'>http://10.139.148.198:3000/push-api/position-redis</entry>
+
+    <entry key='processing.copyAttributes.enable'>true</entry>
+    <entry key='processing.copyAttributes'>door,ignition,battery,batteryLevel,charge</entry>
+
+    <!--entry key='status.updateDeviceState'>true</entry-->
+
+    <entry key='filter.enable'>true</entry>
+    <entry key='filter.duplicate'>true</entry>
+    <entry key='filter.zero'>true</entry>
+    <entry key='filter.distance'>10</entry>
+    <entry key='filter.future'>18000</entry>
+    <entry key='filter.skipLimit'>900</entry>
+    <entry key='filter.skipAttributes.enable'>true</entry>
+    <entry key='filter.skipAttributes'>door,result,alarm,SOC</entry>
+
+    <entry key='coordinates.filter'>true</entry>
+    <entry key='coordinates.maxError'>5000</entry>
+
     <entry key='processing.engineHours.enable'>true</entry>
 
     <entry key='media.path'>./media</entry>
+    <entry key='media.dirAllowed'>true</entry>
 
     <entry key='notificator.types'>web,mail</entry>
 
@@ -47,7 +88,7 @@
     <entry key='database.ignoreUnknown'>true</entry>
     <entry key='database.generateQueries'>true</entry>
     <entry key='database.changelog'>./schema/changelog-master.xml</entry>
- 
+
     <entry key='database.loginUser'>
         SELECT * FROM tc_users
         WHERE email = :email OR login = :email
@@ -83,6 +124,7 @@
 
     <entry key='gps103.port'>5001</entry>
     <entry key='tk103.port'>5002</entry>
+    <entry key='tk103.timeout'>185</entry>
     <entry key='gl100.port'>5003</entry>
     <entry key='gl200.port'>5004</entry>
     <entry key='t55.port'>5005</entry>
@@ -95,6 +137,7 @@
     <entry key='suntech.port'>5011</entry>
     <entry key='progress.port'>5012</entry>
     <entry key='h02.port'>5013</entry>
+    <entry key='h02.timeout'>185</entry>
     <entry key='jt600.port'>5014</entry>
     <entry key='huabao.port'>5015</entry>
     <entry key='v680.port'>5016</entry>
@@ -105,10 +148,14 @@
     <entry key='skypatrol.port'>5021</entry>
     <entry key='gt02.port'>5022</entry>
     <entry key='gt06.port'>5023</entry>
+    <entry key='gt06.timeout'>185</entry>
+    <entry key='gt06.language'>true</entry>
+
     <entry key='megastek.port'>5024</entry>
     <entry key='navigil.port'>5025</entry>
     <entry key='gpsgate.port'>5026</entry>
     <entry key='teltonika.port'>5027</entry>
+    <entry key='teltonika.timeout'>185</entry>
     <entry key='mta6.port'>5028</entry>
     <entry key='tzone.port'>5029</entry>
     <entry key='tlt2h.port'>5030</entry>
@@ -118,6 +165,7 @@
     <entry key='galileo.port'>5034</entry>
     <entry key='ywt.port'>5035</entry>
     <entry key='tk102.port'>5036</entry>
+    <entry key='tk102.timeout'>185</entry>
     <entry key='intellitrac.port'>5037</entry>
     <entry key='gpsmta.port'>5038</entry>
     <entry key='wialon.port'>5039</entry>
@@ -137,6 +185,9 @@
     <entry key='noran.port'>5053</entry>
     <entry key='m2m.port'>5054</entry>
     <entry key='osmand.port'>5055</entry>
+    <entry key='osmand.timeout'>15</entry>
+
+
     <entry key='easytrack.port'>5056</entry>
     <entry key='gpsmarker.port'>5057</entry>
     <entry key='khd.port'>5058</entry>
@@ -175,6 +226,7 @@
     <entry key='blackkite.port'>5091</entry>
     <entry key='adm.port'>5092</entry>
     <entry key='watch.port'>5093</entry>
+    <entry key='watch.timeout'>185</entry>
     <entry key='t800x.port'>5094</entry>
     <entry key='upro.port'>5095</entry>
     <entry key='auro.port'>5096</entry>
@@ -194,6 +246,7 @@
     <entry key='idpl.port'>5110</entry>
     <entry key='huasheng.port'>5111</entry>
     <entry key='l100.port'>5112</entry>
+    <entry key='l100.timeout'>300</entry>
     <entry key='granit.port'>5113</entry>
     <entry key='carcell.port'>5114</entry>
     <entry key='obddongle.port'>5115</entry>
@@ -264,24 +317,21 @@
     <entry key='xrb28.port'>5180</entry>
     <entry key='minifinder2.port'>5187</entry>
 
+
     <entry key='gpsbox.port'>5200</entry>
-    <entry key='gpsbox.timeout'>600</entry>
-    <entry key='trakinfi.port'>5201</entry>
-    <entry key='trakinfi.timeout'>85</entry>
-    <entry key='prime07.port'>5202</entry>
-    <entry key='prime07.timeout'>85</entry>
-    <entry key='nippon.port'>5203</entry>
-    <entry key='nippon.timeout'>85</entry>
+    <entry key='gpsbox.timeout'>101</entry>
+    <entry key='prime.port'>5202</entry>
+    <entry key='nipais.port'>5203</entry>
 
     <entry key='jcx00.port'>5223</entry>
     <entry key='jcx00.language'>true</entry>
-    <entry key='jcx00.timeout'>185</entry>
+    <entry key='jcx00.timeout'>105</entry>
 
     <entry key='rp05.port'>6023</entry>
     <entry key='rp05.language'>true</entry>
     <entry key='rp05.timeout'>185</entry>
     <entry key='et300.port'>6123</entry>
-    <entry key='et300.language'>true</entry>
+    <entry key='et300.language'>false</entry>
     <entry key='et300.timeout'>185</entry>
     <entry key='et300ac.port'>6423</entry>
     <entry key='et300ac.language'>false</entry>
@@ -302,51 +352,51 @@
     <entry key='wanway.language'>true</entry>
     <entry key='wanway.timeout'>185</entry>
 
-
     <entry key='rpais.port'>5300</entry>
-    <entry key='rpais.timeout'>285</entry>
+    <entry key='rpais.timeout'>185</entry>
     <entry key='iacais.port'>5301</entry>
-    <entry key='iacais.timeout'>285</entry>
+    <entry key='iacais.timeout'>185</entry>
     <entry key='transsync.port'>5302</entry>
-    <entry key='transsync.timeout'>285</entry>
+    <entry key='transsync.timeout'>185</entry>
     <entry key='transsync.distanceFilter'>50</entry>
 
     <entry key='atlais.port'>5303</entry>
-    <entry key='atlais.timeout'>285</entry>
+    <entry key='atlais.timeout'>105</entry>
     <entry key='st351.port'>5304</entry>
-    <entry key='st351.timeout'>285</entry>
-    <entry key='itriangleais.port'>5305</entry>
-    <entry key='itriangleais.timeout'>285</entry>
+    <entry key='st351.timeout'>105</entry>
+
     <entry key='gtais.port'>5323</entry>
-    <entry key='gtais.timeout'>285</entry>
+    <entry key='gtais.timeout'>105</entry>
+    <entry key='itriangleais.port'>5305</entry>
+    <entry key='itriangleais.timeout'>185</entry>
 
     <entry key='libiais.port'>5324</entry>
-    <entry key='libiais.timeout'>285</entry>
+    <entry key='libiais.timeout'>185</entry>
     <entry key='gbais.port'>5325</entry>
-    <entry key='gbais.timeout'>285</entry>
+    <entry key='gbais.timeout'>185</entry>
 
     <entry key='roadcast.port'>6055</entry>
-    <entry key='roadcast.timeout'>180</entry>
+    <entry key='roadcast.timeout'>100</entry>
 
     <entry key='dimts.port'>5326</entry>
-    <entry key='dimts.timeout'>180</entry>
-
-    <entry key='trackingproais.port'>5327</entry>
-    <entry key='trackingproais.timeout'>285</entry>
-
-    <entry key='rdmais.port'>5328</entry>
-    <entry key='rdmais.timeout'>300</entry>
-
-    <entry key='cdacais.port'>5329</entry>
-    <entry key='cdacais.timeout'>300</entry>
-    <entry key='cdacais2.port'>5330</entry>
-    <entry key='cdacais2.timeout'>300</entry>
-
-    <entry key='naviais.port'>5331</entry>
-    <entry key='naviais.timeout'>285</entry>
+    <entry key='dimts.timeout'>100</entry>
 
     <entry key='tk103st.port'>6002</entry>
-    <entry key='tk103st.timeout'>300</entry>
+    <entry key='tk103st.timeout'>100</entry>
 
+    <entry key='rdmais.port'>5328</entry>
+    <entry key='rdmais.timeout'>100</entry>
+
+    <entry key='trackingproais.port'>5327</entry>
+    <entry key='trackingproais.timeout'>185</entry>
+
+    <entry key='cdacais.port'>5329</entry>
+    <entry key='cdacais.timeout'>100</entry>
+
+    <entry key='cdacais2.port'>5330</entry>
+    <entry key='cdacais2.timeout'>100</entry>
+
+    <entry key='naviais.port'>5332</entry>
+    <entry key='naviais.timeout'>285</entry>
 
 </properties>

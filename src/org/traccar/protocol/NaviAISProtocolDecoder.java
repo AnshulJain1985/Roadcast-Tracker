@@ -17,7 +17,6 @@ package org.traccar.protocol;
 
 import io.netty.channel.Channel;
 import org.traccar.BaseProtocolDecoder;
-import org.traccar.Protocol;
 import org.traccar.Context;
 import org.traccar.DeviceSession;
 import org.traccar.NetworkMessage;
@@ -34,7 +33,7 @@ import java.util.regex.Pattern;
 
 public class NaviAISProtocolDecoder extends BaseProtocolDecoder {
 
-    public NaviAISProtocolDecoder(Protocol protocol) {
+    public NaviAISProtocolDecoder(NaviAISProtocol protocol) {
         super(protocol);
     }
 

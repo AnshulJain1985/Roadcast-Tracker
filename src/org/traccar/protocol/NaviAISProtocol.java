@@ -39,14 +39,6 @@ public class NaviAISProtocol extends BaseProtocol {
                 pipeline.addLast(new NaviAISProtocolDecoder(NaviAISProtocol.this));
             }
         });
-        addServer(new TrackerServer(true, getName()) {
-            @Override
-            protected void addProtocolHandlers(PipelineBuilder pipeline) {
-                pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new NaviAISProtocolEncoder());
-                pipeline.addLast(new NaviAISProtocolDecoder(NaviAISProtocol.this));
-            }
-        });
     }
 
 }
