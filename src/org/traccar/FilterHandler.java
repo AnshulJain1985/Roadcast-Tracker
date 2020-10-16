@@ -112,7 +112,7 @@ public class FilterHandler extends BaseDataHandler {
     }
 
     private boolean filterZero(Position position) {
-        return filterZero && position.getLatitude() == 0.0 && position.getLongitude() == 0.0;
+        return filterZero && (position.getLatitude() == 0.0 || position.getLongitude() == 0.0);
     }
 
     private boolean filterDuplicate(Position position, Position last) {
