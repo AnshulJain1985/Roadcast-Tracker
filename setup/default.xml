@@ -19,11 +19,12 @@
     <entry key='geocoder.enable'>false</entry>
     <entry key='geocoder.type'>google</entry>
 
-    <entry key='geolocation.enable'>false</entry>
-    <entry key='geolocation.type'>unwired</entry>
-    <entry key='geolocation.url'>http://bugs.roadcast.co.in:8288/location</entry>
-    <entry key='geolocation.key'>roadcast</entry>
-    <entry key='geolocation.processInvalidPositions'>false</entry>
+    <entry key='geolocation.enable'>true</entry>
+    <entry key='geolocation.type'>mozilla</entry>
+    <entry key='geolocation.url'>http://37.247.116.196:8000/v1/geolocate</entry>
+    <entry key='geolocation.key'>a813bbba-6be0-46e4-be6f-b9943b23bfaa</entry>
+    <entry key='geolocation.processInvalidPositions'>true</entry>
+    <entry key='geolocation.protocols'>watch,minifinder2</entry>
 
     <entry key='logger.enable'>true</entry>
     <entry key='logger.level'>info</entry>

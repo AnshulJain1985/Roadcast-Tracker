@@ -462,7 +462,7 @@ public final class Context {
                 geolocationProvider = new UnwiredGeolocationProvider(url, key);
                 break;
             default:
-                geolocationProvider = new MozillaGeolocationProvider(key);
+                geolocationProvider = new MozillaGeolocationProvider(url, key);
                 break;
         }
     }

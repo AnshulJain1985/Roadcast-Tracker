@@ -130,6 +130,9 @@ public class Minifinder2ProtocolDecoder extends BaseProtocolDecoder {
                         deviceSession = getDeviceSession(
                                 channel, remoteAddress, buf.readCharSequence(15, StandardCharsets.US_ASCII).toString());
 
+                        if (deviceSession == null) {
+                            return null;
+                        }
                         position.setDeviceId(deviceSession.getDeviceId());
                         break;
                     case 0x02:

@@ -279,7 +279,7 @@ public class AquilaProtocolDecoder extends BaseProtocolDecoder {
 
         position.set(Position.KEY_ALARM, decodeAlertId(event));
 
-        if (position.getLatitude() == 0.0 && position.getLongitude() == 0.0) {
+        if (position.getLatitude() == 0.0 || position.getLongitude() == 0.0) {
             getLastLocation(position);
         }
 
