@@ -27,6 +27,7 @@ import org.jxls.transform.poi.PoiTransformer;
 import org.jxls.util.TransformerFactory;
 import org.traccar.Context;
 import org.traccar.events.MotionEventHandler;
+import org.traccar.helper.DistanceCalculator;
 import org.traccar.model.DeviceState;
 import org.traccar.model.Driver;
 import org.traccar.model.Event;
@@ -208,7 +209,16 @@ public final class ReportUtils {
         }
         trip.setEndAddress(endAddress);
 
-        trip.setDistance(calculateDistance(startTrip, endTrip, !ignoreOdometer));
+        double distance = calculateDistance(startTrip, endTrip, !ignoreOdometer);
+        if (distance > 1000 * 1000) {
+            distance = 0;
+            for (int i = startIndex + 1; i <= endIndex; i++) {
+                distance += DistanceCalculator.distance(
+                        positions.get(i - 1).getLatitude(), positions.get(i - 1).getLongitude(),
+                        positions.get(i).getLatitude(), positions.get(i).getLongitude());
+            }
+        }
+        trip.setDistance(distance);
         trip.setDuration(tripDuration);
         trip.setAverageSpeed(speedSum / (endIndex - startIndex));
         trip.setMaxSpeed(speedMax);
