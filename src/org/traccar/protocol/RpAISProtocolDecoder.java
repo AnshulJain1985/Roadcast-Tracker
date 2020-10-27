@@ -67,7 +67,7 @@ public class RpAISProtocolDecoder extends BaseProtocolDecoder {
     private static final Pattern PATTERN = new PatternBuilder()
             .text("$")
             .expression("(NRM|ALT),")
-            .expression("([A-Z]+),")                // Vendor Id
+            .expression("([A-Z]*),")                // Vendor Id
             .expression("([^,]+)?,")                // Software version
             .expression("([A-Z]+),")                // Packet Type
             .number("(dd),")                        // Alert ID

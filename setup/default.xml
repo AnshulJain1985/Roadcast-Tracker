@@ -400,4 +400,7 @@
     <entry key='naviais.port'>5332</entry>
     <entry key='naviais.timeout'>285</entry>
 
+    <entry key='h02libiobd.port'>6013</entry>
+    <entry key='h02libiobd.timeout'>185</entry>
+
 </properties>
