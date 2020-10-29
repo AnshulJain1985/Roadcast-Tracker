@@ -50,13 +50,14 @@
 
     <entry key='event.forward.enable'>true</entry>
     <entry key='event.forward.header'>Content-Type:application/json; charset=utf-8</entry>
-    <entry key='event.forward.url'>http://10.139.148.198:3000/home</entry>
-    <!--entry key='event.forward.url'>http://localhost:8080/home</entry-->
+    <!--entry key='event.forward.url'>http://10.139.148.198:3000/home</entry-->
+    <entry key='event.forward.url'>http://10.139.148.198:81/traccar-event/1</entry>
 
     <entry key='forward.enable'>true</entry>
     <entry key='forward.json'>true</entry>
     <!--entry key='forward.url'>http://68.183.244.137:8084</entry-->
-    <entry key='forward.url'>http://10.139.148.198:3000/push-api/position-redis</entry>
+    <!--entry key='forward.url'>http://10.139.148.198:3000/push-api/position-redis</entry-->
+    <entry key='forward.url'>http://10.139.148.198:81/traccar-position/1</entry>
 
     <entry key='processing.copyAttributes.enable'>true</entry>
     <entry key='processing.copyAttributes'>door,ignition,battery,batteryLevel,charge</entry>
@@ -395,12 +396,14 @@
     <entry key='cdacais.timeout'>100</entry>
 
     <entry key='cdacais2.port'>5330</entry>
-    <entry key='cdacais2.timeout'>100</entry>
+    <entry key='cdacais2.timeout'>600</entry>
 
     <entry key='naviais.port'>5332</entry>
     <entry key='naviais.timeout'>285</entry>
 
-    <entry key='h02libiobd.port'>6013</entry>
+    <entry key='h02libiobd.port'>8013</entry>
     <entry key='h02libiobd.timeout'>185</entry>
+
+    <entry key='boltcam.port'>8015</entry>
 
 </properties>
