@@ -49,13 +49,81 @@ public class Jt600ProtocolDecoder extends BaseProtocolDecoder {
         return degrees + minutes / 60;
     }
 
+    private void decodeStatus(Position position, ChannelBuffer buf) {
+
+        int value = buf.readUnsignedByte();
+
+        position.set(Position.KEY_IGNITION, BitUtil.check(value, 0));
+        position.set(Position.KEY_DOOR, BitUtil.check(value, 6));
+
+        value = buf.readUnsignedByte();
+
+        position.set(Position.KEY_CHARGE, BitUtil.check(value, 0));
+        position.set(Position.KEY_BLOCKED, BitUtil.check(value, 1));
+
+        if (BitUtil.check(value, 2)) {
+            position.set(Position.KEY_ALARM, Position.ALARM_SOS);
+        }
+        if (BitUtil.check(value, 3) || BitUtil.check(value, 4)) {
+            position.set(Position.KEY_ALARM, Position.ALARM_GPS_ANTENNA_CUT);
+        }
+        if (BitUtil.check(value, 4)) {
+            position.set(Position.KEY_ALARM, Position.ALARM_OVERSPEED);
+        }
+
+        value = buf.readUnsignedByte();
+
+        if (BitUtil.check(value, 2)) {
+            position.set(Position.KEY_ALARM, Position.ALARM_FATIGUE_DRIVING);
+        }
+        if (BitUtil.check(value, 3)) {
+            position.set(Position.KEY_ALARM, Position.ALARM_TOW);
+        }
+
+        buf.readUnsignedByte(); // reserved
+
+    }
+
+    static boolean isLongFormat(ChannelBuffer buf, int flagIndex) {
+        return buf.getUnsignedByte(flagIndex) >> 4 == 0x7;
+    }
+
+    static void decodeBinaryLocation(ChannelBuffer buf, Position position) {
+
+        DateBuilder dateBuilder = new DateBuilder()
+                .setDay(BcdUtil.readInteger(buf, 2))
+                .setMonth(BcdUtil.readInteger(buf, 2))
+                .setYear(BcdUtil.readInteger(buf, 2))
+                .setHour(BcdUtil.readInteger(buf, 2))
+                .setMinute(BcdUtil.readInteger(buf, 2))
+                .setSecond(BcdUtil.readInteger(buf, 2));
+        position.setTime(dateBuilder.getDate());
+
+        double latitude = convertCoordinate(BcdUtil.readInteger(buf, 8));
+        double longitude = convertCoordinate(BcdUtil.readInteger(buf, 9));
+
+        byte flags = buf.readByte();
+        position.setValid((flags & 0x1) == 0x1);
+        if ((flags & 0x2) == 0) {
+            latitude = -latitude;
+        }
+        position.setLatitude(latitude);
+        if ((flags & 0x4) == 0) {
+            longitude = -longitude;
+        }
+        position.setLongitude(longitude);
+
+        position.setSpeed(BcdUtil.readInteger(buf, 2));
+        position.setCourse(buf.readUnsignedByte() * 2.0);
+    }
+
     private List<Position> decodeBinary(ChannelBuffer buf, Channel channel, SocketAddress remoteAddress) {
 
         List<Position> positions = new LinkedList<>();
 
         buf.readByte(); // header
 
-        boolean longFormat = buf.getUnsignedByte(buf.readerIndex()) == 0x75;
+        boolean longFormat = isLongFormat(buf, buf.readerIndex());
 
         String id = String.valueOf(Long.parseLong(ChannelBuffers.hexDump(buf.readBytes(5))));
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, id);
@@ -76,31 +144,7 @@ public class Jt600ProtocolDecoder extends BaseProtocolDecoder {
             Position position = new Position(getProtocolName());
             position.setDeviceId(deviceSession.getDeviceId());
 
-            DateBuilder dateBuilder = new DateBuilder()
-                    .setDay(BcdUtil.readInteger(buf, 2))
-                    .setMonth(BcdUtil.readInteger(buf, 2))
-                    .setYear(BcdUtil.readInteger(buf, 2))
-                    .setHour(BcdUtil.readInteger(buf, 2))
-                    .setMinute(BcdUtil.readInteger(buf, 2))
-                    .setSecond(BcdUtil.readInteger(buf, 2));
-            position.setTime(dateBuilder.getDate());
-
-            double latitude = convertCoordinate(BcdUtil.readInteger(buf, 8));
-            double longitude = convertCoordinate(BcdUtil.readInteger(buf, 9));
-
-            byte flags = buf.readByte();
-            position.setValid((flags & 0x1) == 0x1);
-            if ((flags & 0x2) == 0) {
-                latitude = -latitude;
-            }
-            position.setLatitude(latitude);
-            if ((flags & 0x4) == 0) {
-                longitude = -longitude;
-            }
-            position.setLongitude(longitude);
-
-            position.setSpeed(BcdUtil.readInteger(buf, 2));
-            position.setCourse(buf.readUnsignedByte() * 2.0);
+            decodeBinaryLocation(buf, position);
 
             if (longFormat) {
 
@@ -109,7 +153,15 @@ public class Jt600ProtocolDecoder extends BaseProtocolDecoder {
 
                 buf.readUnsignedInt(); // vehicle id combined
 
-                position.set(Position.KEY_STATUS, buf.readUnsignedShort());
+                int status = buf.readUnsignedShort();
+                position.set(Position.KEY_ALARM, BitUtil.check(status, 1) ? Position.ALARM_GEOFENCE_ENTER : null);
+                position.set(Position.KEY_ALARM, BitUtil.check(status, 2) ? Position.ALARM_GEOFENCE_EXIT : null);
+                position.set(Position.KEY_ALARM, BitUtil.check(status, 3) ? Position.ALARM_POWER_CUT : null);
+                position.set(Position.KEY_ALARM, BitUtil.check(status, 4) ? Position.ALARM_VIBRATION : null);
+                position.set(Position.KEY_BLOCKED, BitUtil.check(status, 7));
+                position.set(Position.KEY_ALARM, BitUtil.check(status, 8 + 3) ? Position.ALARM_LOW_BATTERY : null);
+                position.set(Position.KEY_ALARM, BitUtil.check(status, 8 + 6) ? Position.ALARM_FAULT : null);
+                position.set(Position.KEY_STATUS, status);
 
                 int battery = buf.readUnsignedByte();
                 if (battery == 0xff) {
@@ -125,6 +177,7 @@ public class Jt600ProtocolDecoder extends BaseProtocolDecoder {
                 if (protocolVersion == 0x17) {
                     buf.readUnsignedByte(); // geofence id
                     buf.skipBytes(3); // reserved
+                    buf.skipBytes(buf.readableBytes() - 1);
                 }
 
             } else if (version == 1) {
@@ -152,7 +205,7 @@ public class Jt600ProtocolDecoder extends BaseProtocolDecoder {
 
                 int fuel = buf.readUnsignedByte() << 8;
 
-                position.set(Position.KEY_STATUS, buf.readUnsignedInt());
+                decodeStatus(position, buf);
                 position.set(Position.KEY_ODOMETER, buf.readUnsignedInt() * 1000);
 
                 fuel += buf.readUnsignedByte();
