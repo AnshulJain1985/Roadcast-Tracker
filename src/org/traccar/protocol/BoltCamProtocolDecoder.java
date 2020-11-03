@@ -151,7 +151,7 @@ public class BoltCamProtocolDecoder extends BaseProtocolDecoder {
         }
 
         if (deviceSession.getTimeZone() == null) {
-            deviceSession.setTimeZone(getTimeZone(deviceSession.getDeviceId()));
+            deviceSession.setTimeZone(getTimeZone(deviceSession.getDeviceId(), "GMT+8"));
         }
 
         if (type == MSG_TERMINAL_REGISTER) {

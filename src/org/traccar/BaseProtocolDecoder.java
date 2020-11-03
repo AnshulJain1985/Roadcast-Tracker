@@ -83,7 +83,11 @@ public abstract class BaseProtocolDecoder extends ExtendedObjectDecoder {
     }
 
     protected TimeZone getTimeZone(long deviceId) {
-        TimeZone result = TimeZone.getTimeZone("UTC");
+        return getTimeZone(deviceId, "UTC");
+    }
+
+    protected TimeZone getTimeZone(long deviceId, String defaultTimeZone) {
+        TimeZone result = TimeZone.getTimeZone(defaultTimeZone);
         String timeZoneName = null;
         if (Context.getDeviceManager() != null) {
             timeZoneName = Context.getDeviceManager().lookupAttributeString(
