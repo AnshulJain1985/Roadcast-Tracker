@@ -24,6 +24,8 @@ public class CellocatorProtocol extends BaseProtocol {
 
     public CellocatorProtocol() {
         setSupportedDataCommands(
+                Command.TYPE_ENGINE_RESUME,
+                Command.TYPE_ENGINE_STOP,
                 Command.TYPE_OUTPUT_CONTROL);
         addServer(new TrackerServer(false, getName()) {
             @Override

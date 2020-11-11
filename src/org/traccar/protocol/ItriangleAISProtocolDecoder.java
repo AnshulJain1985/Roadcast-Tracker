@@ -48,7 +48,8 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
             .number("(-?d+.d+),")                   // latitude
             .expression("([NS]),")
             .number("(-?d+.d+),")                   // longitude
-            .expression("([EW])")
+            .expression("([EW]),")
+            .expression("[^,]*")
             .text("*")
             .any()
             .compile();
@@ -66,7 +67,8 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
             .number("(d+),")                        // ignition off timer
             .number("(d)(d)(d)(d),")                // digital Input 4
             .number("(d+.?d*)?,")                  // Analog input 1
-            .number("(d+.?d*)?")                  // Analog input 2
+            .number("(d+.?d*)?,")                  // Analog input 2
+            .expression("[^,]*")
             .text("*")
             .any()
             .compile();
@@ -77,7 +79,7 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
             .expression("iTriangle,")                // Vendor Id
             .expression("([^,]+)?,")                // Software version
             .expression("([A-Z]+),")                // Packet Type
-            .number("(dd),")                        // Alert ID
+            .number("(d+),")                        // Alert ID
             .expression("([HL]),")                    // Packet Status
             .expression("([0-9]+),")                // IMEI
             .expression("([^,]+)?,")                // vehicle reg no
@@ -91,7 +93,7 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
             .number("(d+.?d*)?,?")                     // speed
             .number("(d+.?d*)?,?")                    // course
             .number("(d+),")                        // No of satellites
-            .number("(d+.?d*)?,?")                  // altitude
+            .expression("([^,]+)?,")                  // altitude
             .number("(d+.?d*)?,?")                     // pdop
             .number("(d+.?d*)?,?")                     // hdop
             .expression("([^,]+)?,")                // Operator Name
@@ -124,6 +126,7 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
             .number("(d+.?d*)?,")                  // Analog input 1
             .number("(d+.?d*)?,")                  // Analog input 2
             .number("(d+.?d*)?,")                  // Odometer
+            .expression("[^,]*,")
             .expression("[^,]*")
 //            .expression("[^,]*,")
 //            .expression("[^,]*,")
