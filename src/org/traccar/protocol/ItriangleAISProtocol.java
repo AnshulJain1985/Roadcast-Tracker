@@ -38,13 +38,5 @@ public class ItriangleAISProtocol extends BaseProtocol {
                 pipeline.addLast(new ItriangleAISProtocolDecoder(ItriangleAISProtocol.this));
             }
         });
-        addServer(new TrackerServer(true, getName()) {
-            @Override
-            protected void addProtocolHandlers(PipelineBuilder pipeline) {
-                pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new ItriangleAISProtocolEncoder());
-                pipeline.addLast(new ItriangleAISProtocolDecoder(ItriangleAISProtocol.this));
-            }
-        });
     }
 }

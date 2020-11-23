@@ -290,13 +290,23 @@ public class CellocatorProtocolDecoder extends BaseProtocolDecoder {
             sendResponse(channel, remoteAddress, deviceUniqueId, packetNumber);
         }
 
+        Position returnPosition = null;
+
         if (type == MSG_CLIENT_STATUS) {
-            return decodeStatus(buf, deviceSession, alternative);
+            returnPosition =  decodeStatus(buf, deviceSession, alternative);
         } else if (type == MSG_CLIENT_MODULAR_EXT) {
-            return decodeModular(buf, deviceSession);
+            returnPosition = decodeModular(buf, deviceSession);
         }
 
-        return null;
+        if (returnPosition != null) {
+            if (returnPosition.getLatitude() == 0 && returnPosition.getLongitude() == 0) {
+                if (returnPosition.getAttributes().isEmpty()) {
+                    return null;
+                }
+                getLastLocation(returnPosition, null);
+            }
+        }
+        return returnPosition;
     }
 
 }

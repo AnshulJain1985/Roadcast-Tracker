@@ -16,11 +16,10 @@
 package org.traccar.protocol;
 
 import io.netty.channel.Channel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.traccar.BaseProtocolDecoder;
 import org.traccar.Context;
 import org.traccar.DeviceSession;
+import org.traccar.Protocol;
 import org.traccar.helper.DateBuilder;
 import org.traccar.helper.Parser;
 import org.traccar.helper.PatternBuilder;
@@ -34,8 +33,7 @@ import java.util.regex.Pattern;
 
 public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ItriangleAISProtocolDecoder.class);
-    public ItriangleAISProtocolDecoder(ItriangleAISProtocol protocol) {
+    public ItriangleAISProtocolDecoder(Protocol protocol) {
         super(protocol);
     }
 
@@ -400,8 +398,6 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
     protected Object decode(Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
         String sentence = (String) msg;
         Position position = new Position(getProtocolName());
-
-        LOGGER.info(channel.id().asShortText() + " - Itriais: " + sentence);
 
         Parser parser = new Parser(PATTERN_LOGIN, sentence);
         if (parser.matches()) {

@@ -43,9 +43,9 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
 
     private static final int IMAGE_PACKET_MAX = 2048;
 
-    private boolean connectionless;
+    private final boolean connectionless;
     private boolean extended;
-    private Map<Long, ByteBuf> photos = new HashMap<>();
+    private final Map<Long, ByteBuf> photos = new HashMap<>();
 
     public void setExtended(boolean extended) {
         this.extended = extended;
@@ -551,6 +551,11 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
 
         decodeNetwork(position);
 
+        if (position.getLatitude() == 0 && position.getLongitude() == 0) {
+            if (!position.getAttributes().isEmpty()) {
+                getLastLocation(position, null);
+            }
+        }
     }
 
     private List<Position> parseData(
