@@ -48,15 +48,19 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
             .number("(-?d+.d+),")                   // latitude
             .expression("([NS]),")
             .number("(-?d+.d+),")                   // longitude
+            .groupBegin()
             .expression("([EW]),")
             .expression("[^,]*")
+            .or()
+            .expression("([EW])")
+            .groupEnd()
             .text("*")
             .any()
             .compile();
 
     private static final Pattern PATTERN_HEARTBEAT = new PatternBuilder()
             .text("$Header,")
-            .expression("iTriangle,")                // Vendor Id
+            .expression("([^,]+)?,")                // Vendor Id
             .expression("([^,]+)?,")                // Software version
             .expression("([0-9]+),")                // IMEI
             .number("(d+.?d*)?,?")                        // battery percentage
@@ -67,8 +71,12 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
             .number("(d+),")                        // ignition off timer
             .number("(d)(d)(d)(d),")                // digital Input 4
             .number("(d+.?d*)?,")                  // Analog input 1
+            .groupBegin()
             .number("(d+.?d*)?,")                  // Analog input 2
             .expression("[^,]*")
+            .or()
+            .number("(d+.?d*)?")                  // Analog input 2
+            .groupEnd()
             .text("*")
             .any()
             .compile();
@@ -76,7 +84,7 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
     private static final Pattern PATTERN = new PatternBuilder()
             .text("$")
             .expression("Header,")
-            .expression("iTriangle,")                // Vendor Id
+            .expression("([^,]+)?,")                // Vendor Id
             .expression("([^,]+)?,")                // Software version
             .expression("([A-Z]+),")                // Packet Type
             .number("(d+),")                        // Alert ID
@@ -126,7 +134,7 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
             .number("(d+.?d*)?,")                  // Analog input 1
             .number("(d+.?d*)?,")                  // Analog input 2
             .number("(d+.?d*)?,")                  // Odometer
-            .expression("[^,]*,")
+            .expression("[^,]*,").optional()
             .expression("[^,]*")
 //            .expression("[^,]*,")
 //            .expression("[^,]*,")
@@ -138,7 +146,8 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
             .compile();
 
     private static final Pattern PATTERN_EMERGENCY = new PatternBuilder()
-            .text("$Header,iTriangle,")
+            .text("$Header,")
+            .expression("([^,]+)?,")                // Vendor Id
             .expression("EMR,")                // Packet Type
             .expression("([0-9]+),")                // IMEI
             .expression("([A-Z]+),")                    // Packet Status
@@ -253,7 +262,7 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
     }
 
     private Object decodeHeartbeat(Position position, Channel channel, SocketAddress remoteAddress, Parser parser) {
-
+        String header = parser.next();
         position.set(Position.KEY_VERSION_HW, parser.next());
         String imei = parser.next();
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
@@ -284,7 +293,7 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
     }
 
     private Object decodeEmergency(Position position, Channel channel, SocketAddress remoteAddress, Parser parser) {
-
+        String header = parser.next();
         String packetType = parser.next();
         String imei = parser.next();
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
@@ -321,7 +330,7 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
 
     private Object decodeNormal(Position position, Channel channel, SocketAddress remoteAddress, Parser parser) {
 
-//        String header = parser.next();
+        String header = parser.next();
 //        position.set(Position.KEY_VERSION_HW, parser.next());
         position.set(Position.KEY_VERSION_FW, parser.next());
         String packetType = parser.next();

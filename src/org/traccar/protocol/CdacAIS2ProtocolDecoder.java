@@ -249,6 +249,10 @@ public class CdacAIS2ProtocolDecoder extends BaseProtocolDecoder {
         String imei;
         DeviceSession deviceSession;
 
+        if (!header.equals("LGN")) {
+            channel.writeAndFlush(new NetworkMessage("$" + header + ",OK*", remoteAddress));
+        }
+
         switch (header) {
             case "NRM":
             case "EPB":
@@ -286,9 +290,6 @@ public class CdacAIS2ProtocolDecoder extends BaseProtocolDecoder {
                 break;
         }
         if (position.getDeviceId() != 0) {
-            if (!header.equals("LGN")) {
-                channel.writeAndFlush(new NetworkMessage("$" + header + ",OK*", remoteAddress));
-            }
             return position;
         } else {
             return null;
