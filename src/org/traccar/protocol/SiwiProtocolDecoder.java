@@ -40,12 +40,12 @@ public class SiwiProtocolDecoder extends BaseProtocolDecoder {
             .number("(d+),")                     // device id
             .number("d+,")                       // unit no
             .expression("([A-Z]),")              // reason
-            .number("d+,")                       // command code
+            .number("[^,]*,")                       // command code
             .number("[^,]*,")                    // command value
             .expression("([01]),")               // ignition
             .expression("[01],")                 // power cut
             .expression("[01],")                 // box open
-            .number("d+,")                       // message key
+            .number("[^,]*,")                       // message key
             .number("(d+),")                     // odometer
             .number("(d+),")                     // speed
             .number("(d+),")                     // satellites
