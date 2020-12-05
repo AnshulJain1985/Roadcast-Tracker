@@ -17,6 +17,8 @@ package org.traccar.protocol;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.traccar.BaseProtocolDecoder;
 import org.traccar.DeviceSession;
 import org.traccar.NetworkMessage;
@@ -37,6 +39,7 @@ import java.util.List;
 public class CdacAIS2ProtocolDecoder extends BaseProtocolDecoder {
 
     private static final int DATETIMECORRECTION = -330;
+    private static final Logger LOGGER = LoggerFactory.getLogger(CdacAIS2ProtocolDecoder.class);
 
     public CdacAIS2ProtocolDecoder(Protocol protocol) {
         super(protocol);
@@ -89,77 +92,84 @@ public class CdacAIS2ProtocolDecoder extends BaseProtocolDecoder {
     }
 
     private void decodeCommon(ByteBuf buf, Position position, boolean isGeofenceId, boolean isBatch) {
-        String alertId = buf.readSlice(2).toString(StandardCharsets.US_ASCII);
-        position.set(Position.KEY_ALARM, decodeAlertId(alertId));
+        try {
+            String alertId = buf.readSlice(2).toString(StandardCharsets.US_ASCII);
+            position.set(Position.KEY_ALARM, decodeAlertId(alertId));
 
-        String packetStatus = buf.readSlice(1).toString(StandardCharsets.US_ASCII);
-        position.setValid(buf.readSlice(1).toString(StandardCharsets.US_ASCII).equals("1"));
+            String packetStatus = buf.readSlice(1).toString(StandardCharsets.US_ASCII);
+            position.setValid(buf.readSlice(1).toString(StandardCharsets.US_ASCII).equals("1"));
 
-        DateBuilder dateBuilder = new DateBuilder()
-                .setDateReverse(Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)),
-                        Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)),
-                        Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
-        dateBuilder.setTime(Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)),
-                Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)),
-                Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
-        dateBuilder.addMinute(DATETIMECORRECTION);
-        position.setTime(dateBuilder.getDate());
-        position.setLatitude(decodeCoordinate(buf));
-        position.setLongitude(decodeCoordinate(buf));
+            DateBuilder dateBuilder = new DateBuilder()
+                    .setDateReverse(Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)),
+                            Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)),
+                            Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
+            dateBuilder.setTime(Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)),
+                    Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)),
+                    Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
+            dateBuilder.addMinute(DATETIMECORRECTION);
+            position.setTime(dateBuilder.getDate());
+            position.setLatitude(decodeCoordinate(buf));
+            position.setLongitude(decodeCoordinate(buf));
 
-        Network network = new Network();
-        int mcc = Integer.parseInt(buf.readSlice(3).toString(StandardCharsets.US_ASCII));
-        int mnc = Integer.parseInt(buf.readSlice(3).toString(StandardCharsets.US_ASCII));
-        int lac = Integer.parseInt(buf.readSlice(4).toString(StandardCharsets.US_ASCII), 16);
-        int cellId = Integer.parseInt(buf.readSlice(9).toString(StandardCharsets.US_ASCII), 16);
+            Network network = new Network();
+            int mcc = Integer.parseInt(buf.readSlice(3).toString(StandardCharsets.US_ASCII));
+            int mnc = Integer.parseInt(buf.readSlice(3).toString(StandardCharsets.US_ASCII));
+            int lac = Integer.parseInt(buf.readSlice(4).toString(StandardCharsets.US_ASCII), 16);
+            int cellId = Integer.parseInt(buf.readSlice(9).toString(StandardCharsets.US_ASCII), 16);
 
-        position.setSpeed(UnitsConverter.knotsFromKph(Double.parseDouble(
-                buf.readSlice(6).toString(StandardCharsets.US_ASCII))));
-        position.setCourse(Double.parseDouble(buf.readSlice(6).toString(StandardCharsets.US_ASCII)));
-        position.set(Position.KEY_SATELLITES, Integer.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
-        position.set(Position.KEY_HDOP, Double.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
-        position.set(Position.KEY_RSSI, Double.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
+            position.setSpeed(UnitsConverter.knotsFromKph(Double.parseDouble(
+                    buf.readSlice(6).toString(StandardCharsets.US_ASCII))));
+            position.setCourse(Double.parseDouble(buf.readSlice(6).toString(StandardCharsets.US_ASCII)));
+            position.set(Position.KEY_SATELLITES,
+                    Integer.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
+            position.set(Position.KEY_HDOP, Double.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
+            position.set(Position.KEY_RSSI, Double.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
 
-        position.set(Position.KEY_IGNITION,
-                Integer.parseInt(buf.readSlice(1).toString(StandardCharsets.US_ASCII)) == 1);
-        position.set(Position.KEY_CHARGE, Integer.parseInt(buf.readSlice(1).toString(StandardCharsets.US_ASCII)) == 1);
-        position.set(Position.KEY_MOTION, buf.readSlice(1).toString(StandardCharsets.US_ASCII).equals("M"));
+            position.set(Position.KEY_IGNITION,
+                    Integer.parseInt(buf.readSlice(1).toString(StandardCharsets.US_ASCII)) == 1);
+            position.set(Position.KEY_CHARGE,
+                    Integer.parseInt(buf.readSlice(1).toString(StandardCharsets.US_ASCII)) == 1);
+            position.set(Position.KEY_MOTION, buf.readSlice(1).toString(StandardCharsets.US_ASCII).equals("M"));
 
 
-        if (buf.readableBytes() == 5 || isGeofenceId) {
-            String geofenceId =  buf.readSlice(5).toString(StandardCharsets.US_ASCII);
-        }
+            if (buf.readableBytes() == 5 || isGeofenceId) {
+                String geofenceId = buf.readSlice(5).toString(StandardCharsets.US_ASCII);
+            }
 
-        if (buf.readableBytes() > 5 && !isBatch) {
+            if (buf.readableBytes() > 5 && !isBatch) {
 //            Full Packet parsing
-            String vendorId =  buf.readSlice(6).toString(StandardCharsets.US_ASCII);
-            position.set(Position.KEY_VERSION_FW, buf.readSlice(6).toString(StandardCharsets.US_ASCII));
-            String vehicleRegNo =  buf.readSlice(16).toString(StandardCharsets.US_ASCII);
-            position.setAltitude(Double.parseDouble(buf.readSlice(7).toString(StandardCharsets.US_ASCII)));
-            position.set(Position.KEY_PDOP, Double.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
-            position.set(Position.KEY_OPERATOR, buf.readSlice(6).toString(StandardCharsets.US_ASCII));
+                String vendorId = buf.readSlice(6).toString(StandardCharsets.US_ASCII);
+                position.set(Position.KEY_VERSION_FW, buf.readSlice(6).toString(StandardCharsets.US_ASCII));
+                String vehicleRegNo = buf.readSlice(16).toString(StandardCharsets.US_ASCII);
+                position.setAltitude(Double.parseDouble(buf.readSlice(7).toString(StandardCharsets.US_ASCII)));
+                position.set(Position.KEY_PDOP, Double.valueOf(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
+                position.set(Position.KEY_OPERATOR, buf.readSlice(6).toString(StandardCharsets.US_ASCII));
 
-            for (int i = 0; i < 4; i++) {
-                int rssiN = Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII));
-                int lacN = Integer.parseInt(buf.readSlice(4).toString(StandardCharsets.US_ASCII), 16);
-                int cellIdN = Integer.parseInt(buf.readSlice(9).toString(StandardCharsets.US_ASCII), 16);
-                network.addCellTower(CellTower.from(mcc, mnc, lacN, cellIdN, rssiN));
+                for (int i = 0; i < 4; i++) {
+                    int rssiN = Integer.parseInt(buf.readSlice(2).toString(StandardCharsets.US_ASCII));
+                    int lacN = Integer.parseInt(buf.readSlice(4).toString(StandardCharsets.US_ASCII), 16);
+                    int cellIdN = Integer.parseInt(buf.readSlice(9).toString(StandardCharsets.US_ASCII), 16);
+                    network.addCellTower(CellTower.from(mcc, mnc, lacN, cellIdN, rssiN));
+                }
+                position.setNetwork(network);
+
+                position.set(Position.KEY_EXTERNAL_BATTERY,
+                        Double.valueOf(buf.readSlice(5).toString(StandardCharsets.US_ASCII)));
+                position.set(Position.KEY_BATTERY,
+                        Double.valueOf(buf.readSlice(5).toString(StandardCharsets.US_ASCII)));
+
+                String tamper = buf.readSlice(1).toString(StandardCharsets.US_ASCII);
+
+                for (int i = 1; i <= 4; i++) {
+                    int tempDio = Integer.parseInt(buf.readSlice(1).toString(StandardCharsets.US_ASCII));
+                    position.set(Position.PREFIX_IN + i, tempDio);
+                }
+
+                String frameNumber = buf.readSlice(6).toString(StandardCharsets.US_ASCII);
+                String checksum = buf.readSlice(8).toString(StandardCharsets.US_ASCII);
             }
-            position.setNetwork(network);
-
-            position.set(Position.KEY_EXTERNAL_BATTERY,
-                    Double.valueOf(buf.readSlice(5).toString(StandardCharsets.US_ASCII)));
-            position.set(Position.KEY_BATTERY, Double.valueOf(buf.readSlice(5).toString(StandardCharsets.US_ASCII)));
-
-            String tamper =  buf.readSlice(1).toString(StandardCharsets.US_ASCII);
-
-            for (int i = 1; i <= 4; i++) {
-                int tempDio = Integer.parseInt(buf.readSlice(1).toString(StandardCharsets.US_ASCII));
-                position.set(Position.PREFIX_IN + i, tempDio);
-            }
-
-            String frameNumber =  buf.readSlice(6).toString(StandardCharsets.US_ASCII);
-            String checksum =  buf.readSlice(8).toString(StandardCharsets.US_ASCII);
+        } catch (Exception e) {
+            LOGGER.warn("CdacAIS2 error", e);
         }
     }
 

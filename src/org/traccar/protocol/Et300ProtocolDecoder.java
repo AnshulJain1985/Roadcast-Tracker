@@ -260,7 +260,7 @@ public class Et300ProtocolDecoder extends BaseProtocolDecoder {
         return true;
     }
 
-    private boolean decodeStatus(Position position, ByteBuf buf) {
+    private boolean decodeStatus(Position position, ByteBuf buf, int type) {
 
         int status = buf.readUnsignedByte();
 
@@ -288,7 +288,9 @@ public class Et300ProtocolDecoder extends BaseProtocolDecoder {
 
         position.set(Position.KEY_BATTERY_LEVEL, buf.readUnsignedByte() * 100 / 6);
         position.set(Position.KEY_RSSI, buf.readUnsignedByte());
-        position.set(Position.KEY_ALARM, decodeAlarm(buf.readUnsignedByte()));
+        if (type != MSG_STATUS) {
+            position.set(Position.KEY_ALARM, decodeAlarm(buf.readUnsignedByte()));
+        }
 
         return true;
     }
@@ -661,7 +663,7 @@ public class Et300ProtocolDecoder extends BaseProtocolDecoder {
             }
 
             if (hasStatus(type)) {
-                decodeStatus(position, buf);
+                decodeStatus(position, buf, type);
             }
 
             if (type == MSG_GPS_LBS_1 && buf.readableBytes() >= 4 + 6) {
