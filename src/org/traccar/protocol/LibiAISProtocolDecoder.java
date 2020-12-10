@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.traccar.BaseProtocolDecoder;
 import org.traccar.Context;
 import org.traccar.DeviceSession;
+import org.traccar.Protocol;
 import org.traccar.helper.DateBuilder;
 import org.traccar.helper.Parser;
 import org.traccar.helper.PatternBuilder;
@@ -37,7 +38,7 @@ public class LibiAISProtocolDecoder extends BaseProtocolDecoder {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LibiAISProtocolDecoder.class);
 
-    public LibiAISProtocolDecoder(LibiAISProtocol protocol) {
+    public LibiAISProtocolDecoder(Protocol protocol) {
         super(protocol);
     }
 

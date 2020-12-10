@@ -21,6 +21,7 @@ import io.netty.channel.Channel;
 import org.traccar.BaseProtocolDecoder;
 import org.traccar.Context;
 import org.traccar.DeviceSession;
+import org.traccar.Protocol;
 import org.traccar.helper.BitUtil;
 import org.traccar.helper.DateBuilder;
 import org.traccar.helper.UnitsConverter;
@@ -38,7 +39,7 @@ public class TranssyncProtocolDecoder extends BaseProtocolDecoder {
     private final int distanceFilter = Context.getConfig().getInteger(getProtocolName() + ".distanceFilter");
 
 
-    public TranssyncProtocolDecoder(TranssyncProtocol protocol) {
+    public TranssyncProtocolDecoder(Protocol protocol) {
         super(protocol);
     }
 

@@ -69,9 +69,14 @@ public class TrackingProAISProtocolDecoder extends BaseProtocolDecoder {
             .compile();
 
     private static final Pattern PATTERN = new PatternBuilder()
+            .groupBegin()
+            .text("$")
+            .or()
             .text("$,")
-            .expression("([^,]+)?,")                // event code
-            .expression("([^,]+)?,")                // Vendor Id
+            .groupEnd()
+            .expression("[^,]+,").optional()                // header
+            .expression("[^,]+,").optional()                // event code
+            .expression("[^,]+,")                // Vendor Id
             .expression("([^,]+)?,")                // Software version
             .expression("([A-Z]+),")                // Packet Type
             .number("(dd),")                        // Alert ID
@@ -79,8 +84,13 @@ public class TrackingProAISProtocolDecoder extends BaseProtocolDecoder {
             .expression("([0-9]+),")                // IMEI
             .expression("([^,]+)?,")                // vehicle reg no
             .number("(d+),")                        // GPS Fix
+            .groupBegin()
             .number("(dd),(dd),(dddd),")                // date utc (DDMMYYYY)
             .number("(dd),(dd),(dd),")                // time utc (hhmmss)
+            .or()
+            .number("(dd)(dd)(dddd),")                // date utc (DDMMYYYY)
+            .number("(dd)(dd)(dd),")                // time utc (hhmmss)
+            .groupEnd()
             .number("(-?d+.d+),")                   // latitude
             .expression("([NS]),")
             .number("(-?d+.d+),")                   // longitude
@@ -117,8 +127,16 @@ public class TrackingProAISProtocolDecoder extends BaseProtocolDecoder {
             .expression("([^,]+)?,")                // NMR1 GSM
             .number("(d)(d)(d)(d),")                // digital Input 4
             .number("(d)(d),")                      // digital Output 2
+            .expression("[^,]+,").optional()                // header
+            .expression("[^,]+,").optional()                // header
+            .expression("[^,]+,").optional()                // header
+            .expression("[^,]+,").optional()                // header
             .number("(d+),")                        // Frame number
+            .groupBegin()
+            .expression("[^,]+")                   // checksum
+            .or()
             .number("[x]+,")                   // checksum
+            .groupEnd()
             .text("*")
             .any()
             .compile();
@@ -312,8 +330,8 @@ public class TrackingProAISProtocolDecoder extends BaseProtocolDecoder {
     }
 
     private Object decodeNormal(Position position, Channel channel, SocketAddress remoteAddress, Parser parser) {
-        String eventCode = parser.next();
-        String vendorId = parser.next();
+//        String eventCode = parser.next();
+//        String vendorId = parser.next();
         position.set(Position.KEY_VERSION_FW, parser.next());
         String packetType = parser.next();
         int alertId = parser.nextInt(0);
@@ -328,11 +346,20 @@ public class TrackingProAISProtocolDecoder extends BaseProtocolDecoder {
         position.set(Position.KEY_ALARM, decodeAlarm(channel, packetType));
         position.set(Position.KEY_ORIGINAL, parser.next());
         position.setValid(parser.nextInt(0) == 1);
-        DateBuilder dateBuilder = new DateBuilder()
-                .setDateReverse(parser.nextInt(0), parser.nextInt(0),
-                        parser.nextInt(0));
-        dateBuilder.setTime(parser.nextInt(0), parser.nextInt(0), parser.nextInt(0));
-        position.setTime(dateBuilder.getDate());
+        if (parser.hasNext(6)) {
+            DateBuilder dateBuilder = new DateBuilder()
+                    .setDateReverse(parser.nextInt(0), parser.nextInt(0),
+                            parser.nextInt(0));
+            dateBuilder.setTime(parser.nextInt(0), parser.nextInt(0), parser.nextInt(0));
+            position.setTime(dateBuilder.getDate());
+        }
+        if (parser.hasNext(6)) {
+            DateBuilder dateBuilder = new DateBuilder()
+                    .setDateReverse(parser.nextInt(0), parser.nextInt(0),
+                            parser.nextInt(0));
+            dateBuilder.setTime(parser.nextInt(0), parser.nextInt(0), parser.nextInt(0));
+            position.setTime(dateBuilder.getDate());
+        }
         position.setLatitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
         position.setLongitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
         position.setSpeed(UnitsConverter.knotsFromKph(parser.nextDouble(0)));
