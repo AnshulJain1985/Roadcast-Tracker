@@ -401,6 +401,9 @@
     <entry key='naviais.port'>5332</entry>
     <entry key='naviais.timeout'>285</entry>
 
+    <entry key='vt333.port'>5333</entry>
+    <entry key='vt333.timeout'>285</entry>
+
     <entry key='h02libiobd.port'>8013</entry>
     <entry key='h02libiobd.timeout'>185</entry>
 

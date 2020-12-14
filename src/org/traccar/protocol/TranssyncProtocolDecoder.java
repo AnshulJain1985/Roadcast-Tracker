@@ -126,6 +126,9 @@ public class TranssyncProtocolDecoder extends BaseProtocolDecoder {
         position.set(Position.PREFIX_OUT + 1, BitUtil.check(status0, 6));
         position.set(Position.PREFIX_OUT + 2, BitUtil.check(status0, 7));
 
+        if (BitUtil.check(status2, 5)) {
+            position.set(Position.KEY_ALARM, Position.ALARM_LOW_BATTERY);
+        }
         if (BitUtil.check(status2, 6)) {
             position.set(Position.KEY_ALARM, Position.ALARM_SOS);
         }
@@ -138,17 +141,19 @@ public class TranssyncProtocolDecoder extends BaseProtocolDecoder {
         position.set(Position.KEY_SATELLITES, buf.readUnsignedByte());
         position.set(Position.KEY_HDOP, buf.readUnsignedByte());
 
-        buf.skipBytes(2);
-        buf.skipBytes(1);
-        buf.skipBytes(1);
-        buf.skipBytes(5);
-        buf.skipBytes(1);
-        buf.skipBytes(buf.readUnsignedByte());
+        position.set(Position.PREFIX_ADC + 1, buf.readShort());
 
-        buf.skipBytes(1);
-        buf.skipBytes(buf.readUnsignedByte());
-
-        buf.skipBytes(2);
+//        buf.skipBytes(2);
+//        buf.skipBytes(1);
+//        buf.skipBytes(1);
+//        buf.skipBytes(5);
+//        buf.skipBytes(1);
+//        buf.skipBytes(buf.readUnsignedByte());
+//
+//        buf.skipBytes(1);
+//        buf.skipBytes(buf.readUnsignedByte());
+//
+//        buf.skipBytes(2);
         return position;
     }
 

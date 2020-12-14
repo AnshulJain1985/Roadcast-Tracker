@@ -294,6 +294,7 @@ public class CdacAIS2ProtocolDecoder extends BaseProtocolDecoder {
                 if (deviceSession != null) {
                     position.setDeviceId(deviceSession.getDeviceId());
                     position.setTime(new Date());
+                    getLastLocation(position, null);
                 }
                 break;
             default:
