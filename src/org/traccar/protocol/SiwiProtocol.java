@@ -17,18 +17,25 @@ package org.traccar.protocol;
 
 import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.string.StringDecoder;
+import io.netty.handler.codec.string.StringEncoder;
 import org.traccar.BaseProtocol;
 import org.traccar.PipelineBuilder;
 import org.traccar.TrackerServer;
+import org.traccar.model.Command;
 
 public class SiwiProtocol extends BaseProtocol {
 
     public SiwiProtocol() {
+        setSupportedDataCommands(
+                Command.TYPE_ENGINE_STOP,
+                Command.TYPE_ENGINE_RESUME);
         addServer(new TrackerServer(false, getName()) {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new LineBasedFrameDecoder(1024));
                 pipeline.addLast(new StringDecoder());
+                pipeline.addLast(new StringEncoder());
+                pipeline.addLast(new SiwiProtocolEncoder());
                 pipeline.addLast(new SiwiProtocolDecoder(SiwiProtocol.this));
             }
         });

@@ -19,6 +19,7 @@ import io.netty.channel.Channel;
 import org.traccar.BaseProtocolDecoder;
 import org.traccar.Context;
 import org.traccar.DeviceSession;
+import org.traccar.Protocol;
 import org.traccar.helper.DateBuilder;
 import org.traccar.helper.Parser;
 import org.traccar.helper.PatternBuilder;
@@ -32,7 +33,7 @@ import java.util.regex.Pattern;
 
 public class RpAISProtocolDecoder extends BaseProtocolDecoder {
 
-    public RpAISProtocolDecoder(RpAISProtocol protocol) {
+    public RpAISProtocolDecoder(Protocol protocol) {
         super(protocol);
     }
 
@@ -405,6 +406,9 @@ public class RpAISProtocolDecoder extends BaseProtocolDecoder {
     @Override
     protected Object decode(Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
         String sentence = (String) msg;
+        if (sentence.length() < 4) {
+            return null;
+        }
         Position position = new Position(getProtocolName());
         String header = sentence.substring(1, 4);
 
