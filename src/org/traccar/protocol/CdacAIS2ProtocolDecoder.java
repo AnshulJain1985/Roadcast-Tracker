@@ -136,7 +136,7 @@ public class CdacAIS2ProtocolDecoder extends BaseProtocolDecoder {
                 String geofenceId = buf.readSlice(5).toString(StandardCharsets.US_ASCII);
             }
 
-            if (buf.readableBytes() > 5 && !isBatch) {
+            if (buf.readableBytes() > 131 && !isBatch) {
 //            Full Packet parsing
                 String vendorId = buf.readSlice(6).toString(StandardCharsets.US_ASCII);
                 position.set(Position.KEY_VERSION_FW, buf.readSlice(6).toString(StandardCharsets.US_ASCII));
@@ -245,23 +245,12 @@ public class CdacAIS2ProtocolDecoder extends BaseProtocolDecoder {
     protected Object decode(
             Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
 
-//        FullHttpRequest request = (FullHttpRequest) msg;
-//
-//        ByteBuf buf = request.content();
         ByteBuf buf = (ByteBuf) msg;
-//        String parameter = buf.readSlice(7).toString(StandardCharsets.US_ASCII);
-//        buf.skipBytes(1);
-//        String data = buf.toString(StandardCharsets.US_ASCII);
-
         Position position = new Position(getProtocolName());
 
         String header = buf.readSlice(3).toString(StandardCharsets.US_ASCII);
         String imei;
         DeviceSession deviceSession;
-
-        if (!header.equals("LGN")) {
-            channel.writeAndFlush(new NetworkMessage("$" + header + ",OK*", remoteAddress));
-        }
 
         switch (header) {
             case "NRM":
@@ -269,12 +258,14 @@ public class CdacAIS2ProtocolDecoder extends BaseProtocolDecoder {
             case "CRT":
             case "ALT":
             case "FUL":
+                channel.writeAndFlush(new NetworkMessage("$" + header + ",OK*", remoteAddress));
                 decodeNormalPacket(channel, remoteAddress, buf, position);
                 break;
             case "BTH":
                 channel.writeAndFlush(new NetworkMessage("$" + header + ",OK*", remoteAddress));
                 return decodeBatchPacket(channel, remoteAddress, buf);
             case "HLM":
+                channel.writeAndFlush(new NetworkMessage("$" + header + ",OK*", remoteAddress));
                 decodeHealthPacket(channel, remoteAddress, buf, position);
                 break;
             case "LGN":
@@ -289,6 +280,7 @@ public class CdacAIS2ProtocolDecoder extends BaseProtocolDecoder {
                 break;
             case "ACK":
             case "HBT":
+                channel.writeAndFlush(new NetworkMessage("$" + header + ",OK*", remoteAddress));
                 imei = buf.readSlice(15).toString(StandardCharsets.US_ASCII);
                 deviceSession = getDeviceSession(channel, remoteAddress, imei);
                 if (deviceSession != null) {

@@ -35,7 +35,7 @@ import java.util.regex.Pattern;
 
 public class Tk103STProtocolDecoder extends BaseProtocolDecoder {
 
-    private boolean decodeLow;
+    private final boolean decodeLow;
 
     public Tk103STProtocolDecoder(Protocol protocol) {
         super(protocol);
@@ -425,7 +425,7 @@ public class Tk103STProtocolDecoder extends BaseProtocolDecoder {
                 }
             }
             if (decodeLow || BitUtil.check(mask2, 3)) {
-                position.set(Position.KEY_DOOR, BitUtil.check(mask2, 3) ? 1 : 0);
+                position.set(Position.KEY_DOOR, BitUtil.check(mask2, 3));
             }
 
             int mask3 = parser.nextHexInt();

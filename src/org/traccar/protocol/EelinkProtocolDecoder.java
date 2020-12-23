@@ -371,7 +371,11 @@ public class EelinkProtocolDecoder extends BaseProtocolDecoder {
             deviceSession = getDeviceSession(channel, remoteAddress);
         }
 
-        buf.skipBytes(2); // header
+//        buf.skipBytes(2); // header
+        String header = ByteBufUtil.hexDump(buf.readSlice(2));
+        if (header.equals("0000")) {
+            return null;
+        }
         int type = buf.readUnsignedByte();
         buf.readShort(); // length
         int index = buf.readUnsignedShort();
