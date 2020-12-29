@@ -38,7 +38,8 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
     }
 
     private static final Pattern PATTERN_LOGIN = new PatternBuilder()
-            .text("$Header,iTriangle,")
+            .text("$Header,")
+            .expression("([^,]+)?,")                // Vendor Id
             .expression("([^,]+)?,")                // vehicle reg no
             .expression("([0-9]+),")                // IMEI
             .expression("([^,]+)?,")                // Software version
@@ -244,6 +245,7 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
 
     private Object decodeLogin(Position position, Channel channel, SocketAddress remoteAddress, Parser parser) {
 
+        String header = parser.next();
         String deviceName = parser.next();
         String imei = parser.next();
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
@@ -366,15 +368,15 @@ public class ItriangleAISProtocolDecoder extends BaseProtocolDecoder {
         String temperAlert = parser.next();
         position.set(Position.KEY_RSSI, parser.nextInt(0));
         Network network = new Network();
-        int mcc = parser.nextHexInt();
-        int mnc = parser.nextHexInt();
-        int lac = parser.nextHexInt();
-        int cellId = parser.nextHexInt();
+        int mcc = parser.nextHexInt(0);
+        int mnc = parser.nextHexInt(0);
+        int lac = parser.nextHexInt(0);
+        int cellId = parser.nextHexInt(0);
 
         for (int i = 0; i < 4; i++) {
-            int cellIdN = parser.nextHexInt();
-            int lacN = parser.nextHexInt();
-            int rssiN = parser.nextHexInt();
+            int cellIdN = parser.nextHexInt(0);
+            int lacN = parser.nextHexInt(0);
+            int rssiN = parser.nextHexInt(0);
             network.addCellTower(CellTower.from(mcc, mnc, lacN, cellIdN, rssiN));
         }
 
