@@ -424,7 +424,7 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
         return position;
     }
 
-    private Object decodeBasic(Channel channel, SocketAddress remoteAddress, ByteBuf buf) throws Exception {
+    private Position decodeBasic(Channel channel, SocketAddress remoteAddress, ByteBuf buf) throws Exception {
 
         int length = buf.readUnsignedByte();
         int dataLength = length - 5;
@@ -545,7 +545,7 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
         return null;
     }
 
-    private Object decodeX1(Channel channel, ByteBuf buf, DeviceSession deviceSession, int type) {
+    private Position decodeX1(Channel channel, ByteBuf buf, DeviceSession deviceSession, int type) {
 
         if (type == MSG_X1_GPS) {
 
@@ -603,7 +603,7 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
         return null;
     }
 
-    private Object decodeWifi(Channel channel, ByteBuf buf, DeviceSession deviceSession, int type) {
+    private Position decodeWifi(Channel channel, ByteBuf buf, DeviceSession deviceSession, int type) {
 
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
@@ -652,7 +652,7 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
         return position;
     }
 
-    private Object decodeBasicOther(Channel channel, ByteBuf buf,
+    private Position decodeBasicOther(Channel channel, ByteBuf buf,
                                     DeviceSession deviceSession, int type, int dataLength) {
 
         Position position = new Position(getProtocolName());
@@ -878,7 +878,7 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
         }
     }
 
-    private Object decodeExtended(Channel channel, SocketAddress remoteAddress, ByteBuf buf) {
+    private Position decodeExtended(Channel channel, SocketAddress remoteAddress, ByteBuf buf) {
 
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress);
         if (deviceSession == null) {
@@ -1070,7 +1070,7 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
         return null;
     }
 
-    private Object decodeExtendedModular(ByteBuf buf, DeviceSession deviceSession) {
+    private Position decodeExtendedModular(ByteBuf buf, DeviceSession deviceSession) {
 
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
@@ -1174,7 +1174,7 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
         return position;
     }
 
-    private Object decodeExtendedOther(Channel channel, ByteBuf buf, DeviceSession deviceSession, int type) {
+    private Position decodeExtendedOther(Channel channel, ByteBuf buf, DeviceSession deviceSession, int type) {
 
         Position position = null;
 
@@ -1261,13 +1261,20 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
 
         int header = buf.readShort();
 
+        Position returnPosition = null;
+
         if (header == 0x7878) {
-            return decodeBasic(channel, remoteAddress, buf);
+            returnPosition = decodeBasic(channel, remoteAddress, buf);
         } else if (header == 0x7979) {
-            return decodeExtended(channel, remoteAddress, buf);
+            returnPosition = decodeExtended(channel, remoteAddress, buf);
         }
 
-        return null;
+        if (returnPosition != null) {
+            if (returnPosition.getLatitude() == 0 || returnPosition.getLongitude() == 0) {
+                getLastLocation(returnPosition, null);
+            }
+        }
+        return returnPosition;
     }
 
 }

@@ -28,6 +28,7 @@ import org.traccar.helper.UnitsConverter;
 import org.traccar.model.Position;
 
 import java.net.SocketAddress;
+import java.nio.charset.StandardCharsets;
 
 public class CellocatorProtocolDecoder extends BaseProtocolDecoder {
 
@@ -270,7 +271,11 @@ public class CellocatorProtocolDecoder extends BaseProtocolDecoder {
 
         boolean alternative = buf.getByte(buf.readerIndex() + 3) != 'P';
 
-        buf.skipBytes(4); // system code
+        String startingChars = buf.readSlice(3).toString(StandardCharsets.US_ASCII);
+        if (!startingChars.equals("MCG")) {
+            return null;
+        }
+        buf.skipBytes(1); // system code
         int type = buf.readUnsignedByte();
 
         long deviceUniqueId = buf.readUnsignedIntLE();

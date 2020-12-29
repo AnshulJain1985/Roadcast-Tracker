@@ -846,7 +846,7 @@ public class Et300ProtocolDecoder extends BaseProtocolDecoder {
         }
 
         if (returnPosition != null) {
-            if (returnPosition.getLatitude() == 0 && returnPosition.getLongitude() == 0) {
+            if (returnPosition.getLatitude() == 0 || returnPosition.getLongitude() == 0) {
                 if (returnPosition.getAttributes().isEmpty()) {
                     return null;
                 }
