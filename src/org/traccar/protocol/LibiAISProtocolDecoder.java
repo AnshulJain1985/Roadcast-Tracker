@@ -252,6 +252,7 @@ public class LibiAISProtocolDecoder extends BaseProtocolDecoder {
         position.setTime(new Date());
         position.setLatitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
         position.setLongitude(parser.nextCoordinate(Parser.CoordinateFormat.DEG_HEM));
+        getLastLocation(position, null);
         return position;
     }
 

@@ -40,12 +40,12 @@ public class SiwiProtocolDecoder extends BaseProtocolDecoder {
             .number("(d+),")                     // device id
             .number("d+,")                       // unit no
             .expression("([A-Z]),")              // reason
-            .number("[^,]*,")                       // command code
+            .number("[^,]*,")                    // command code
             .number("[^,]*,")                    // command value
             .expression("([01]),")               // ignition
-            .expression("[01],")                 // power cut
-            .expression("[01],")                 // box open
-            .number("[^,]*,")                       // message key
+            .expression("([01]),")               // power cut
+            .number("d,")                        // box open / status flag
+            .number("(d+.?d*)?,?")               // Mains Voltage
             .number("(d+),")                     // odometer
             .number("(d+),")                     // speed
             .number("(d+),")                     // satellites
@@ -56,6 +56,12 @@ public class SiwiProtocolDecoder extends BaseProtocolDecoder {
             .number("(d+),")                     // course
             .number("(dd)(dd)(dd),")             // time (hhmmss)
             .number("(dd)(dd)(dd),")             // date (ddmmyy)
+            .number("(d+),")                     // signal strength
+            .number("d+,")                       // gsm status
+            .number("[^,]*,")                    // error code
+            .number("(d+),")                     // server status
+            .number("(d+),")                     // internal battery
+            .number("(d+),")                     // adc1
             .any()
             .compile();
 
@@ -79,10 +85,22 @@ public class SiwiProtocolDecoder extends BaseProtocolDecoder {
         position.set(Position.KEY_EVENT, parser.next());
         boolean isIgnition = parser.next().equals("1");
         position.set(Position.KEY_IGNITION, isIgnition);
+        boolean isCharge = parser.next().equals("1");
+
+        if (!isCharge) {
+            Position last = Context.getIdentityManager().getLastPosition(position.getDeviceId());
+            if (last != null && last.getBoolean(Position.KEY_CHARGE)) {
+                position.set(Position.KEY_ALARM, Position.ALARM_POWER_CUT);
+            }
+            position.set(Position.KEY_CHARGE, false);
+        } else {
+            position.set(Position.KEY_CHARGE, true);
+        }
+
+        position.set(Position.KEY_CHARGE, isCharge);
+        position.set("maininput", parser.nextDouble(0));
         position.set(Position.KEY_ODOMETER, parser.nextInt(0));
-
         position.setSpeed(UnitsConverter.knotsFromKph(parser.nextInt(0)));
-
         position.set(Position.KEY_SATELLITES, parser.nextInt(0));
 
         position.setValid(parser.next().equals("A"));
@@ -92,6 +110,12 @@ public class SiwiProtocolDecoder extends BaseProtocolDecoder {
         position.setCourse(parser.nextInt(0));
 
         position.setTime(parser.nextDateTime(Parser.DateTimeFormat.HMS_DMY, "IST"));
+
+        position.set(Position.KEY_RSSI, parser.nextInt(0));
+
+        position.set(Position.KEY_STATUS, parser.nextDouble(0));
+        position.set(Position.KEY_BATTERY, (parser.nextInt(0) / 1000));
+        position.set(Position.PREFIX_ADC + 1, (parser.nextInt(0) / 100));
 
         if (!isIgnition) {
             getLastLocation(position, position.getDeviceTime());
