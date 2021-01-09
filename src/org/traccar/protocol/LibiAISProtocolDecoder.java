@@ -16,8 +16,6 @@
 package org.traccar.protocol;
 
 import io.netty.channel.Channel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.traccar.BaseProtocolDecoder;
 import org.traccar.Context;
 import org.traccar.DeviceSession;
@@ -34,8 +32,6 @@ import java.util.Date;
 import java.util.regex.Pattern;
 
 public class LibiAISProtocolDecoder extends BaseProtocolDecoder {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(LibiAISProtocolDecoder.class);
 
     public LibiAISProtocolDecoder(LibiAISProtocol protocol) {
         super(protocol);
@@ -57,8 +53,6 @@ public class LibiAISProtocolDecoder extends BaseProtocolDecoder {
             .compile();
 
 
-//    $,Header,MARK,WETRACK_800_11_A1A_D23_R0_V02_WM,351510091150527,5.99%,20%,0.00%,10,10,0010,00,0.1,*,93BA
-//    $HBT,MARK,V0.0.1,351510091197726,54,20,0,10,20,0000,0.1,*
     private static final Pattern PATTERN_HEARTBEAT = new PatternBuilder()
             .text("$Header,")
             .expression("([^,]+)?,")                // Vendor Id
@@ -401,9 +395,6 @@ public class LibiAISProtocolDecoder extends BaseProtocolDecoder {
     protected Object decode(Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
         String sentence = (String) msg;
         Position position = new Position(getProtocolName());
-
-//        LOGGER.info(channel.id().asShortText() + " - LIBIAIS String: " + sentence);
-
 
         Parser parser = new Parser(PATTERN_LOGIN, sentence);
         if (parser.matches()) {

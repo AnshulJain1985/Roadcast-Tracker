@@ -116,7 +116,8 @@ public class FilterHandler extends BaseDataHandler {
     }
 
     private boolean filterDuplicate(Position position, Position last) {
-        if (filterDuplicate && last != null && position.getFixTime().equals(last.getFixTime())) {
+        if (filterDuplicate && last != null && position.getFixTime().equals(last.getFixTime())
+                && last.getBoolean(Position.KEY_IGNITION) == position.getBoolean(Position.KEY_IGNITION)) {
             for (String key : position.getAttributes().keySet()) {
                 if (!last.getAttributes().containsKey(key)) {
                     return false;
@@ -189,6 +190,9 @@ public class FilterHandler extends BaseDataHandler {
                 && ((last.getLong(Position.PREFIX_ADC + 1) != position.getLong(Position.PREFIX_ADC + 1))
                 || (last.getLong("di1") != position.getLong("di1"))
                 || (last.getLong("di2") != position.getLong("di2")))) {
+            return true;
+        }
+        if (last != null && position.getAttributes().containsKey(Position.KEY_POWER)) {
             return true;
         }
         return last != null && position.getAttributes().containsKey(Position.KEY_POWER)
