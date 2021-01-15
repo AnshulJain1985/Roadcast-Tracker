@@ -17,6 +17,7 @@ package org.traccar.protocol;
 
 import org.jboss.netty.channel.Channel;
 import org.traccar.BaseProtocolDecoder;
+import org.traccar.Context;
 import org.traccar.DeviceSession;
 import org.traccar.helper.Parser;
 import org.traccar.helper.PatternBuilder;
@@ -24,6 +25,7 @@ import org.traccar.helper.UnitsConverter;
 import org.traccar.model.Position;
 
 import java.net.SocketAddress;
+import java.util.Date;
 import java.util.regex.Pattern;
 
 public class SiwiProtocolDecoder extends BaseProtocolDecoder {
@@ -37,12 +39,12 @@ public class SiwiProtocolDecoder extends BaseProtocolDecoder {
             .number("(d+),")                     // device id
             .number("d+,")                       // unit no
             .expression("([A-Z]),")              // reason
-            .number("d+,")                       // command code
+            .number("[^,]*,")                    // command code
             .number("[^,]*,")                    // command value
             .expression("([01]),")               // ignition
-            .expression("[01],")                 // power cut
-            .expression("[01],")                 // box open
-            .number("d+,")                       // message key
+            .expression("([01]),")               // power cut
+            .number("d,")                        // box open / status flag
+            .number("(d+.?d*)?,?")               // Mains Voltage
             .number("(d+),")                     // odometer
             .number("(d+),")                     // speed
             .number("(d+),")                     // satellites
@@ -53,6 +55,12 @@ public class SiwiProtocolDecoder extends BaseProtocolDecoder {
             .number("(d+),")                     // course
             .number("(dd)(dd)(dd),")             // time (hhmmss)
             .number("(dd)(dd)(dd),")             // date (ddmmyy)
+            .number("(d+),")                     // signal strength
+            .number("d+,")                       // gsm status
+            .number("[^,]*,")                    // error code
+            .number("(d+),")                     // server status
+            .number("(d+),")                     // internal battery
+            .number("(d+),")                     // adc1
             .any()
             .compile();
 
@@ -74,7 +82,22 @@ public class SiwiProtocolDecoder extends BaseProtocolDecoder {
         position.setDeviceId(deviceSession.getDeviceId());
 
         position.set(Position.KEY_EVENT, parser.next());
-        position.set(Position.KEY_IGNITION, parser.next().equals("1"));
+        boolean isIgnition = parser.next().equals("1");
+        position.set(Position.KEY_IGNITION, isIgnition);
+        boolean isCharge = parser.next().equals("1");
+
+        if (!isCharge) {
+            Position last = Context.getIdentityManager().getLastPosition(position.getDeviceId());
+            if (last != null && last.getBoolean(Position.KEY_CHARGE)) {
+                position.set(Position.KEY_ALARM, Position.ALARM_POWER_CUT);
+            }
+            position.set(Position.KEY_CHARGE, false);
+        } else {
+            position.set(Position.KEY_CHARGE, true);
+        }
+
+        position.set(Position.KEY_CHARGE, isCharge);
+        position.set("maininput", parser.nextDouble(0));
         position.set(Position.KEY_ODOMETER, parser.nextInt(0));
 
         position.setSpeed(UnitsConverter.knotsFromKph(parser.nextInt(0)));
@@ -89,7 +112,41 @@ public class SiwiProtocolDecoder extends BaseProtocolDecoder {
 
         position.setTime(parser.nextDateTime(Parser.DateTimeFormat.HMS_DMY, "IST"));
 
+        position.set(Position.KEY_RSSI, parser.nextInt(0));
+
+        position.set(Position.KEY_STATUS, parser.nextDouble(0));
+        position.set(Position.KEY_BATTERY, (parser.nextInt(0) / 1000));
+        position.set(Position.PREFIX_ADC + 1, (parser.nextInt(0) / 100));
+
+        if (!isIgnition) {
+            getLastLocation(position, position.getDeviceTime());
+        }
+
         return position;
+    }
+
+    public void getLastLocation(Position position, Date deviceTime) {
+        if (position.getDeviceId() != 0) {
+            position.setOutdated(true);
+
+            Position last = Context.getIdentityManager().getLastPosition(position.getDeviceId());
+            if (last != null) {
+                position.setFixTime(last.getFixTime());
+                position.setValid(last.getValid());
+                position.setLatitude(last.getLatitude());
+                position.setLongitude(last.getLongitude());
+                position.setAltitude(last.getAltitude());
+                position.setSpeed(last.getSpeed());
+                position.setCourse(last.getCourse());
+                position.setAccuracy(last.getAccuracy());
+            }
+
+            if (deviceTime != null) {
+                position.setDeviceTime(deviceTime);
+            } else {
+                position.setDeviceTime(new Date());
+            }
+        }
     }
 
 }
