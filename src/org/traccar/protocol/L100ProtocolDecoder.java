@@ -19,6 +19,7 @@ import io.netty.channel.Channel;
 import org.traccar.BaseProtocolDecoder;
 import org.traccar.DeviceSession;
 import org.traccar.NetworkMessage;
+import org.traccar.Context;
 import org.traccar.Protocol;
 import org.traccar.helper.Checksum;
 import org.traccar.helper.DateBuilder;
@@ -200,14 +201,32 @@ public class L100ProtocolDecoder extends BaseProtocolDecoder {
         //Used for AC for now.
         position.set(Position.KEY_DOOR, status.charAt(5) == '1');
 
+        boolean isCharge = status.charAt(7) == '1';
+        position.set(Position.KEY_CHARGE, isCharge);
+
         position.set(Position.KEY_STATUS, status);
         position.set(Position.PREFIX_ADC + 1, parser.next());
         position.set(Position.KEY_ODOMETER, parser.nextDouble());
         position.set(Position.PREFIX_TEMP + 1, parser.nextDouble());
 
         double battery = parser.nextDouble();
+        int batteryLevel = decodeBattery(battery);
         position.set(Position.KEY_BATTERY, battery);
-        position.set(Position.KEY_BATTERY_LEVEL, decodeBattery(battery));
+        position.set(Position.KEY_BATTERY_LEVEL, batteryLevel);
+
+        if (decodeBattery(battery) == 0 || !isCharge) {
+            Position last = Context.getIdentityManager().getLastPosition(position.getDeviceId());
+            if (last != null) {
+                if (last.getAttributes().containsKey(Position.KEY_CHARGE)
+                        && (position.getBoolean(Position.KEY_CHARGE) != isCharge)) {
+                    position.set(Position.KEY_ALARM, Position.ALARM_POWER_CUT);
+                }
+                if (last.getAttributes().containsKey(Position.KEY_BATTERY_LEVEL)
+                        && (last.getLong(Position.KEY_BATTERY_LEVEL) != decodeBattery(battery))) {
+                    position.set(Position.KEY_ALARM, Position.ALARM_LOW_BATTERY);
+                }
+            }
+        }
 
         int rssi = parser.nextInt();
         if (rssi > 0) {
@@ -222,7 +241,7 @@ public class L100ProtocolDecoder extends BaseProtocolDecoder {
         return position;
     }
 
-    private Integer decodeBattery(double value) {
+    private int decodeBattery(double value) {
         if (value <= 3.5) {
             return 0;
         } else if (value <= 3.65) {

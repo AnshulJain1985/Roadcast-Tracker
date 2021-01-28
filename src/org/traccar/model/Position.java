@@ -90,6 +90,8 @@ public class Position extends Message {
 
     public static final String KEY_RESULT = "result";
 
+    public static final String KEY_G_SENSOR = "gSensor";
+
     public static final String KEY_DRIVER_UNIQUE_ID = "driverUniqueId";
 
     // Start with 1 not 0

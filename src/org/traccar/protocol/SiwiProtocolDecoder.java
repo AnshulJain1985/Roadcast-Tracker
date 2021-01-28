@@ -20,6 +20,7 @@ import org.traccar.BaseProtocolDecoder;
 import org.traccar.Context;
 import org.traccar.DeviceSession;
 import org.traccar.Protocol;
+import org.traccar.helper.BitUtil;
 import org.traccar.helper.Parser;
 import org.traccar.helper.PatternBuilder;
 import org.traccar.helper.UnitsConverter;
@@ -62,6 +63,7 @@ public class SiwiProtocolDecoder extends BaseProtocolDecoder {
             .number("(d+),")                     // server status
             .number("(d+),")                     // internal battery
             .number("(d+),")                     // adc1
+            .number("(d+),")                     // digital input
             .any()
             .compile();
 
@@ -115,7 +117,13 @@ public class SiwiProtocolDecoder extends BaseProtocolDecoder {
 
         position.set(Position.KEY_STATUS, parser.nextDouble(0));
         position.set(Position.KEY_BATTERY, (parser.nextInt(0) / 1000));
-        position.set(Position.PREFIX_ADC + 1, (parser.nextInt(0) / 100));
+        position.set(Position.PREFIX_ADC + 1, (parser.nextInt(0) / 1000));
+
+        int digitalInput = parser.nextInt(0);
+        position.set(Position.KEY_DOOR, BitUtil.check(digitalInput, 1));
+        if (BitUtil.check(digitalInput, 2)) {
+            position.set(Position.ALARM_SOS, true);
+        }
 
         if (!isIgnition) {
             getLastLocation(position, position.getDeviceTime());

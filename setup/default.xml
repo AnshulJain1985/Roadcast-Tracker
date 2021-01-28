@@ -404,9 +404,12 @@
     <entry key='vt333.port'>5333</entry>
     <entry key='vt333.timeout'>285</entry>
 
+    <entry key='eelinkasset.port'>6064</entry>
+
     <entry key='h02libiobd.port'>8013</entry>
     <entry key='h02libiobd.timeout'>185</entry>
 
     <entry key='boltcam.port'>8015</entry>
+
 
 </properties>
