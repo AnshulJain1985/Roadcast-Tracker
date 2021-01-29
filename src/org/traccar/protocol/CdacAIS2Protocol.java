@@ -15,7 +15,6 @@
  */
 package org.traccar.protocol;
 
-import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import org.traccar.BaseProtocol;
 import org.traccar.PipelineBuilder;
@@ -28,7 +27,6 @@ public class CdacAIS2Protocol extends BaseProtocol {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new StringDecoder());
                 pipeline.addLast(new CdacAIS2ProtocolEncoder());
                 pipeline.addLast(new CdacAIS2ProtocolDecoder(CdacAIS2Protocol.this));
             }
