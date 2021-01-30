@@ -534,18 +534,14 @@ public class H02ProtocolDecoder extends BaseProtocolDecoder {
 
             if (position.getDeviceId() != 0) {
                 position.setOutdated(true);
-                if (last != null) {
-                    position.setFixTime(last.getFixTime());
-                    position.setValid(last.getValid());
-                    position.setLatitude(last.getLatitude());
-                    position.setLongitude(last.getLongitude());
-                    position.setAltitude(last.getAltitude());
-                    position.setSpeed(last.getSpeed());
-                    position.setCourse(last.getCourse());
-                    position.setAccuracy(last.getAccuracy());
-                } else {
-                    position.setFixTime(new Date(0));
-                }
+                position.setFixTime(last.getFixTime());
+                position.setValid(last.getValid());
+                position.setLatitude(last.getLatitude());
+                position.setLongitude(last.getLongitude());
+                position.setAltitude(last.getAltitude());
+                position.setSpeed(last.getSpeed());
+                position.setCourse(last.getCourse());
+                position.setAccuracy(last.getAccuracy());
 
                 if (position.getDeviceTime() == null) {
                     position.setDeviceTime(new Date());
@@ -566,7 +562,7 @@ public class H02ProtocolDecoder extends BaseProtocolDecoder {
         if (!position.getValid() && position.getAttributes().containsKey(Position.KEY_DISTANCE)) {
             return position.getDouble(Position.KEY_DISTANCE) > 500000;
         }
-        return false;
+        return !position.getValid() && position.getFixTime().getTime() > System.currentTimeMillis() + 18000;
     }
 
 }

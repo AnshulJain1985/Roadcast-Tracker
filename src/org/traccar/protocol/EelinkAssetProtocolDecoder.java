@@ -51,6 +51,7 @@ public class EelinkAssetProtocolDecoder extends BaseProtocolDecoder {
     public static final int MSG_HEARTBEAT_EXTENDED = 0x07;
     public static final int MSG_DOWNLINK = 0x80;
     public static final int MSG_DATA = 0x81;
+    public static final int MSG_LBS = 0x91;
 
     public static final int MSG_NORMAL = 0x12;
     public static final int MSG_WARNING = 0x14;
@@ -354,6 +355,31 @@ public class EelinkAssetProtocolDecoder extends BaseProtocolDecoder {
         return position;
     }
 
+    private Object decodeLBS(DeviceSession deviceSession, ByteBuf buf, int index) {
+        Position position = new Position(getProtocolName());
+        position.setDeviceId(deviceSession.getDeviceId());
+
+        position.set(Position.KEY_INDEX, index);
+
+        position.setTime(new Date(buf.readUnsignedInt() * 1000));
+        int timingAdvance = buf.readUnsignedByte();
+
+        int mcc = buf.readUnsignedShort();
+        int mnc = buf.readUnsignedByte();
+        int cellCount = buf.readUnsignedByte();
+        Network network = new Network();
+        for (int i = 0; i < cellCount; i++) {
+            network.addCellTower(CellTower.from(
+                    mcc, mnc, buf.readUnsignedShort(), buf.readUnsignedMedium(), buf.readUnsignedByte()));
+        }
+
+        position.setNetwork(network);
+        int status = buf.readUnsignedByte();
+
+        position.setValid(BitUtil.check(status, 0));
+        return position;
+    }
+
     @Override
     protected Object decode(
             Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
@@ -432,8 +458,11 @@ public class EelinkAssetProtocolDecoder extends BaseProtocolDecoder {
 
                 return decodeResult(deviceSession, buf, index);
 
-            }
+            } else if (type == MSG_LBS) {
 
+                return decodeLBS(deviceSession, buf, index);
+
+            }
         }
 
         return null;
