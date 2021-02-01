@@ -89,18 +89,17 @@ public class H02ProtocolDecoder extends BaseProtocolDecoder {
     }
 
     private Integer decodeBattery(int value) {
-        switch (value) {
-            case 6:
-                return 100;
-            case 5:
-                return 80;
-            case 4:
-                return 60;
-            case 3:
-                return 20;
-            case 2:
-                return 10;
-            default:
+        if (value == 0) {
+            return null;
+        } else if (value <= 3) {
+            return (value - 1) * 10;
+        } else if (value <= 6) {
+            return (value - 1) * 20;
+        } else if (value <= 100) {
+            return value;
+        } else if (value >= 0xF1 && value <= 0xF6) {
+            return value - 0xF0;
+        } else {
                 return null;
         }
     }
@@ -164,16 +163,12 @@ public class H02ProtocolDecoder extends BaseProtocolDecoder {
             .expression("..,")                   // manufacturer
             .number("(d+)?,")                    // imei
             .groupBegin()
-            .text("VP1,")
-            .or()
-            .groupBegin()
             .text("V4,")
             .expression("(.*),")                 // response
             .or()
             .expression("(V[^,]*),")
             .groupEnd()
             .number("(?:(dd)(dd)(dd))?,")        // time (hhmmss)
-            .groupEnd()
             .groupBegin()
             .expression("([ABV])?,")             // validity
             .or()
@@ -229,7 +224,7 @@ public class H02ProtocolDecoder extends BaseProtocolDecoder {
             .number("(d+),")                     // mnc
             .number("d+,")                       // gsm delay time
             .number("d+,")                       // count
-            .number("((?:d+,d+,d+,)+)")          // cells
+            .number("((?:d+,d+,-?d+,)+)")        // cells
             .number("(dd)(dd)(dd),")             // date (ddmmyy)
             .number("(x{8})")                    // status
             .any()
@@ -269,11 +264,47 @@ public class H02ProtocolDecoder extends BaseProtocolDecoder {
             .text("#").optional()
             .compile();
 
+    private static final Pattern PATTERN_VP1 = new PatternBuilder()
+            .text("*hq,")
+            .number("(d{15}),")                  // imei
+            .text("VP1,")
+            .groupBegin()
+            .text("V,")
+            .number("(d+),")                     // mcc
+            .number("(d+),")                     // mnc
+            .expression("([^#]+)")               // cells
+            .or()
+            .expression("[AB],")                 // validity
+            .number("(d+)(dd.d+),")              // latitude
+            .expression("([NS]),")
+            .number("(d+)(dd.d+),")              // longitude
+            .expression("([EW]),")
+            .number("(d+.d+),")                  // speed
+            .number("(d+.d+),")                  // course
+            .number("(dd)(dd)(dd)")              // date (ddmmyy)
+            .groupEnd()
+            .any()
+            .compile();
+
+    private static final Pattern PATTERN_HTBT = new PatternBuilder()
+            .text("*HQ,")
+            .number("(d{15}),")                  // imei
+            .text("HTBT,")
+            .number("(d+)")                      // battery
+            .any()
+            .compile();
+
     private void sendResponse(Channel channel, SocketAddress remoteAddress, String id, String type) {
         if (channel != null && id != null) {
-            DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+            String response;
+            DateFormat dateFormat = new SimpleDateFormat(type.equals("R12") ? "HHmmss" : "yyyyMMddHHmmss");
             dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-            String response = String.format("*HQ,%s,V4,%s,%s#", id, type, dateFormat.format(new Date()));
+            String time = dateFormat.format(new Date());
+            if (type.equals("R12")) {
+                response = String.format("*HQ,%s,%s,%s#", id, type, time);
+            } else {
+                response = String.format("*HQ,%s,V4,%s,%s#", id, type, time);
+            }
             channel.writeAndFlush(new NetworkMessage(response, remoteAddress));
         }
     }
@@ -300,6 +331,8 @@ public class H02ProtocolDecoder extends BaseProtocolDecoder {
 
         if (parser.hasNext() && parser.next().equals("V1")) {
             sendResponse(channel, remoteAddress, id, "V1");
+        } else if (Context.getConfig().getBoolean(getProtocolName() + ".ack")) {
+            sendResponse(channel, remoteAddress, id, "R12");
         }
 
         DateBuilder dateBuilder = new DateBuilder();
@@ -480,6 +513,75 @@ public class H02ProtocolDecoder extends BaseProtocolDecoder {
         return position;
     }
 
+    private Position decodeVp1(String sentence, Channel channel, SocketAddress remoteAddress) {
+
+        Parser parser = new Parser(PATTERN_VP1, sentence);
+        if (!parser.matches()) {
+            return null;
+        }
+
+        DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, parser.next());
+        if (deviceSession == null) {
+            return null;
+        }
+
+        Position position = new Position(getProtocolName());
+        position.setDeviceId(deviceSession.getDeviceId());
+
+        if (parser.hasNext(3)) {
+
+            getLastLocation(position, null);
+
+            int mcc = parser.nextInt();
+            int mnc = parser.nextInt();
+
+            Network network = new Network();
+            for (String cell : parser.next().split("Y")) {
+                String[] values = cell.split(",");
+                network.addCellTower(CellTower.from(mcc, mnc,
+                        Integer.parseInt(values[0]), Integer.parseInt(values[1]), Integer.parseInt(values[2])));
+            }
+
+            position.setNetwork(network);
+
+        } else {
+
+            position.setValid(true);
+            position.setLatitude(parser.nextCoordinate());
+            position.setLongitude(parser.nextCoordinate());
+            position.setSpeed(parser.nextDouble());
+            position.setCourse(parser.nextDouble());
+
+            position.setTime(new DateBuilder()
+                    .setDateReverse(parser.nextInt(0), parser.nextInt(0), parser.nextInt(0)).getDate());
+
+        }
+
+        return position;
+    }
+
+    private Position decodeHeartbeat(String sentence, Channel channel, SocketAddress remoteAddress) {
+
+        Parser parser = new Parser(PATTERN_HTBT, sentence);
+        if (!parser.matches()) {
+            return null;
+        }
+
+        DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, parser.next());
+        if (deviceSession == null) {
+            return null;
+        }
+
+        Position position = new Position(getProtocolName());
+        position.setDeviceId(deviceSession.getDeviceId());
+
+        getLastLocation(position, null);
+
+        position.set(Position.KEY_BATTERY_LEVEL, parser.nextInt());
+
+        return position;
+    }
+
     @Override
     protected Object decode(
             Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
@@ -493,9 +595,20 @@ public class H02ProtocolDecoder extends BaseProtocolDecoder {
                 String sentence = buf.toString(StandardCharsets.US_ASCII).trim();
                 int typeStart = sentence.indexOf(',', sentence.indexOf(',') + 1) + 1;
                 int typeEnd = sentence.indexOf(',', typeStart);
+                if (typeEnd < 0) {
+                    typeEnd = sentence.indexOf('#', typeStart);
+                }
                 if (typeEnd > 0) {
                     String type = sentence.substring(typeStart, typeEnd);
                     switch (type) {
+                        case "V0":
+                        case "HTBT":
+                            if (channel != null) {
+                                String response = sentence.substring(0, typeEnd) + "#";
+                                channel.writeAndFlush(new NetworkMessage(response, remoteAddress));
+                            }
+                            position = decodeHeartbeat(sentence, channel, remoteAddress);
+                            break;
                         case "NBR":
                             position = decodeLbs(sentence, channel, remoteAddress);
                             break;
@@ -503,7 +616,11 @@ public class H02ProtocolDecoder extends BaseProtocolDecoder {
                             position = decodeLink(sentence, channel, remoteAddress);
                             break;
                         case "V3":
-                            return decodeV3(sentence, channel, remoteAddress);
+                            position = decodeV3(sentence, channel, remoteAddress);
+                            break;
+                        case "VP1":
+                            position = decodeVp1(sentence, channel, remoteAddress);
+                            break;
                         default:
                             position = decodeText(sentence, channel, remoteAddress);
                             break;
@@ -523,29 +640,24 @@ public class H02ProtocolDecoder extends BaseProtocolDecoder {
 
         if (position != null && (position.getLatitude() == 0 || position.getLongitude() == 0
                 || checkValidPosition(position))) {
-            if (position.getAttributes().isEmpty()) {
-                return position;
-            }
 
             Position last = Context.getIdentityManager().getLastPosition(position.getDeviceId());
             if (last == null) {
                 return position;
             }
 
-            if (position.getDeviceId() != 0) {
-                position.setOutdated(true);
-                position.setFixTime(last.getFixTime());
-                position.setValid(last.getValid());
-                position.setLatitude(last.getLatitude());
-                position.setLongitude(last.getLongitude());
-                position.setAltitude(last.getAltitude());
-                position.setSpeed(last.getSpeed());
-                position.setCourse(last.getCourse());
-                position.setAccuracy(last.getAccuracy());
+            position.setOutdated(true);
+            position.setFixTime(last.getFixTime());
+            position.setValid(last.getValid());
+            position.setLatitude(last.getLatitude());
+            position.setLongitude(last.getLongitude());
+            position.setAltitude(last.getAltitude());
+            position.setSpeed(last.getSpeed());
+            position.setCourse(last.getCourse());
+            position.setAccuracy(last.getAccuracy());
 
-                if (position.getDeviceTime() == null) {
-                    position.setDeviceTime(new Date());
-                }
+            if (position.getDeviceTime() == null) {
+                position.setDeviceTime(new Date());
             }
         }
         return position;
@@ -559,10 +671,10 @@ public class H02ProtocolDecoder extends BaseProtocolDecoder {
             return true;
         }
 
-        if (!position.getValid() && position.getAttributes().containsKey(Position.KEY_DISTANCE)) {
+        if (position.getAttributes().containsKey(Position.KEY_DISTANCE)) {
             return position.getDouble(Position.KEY_DISTANCE) > 500000;
         }
-        return !position.getValid() && position.getFixTime().getTime() > System.currentTimeMillis() + 18000;
+        return position.getFixTime().getTime() > System.currentTimeMillis() + 18000;
     }
 
 }
