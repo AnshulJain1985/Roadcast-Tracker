@@ -254,6 +254,9 @@ public class CdacAIS2ProtocolDecoder extends BaseProtocolDecoder {
 
         switch (header) {
             case "NRM":
+                channel.writeAndFlush(new NetworkMessage("$" + header + ",OK*", remoteAddress));
+                decodeNormalPacket(channel, remoteAddress, buf, position);
+                break;
             case "EPB":
             case "CRT":
             case "ALT":

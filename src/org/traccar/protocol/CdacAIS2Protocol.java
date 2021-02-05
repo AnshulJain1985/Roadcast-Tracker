@@ -26,6 +26,7 @@ public class CdacAIS2Protocol extends BaseProtocol {
         addServer(new TrackerServer(false, getName()) {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
+                pipeline.addLast(new CdacAIS2FrameDecoder());
                 pipeline.addLast(new StringEncoder());
                 pipeline.addLast(new CdacAIS2ProtocolEncoder());
                 pipeline.addLast(new CdacAIS2ProtocolDecoder(CdacAIS2Protocol.this));

@@ -64,6 +64,13 @@ public class SiwiProtocolDecoder extends BaseProtocolDecoder {
             .number("(d+),")                     // internal battery
             .number("(d+),")                     // adc1
             .number("(d+),")                     // digital input
+            .number("[^,]*,")                    // Aux Field 1
+            .number("[^,]*,")                    // Aux Field 2
+            .number("[^,]*,")                    // Aux Field 3
+            .number("[^,]*,")                    // Aux Field 4
+            .number("[^,]*,")                    // Hardware Version
+            .number("[^,]*,")                    // Software Version
+            .number("(d+)")                     // Packet Type
             .any()
             .compile();
 
@@ -120,12 +127,14 @@ public class SiwiProtocolDecoder extends BaseProtocolDecoder {
         position.set(Position.PREFIX_ADC + 1, (parser.nextInt(0) / 1000));
 
         int digitalInput = parser.nextInt(0);
-        position.set(Position.KEY_DOOR, BitUtil.check(digitalInput, 1));
+        position.set(Position.KEY_DOOR, BitUtil.check(digitalInput, 0));
         if (BitUtil.check(digitalInput, 2)) {
             position.set(Position.ALARM_SOS, true);
         }
 
-        if (!isIgnition) {
+        boolean isLivePacket = parser.next().equals("0");
+
+        if (!isIgnition && isLivePacket) {
             getLastLocation(position, position.getDeviceTime());
         }
 
