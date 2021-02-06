@@ -44,8 +44,8 @@ public class CdacAIS2FrameDecoder extends BaseFrameDecoder {
                 }
                 break;
             case "FUL":
-                if (buf.readableBytes() >= 228 + 3) {
-                    return buf.readRetainedSlice(228 + 3);
+                if (buf.readableBytes() >= 225 + 3) {
+                    return buf.readRetainedSlice(225 + 3);
                 }
                 break;
             case "BTH":
@@ -65,11 +65,15 @@ public class CdacAIS2FrameDecoder extends BaseFrameDecoder {
                     return buf.readRetainedSlice(15 + 3);
                 }
                 break;
+            case "HLM":
+                if (buf.readableBytes() >= 59 + 3) {
+                    return buf.readRetainedSlice(59 + 3);
+                }
+                break;
             case "ACK":
                 int index = buf.indexOf(buf.readerIndex() + 1, buf.writerIndex(), (byte) '*');
                 if (index >= 0) {
-                    buf.resetReaderIndex();
-                    return buf.readRetainedSlice(index + 1 + 3);
+                    return buf.readRetainedSlice(index + 1);
                 }
                 break;
             default:
