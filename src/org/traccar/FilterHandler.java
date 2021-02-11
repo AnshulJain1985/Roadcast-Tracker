@@ -21,6 +21,8 @@ import org.slf4j.LoggerFactory;
 import org.traccar.helper.UnitsConverter;
 import org.traccar.model.Position;
 
+import java.util.Date;
+
 @ChannelHandler.Sharable
 public class FilterHandler extends BaseDataHandler {
 
@@ -192,21 +194,13 @@ public class FilterHandler extends BaseDataHandler {
                 || (last.getLong("di2") != position.getLong("di2")))) {
             return true;
         }
-        if (last != null && position.getAttributes().containsKey(Position.KEY_POWER)) {
-            return true;
-        }
         return last != null && position.getAttributes().containsKey(Position.KEY_POWER)
                 && position.getDouble(Position.KEY_POWER) != last.getDouble(Position.KEY_POWER);
     }
 
-    private boolean filter(Position position) {
+    private boolean filter(Position position, Position last) {
 
         StringBuilder filterType = new StringBuilder();
-
-        Position last = null;
-        if (Context.getIdentityManager() != null) {
-            last = Context.getIdentityManager().getLastPosition(position.getDeviceId());
-        }
 
         if (skipAttributes(position, last)) {
             return false;
@@ -265,8 +259,32 @@ public class FilterHandler extends BaseDataHandler {
 
     @Override
     protected Position handlePosition(Position position) {
-        if (filter(position)) {
+
+        Position last = null;
+        if (Context.getIdentityManager() != null) {
+            last = Context.getIdentityManager().getLastPosition(position.getDeviceId());
+        }
+
+        if (filter(position, last)) {
             return null;
+        }
+
+        if (last != null) {
+            if (position.getLatitude() == 0.0 || position.getLongitude() == 0.0
+                    || position.getFixTime().getTime() > System.currentTimeMillis() + filterFuture) {
+                position.setFixTime(last.getFixTime());
+                position.setValid(last.getValid());
+                position.setLatitude(last.getLatitude());
+                position.setLongitude(last.getLongitude());
+                position.setAltitude(last.getAltitude());
+                position.setSpeed(last.getSpeed());
+                position.setCourse(last.getCourse());
+                position.setAccuracy(last.getAccuracy());
+            }
+        } else {
+            if (position.getFixTime().getTime() > System.currentTimeMillis() + filterFuture) {
+                position.setFixTime(new Date(0));
+            }
         }
         return position;
     }

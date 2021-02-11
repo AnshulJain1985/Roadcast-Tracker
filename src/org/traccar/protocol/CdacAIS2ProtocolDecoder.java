@@ -24,6 +24,7 @@ import org.traccar.DeviceSession;
 import org.traccar.NetworkMessage;
 import org.traccar.Protocol;
 import org.traccar.helper.DateBuilder;
+import org.traccar.helper.Parser;
 import org.traccar.helper.UnitsConverter;
 import org.traccar.model.CellTower;
 import org.traccar.model.Network;
@@ -290,6 +291,14 @@ public class CdacAIS2ProtocolDecoder extends BaseProtocolDecoder {
                     position.setDeviceId(deviceSession.getDeviceId());
                     position.setTime(new Date());
                     getLastLocation(position, null);
+                }
+                break;
+            case "CMD":
+                deviceSession = getDeviceSession(channel, remoteAddress);
+                if (deviceSession != null) {
+                    getLastLocation(position, null);
+                    String sentence = buf.toString(StandardCharsets.UTF_8);
+                    position.set(Position.KEY_RESULT, sentence);
                 }
                 break;
             default:

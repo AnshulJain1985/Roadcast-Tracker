@@ -128,7 +128,7 @@ public class SiwiProtocolDecoder extends BaseProtocolDecoder {
 
         int digitalInput = parser.nextInt(0);
         position.set(Position.KEY_DOOR, BitUtil.check(digitalInput, 0));
-        if (BitUtil.check(digitalInput, 2)) {
+        if (BitUtil.check(digitalInput, 4)) {
             position.set(Position.ALARM_SOS, true);
         }
 

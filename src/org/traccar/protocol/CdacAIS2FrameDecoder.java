@@ -39,13 +39,13 @@ public class CdacAIS2FrameDecoder extends BaseFrameDecoder {
             case "EPB":
             case "CRT":
             case "ALT":
-                if (buf.readableBytes() >= 96 + 3) {
-                    return buf.readRetainedSlice(96 + 3);
+                if (buf.readableBytes() >= 96) {
+                    return buf.readRetainedSlice(96);
                 }
                 break;
             case "FUL":
-                if (buf.readableBytes() >= 225 + 3) {
-                    return buf.readRetainedSlice(225 + 3);
+                if (buf.readableBytes() >= 228) {
+                    return buf.readRetainedSlice(228);
                 }
                 break;
             case "BTH":
@@ -61,13 +61,13 @@ public class CdacAIS2FrameDecoder extends BaseFrameDecoder {
                 break;
             case "LGN":
             case "HBT":
-                if (buf.readableBytes() >= 15 + 3) {
-                    return buf.readRetainedSlice(15 + 3);
+                if (buf.readableBytes() >= 18) {
+                    return buf.readRetainedSlice(18);
                 }
                 break;
             case "HLM":
-                if (buf.readableBytes() >= 59 + 3) {
-                    return buf.readRetainedSlice(59 + 3);
+                if (buf.readableBytes() >= 62) {
+                    return buf.readRetainedSlice(62);
                 }
                 break;
             case "ACK":
@@ -76,6 +76,8 @@ public class CdacAIS2FrameDecoder extends BaseFrameDecoder {
                     return buf.readRetainedSlice(index + 1);
                 }
                 break;
+            case "CMD":
+                return buf;
             default:
                 break;
         }
