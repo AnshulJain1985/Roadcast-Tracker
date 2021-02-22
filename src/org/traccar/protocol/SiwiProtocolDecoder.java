@@ -118,7 +118,7 @@ public class SiwiProtocolDecoder extends BaseProtocolDecoder {
         position.setAltitude(parser.nextDouble(0));
         position.setCourse(parser.nextInt(0));
 
-        position.setTime(parser.nextDateTime(Parser.DateTimeFormat.HMS_DMY, "IST"));
+        position.setTime(parser.nextDateTime(Parser.DateTimeFormat.HMS_DMY));
 
         position.set(Position.KEY_RSSI, parser.nextInt(0));
 
@@ -128,7 +128,7 @@ public class SiwiProtocolDecoder extends BaseProtocolDecoder {
 
         int digitalInput = parser.nextInt(0);
         position.set(Position.KEY_DOOR, BitUtil.check(digitalInput, 0));
-        if (BitUtil.check(digitalInput, 4)) {
+        if (BitUtil.check(digitalInput, 3)) {
             position.set(Position.ALARM_SOS, true);
         }
 

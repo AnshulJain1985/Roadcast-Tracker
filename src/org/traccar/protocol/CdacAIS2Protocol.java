@@ -19,10 +19,15 @@ import io.netty.handler.codec.string.StringEncoder;
 import org.traccar.BaseProtocol;
 import org.traccar.PipelineBuilder;
 import org.traccar.TrackerServer;
+import org.traccar.model.Command;
 
 public class CdacAIS2Protocol extends BaseProtocol {
 
     public CdacAIS2Protocol() {
+        setSupportedDataCommands(
+                Command.TYPE_CUSTOM,
+                Command.TYPE_ENGINE_STOP,
+                Command.TYPE_ENGINE_RESUME);
         addServer(new TrackerServer(false, getName()) {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
