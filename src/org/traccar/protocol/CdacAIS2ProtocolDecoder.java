@@ -163,6 +163,9 @@ public class CdacAIS2ProtocolDecoder extends BaseProtocolDecoder {
                 for (int i = 1; i <= 4; i++) {
                     int tempDio = Integer.parseInt(buf.readSlice(1).toString(StandardCharsets.US_ASCII));
                     position.set(Position.PREFIX_IN + i, tempDio);
+                    if (i == 2) {
+                        position.set(Position.KEY_DOOR, tempDio == 0);
+                    }
                 }
 
                 String frameNumber = buf.readSlice(6).toString(StandardCharsets.US_ASCII);
@@ -254,9 +257,6 @@ public class CdacAIS2ProtocolDecoder extends BaseProtocolDecoder {
 
         switch (header) {
             case "NRM":
-                channel.writeAndFlush(new NetworkMessage("$" + header + ",OK*", remoteAddress));
-                decodeNormalPacket(channel, remoteAddress, buf, position);
-                break;
             case "EPB":
             case "CRT":
             case "ALT":

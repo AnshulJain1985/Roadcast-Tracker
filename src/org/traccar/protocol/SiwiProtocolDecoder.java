@@ -91,7 +91,7 @@ public class SiwiProtocolDecoder extends BaseProtocolDecoder {
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
 
-        position.set(Position.KEY_EVENT, parser.next());
+        decodeAlarm(position, parser.next());
         boolean isIgnition = parser.next().equals("1");
         position.set(Position.KEY_IGNITION, isIgnition);
         boolean isCharge = parser.next().equals("1");
@@ -140,6 +140,31 @@ public class SiwiProtocolDecoder extends BaseProtocolDecoder {
 
         return position;
     }
+
+    private void decodeAlarm(Position position, String alarm) {
+        position.set(Position.KEY_EVENT, alarm);
+        switch (alarm) {
+            case "K":
+                position.set(Position.KEY_ALARM, Position.ALARM_TAMPERING);
+                break;
+            case "M":
+                position.set(Position.KEY_ALARM, Position.ALARM_CORNERING);
+                break;
+            case "N":
+                position.set(Position.KEY_ALARM, Position.ALARM_SOS);
+                break;
+            case "P":
+                position.set(Position.KEY_ALARM, Position.ALARM_ACCELERATION);
+                break;
+            case "S":
+                position.set(Position.KEY_ALARM, Position.ALARM_BRAKING);
+                break;
+            default:
+                break;
+
+        }
+    }
+
 
     public void getLastLocation(Position position, Date deviceTime) {
         if (position.getDeviceId() != 0) {
