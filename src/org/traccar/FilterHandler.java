@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.traccar.helper.UnitsConverter;
 import org.traccar.model.Position;
-
 import java.util.Date;
 
 @ChannelHandler.Sharable
@@ -280,6 +279,10 @@ public class FilterHandler extends BaseDataHandler {
                 position.setSpeed(last.getSpeed());
                 position.setCourse(last.getCourse());
                 position.setAccuracy(last.getAccuracy());
+                if (last.getAttributes().containsKey(Position.KEY_DISTANCE)) {
+                    position.set(Position.KEY_DISTANCE, last.getDouble(Position.KEY_DISTANCE));
+                    position.set(Position.KEY_TOTAL_DISTANCE, last.getDouble(Position.KEY_TOTAL_DISTANCE));
+                }
             }
         } else {
             if (position.getFixTime().getTime() > System.currentTimeMillis() + filterFuture) {
