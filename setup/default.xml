@@ -354,6 +354,10 @@
     <entry key='wanway.language'>true</entry>
     <entry key='wanway.timeout'>185</entry>
 
+    <entry key='s15asset.port'>6723</entry>
+    <entry key='s15asset.language'>true</entry>
+    <entry key='s15asset.timeout'>185</entry>
+
     <entry key='rpais.port'>5300</entry>
     <entry key='rpais.timeout'>185</entry>
     <entry key='iacais.port'>5301</entry>
