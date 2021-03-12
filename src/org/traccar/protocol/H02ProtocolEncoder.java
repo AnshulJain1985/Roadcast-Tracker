@@ -21,6 +21,7 @@ import org.traccar.StringProtocolEncoder;
 import org.traccar.model.Command;
 
 import java.util.Date;
+import java.util.TimeZone;
 
 public class H02ProtocolEncoder extends StringProtocolEncoder {
 
@@ -60,6 +61,9 @@ public class H02ProtocolEncoder extends StringProtocolEncoder {
                 } else {
                     return formatCommand(time, uniqueId, "S71", "22", frequency);
                 }
+            case Command.TYPE_SET_TIMEZONE:
+                int timezone = TimeZone.getTimeZone(command.getString(Command.KEY_TIMEZONE)).getRawOffset();
+                return formatCommand(time, uniqueId, "S71", "15", Integer.toString(timezone));
             default:
                 return null;
         }

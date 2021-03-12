@@ -30,7 +30,8 @@ public class H02Protocol extends BaseProtocol {
                 Command.TYPE_ALARM_DISARM,
                 Command.TYPE_ENGINE_STOP,
                 Command.TYPE_ENGINE_RESUME,
-                Command.TYPE_POSITION_PERIODIC
+                Command.TYPE_POSITION_PERIODIC,
+                Command.TYPE_SET_TIMEZONE
         );
         addServer(new TrackerServer(false, getName()) {
             @Override
