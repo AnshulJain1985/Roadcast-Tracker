@@ -415,5 +415,9 @@
 
     <entry key='boltcam.port'>8015</entry>
 
+    <entry key='thinture.port'>5334</entry>
+    <entry key='thinture.timeout'>185</entry>
+
+
 
 </properties>
