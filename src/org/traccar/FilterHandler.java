@@ -177,7 +177,8 @@ public class FilterHandler extends BaseDataHandler {
                 (position.getAttributes().containsKey(Position.KEY_POWER)
                         && position.getDouble(Position.KEY_POWER) != last.getDouble(Position.KEY_POWER))
                         || (position.getAttributes().containsKey(Position.KEY_BATTERY_LEVEL)
-                        && position.getDouble(Position.KEY_BATTERY_LEVEL) != last.getDouble(Position.KEY_BATTERY_LEVEL)));
+                        && position.getDouble(Position.KEY_BATTERY_LEVEL) != last.getDouble(Position.KEY_BATTERY_LEVEL)
+                ));
     }
 
     private boolean filter(Position position) {
