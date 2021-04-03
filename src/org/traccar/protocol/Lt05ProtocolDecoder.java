@@ -521,10 +521,32 @@ public class Lt05ProtocolDecoder extends BaseProtocolDecoder {
             Position position = new Position(getProtocolName());
             position.setDeviceId(deviceSession.getDeviceId());
 
+            int subType = buf.readUnsignedByte();
+
             getLastLocation(position, null);
 
-            position.set(Position.KEY_POWER, buf.readShort() * 0.01);
-
+            if (subType == 0x00) {
+                position.set(Position.KEY_POWER, buf.readUnsignedShort() * 0.01);
+                return position;
+            } else if (subType == 0x0a) {
+                buf.skipBytes(8); // imei
+                buf.skipBytes(8); // imsi
+                position.set(Position.KEY_ICCID, ByteBufUtil.hexDump(buf.readSlice(10)).replaceAll("f", ""));
+                return position;
+            } else if (subType == 0x0d) {
+                if (buf.getByte(buf.readerIndex()) != '!') {
+                    buf.skipBytes(6);
+                }
+                return decodeFuelData(position, buf.toString(
+                        buf.readerIndex(), buf.readableBytes() - 4 - 2, StandardCharsets.US_ASCII));
+            } else if (subType == 0x1b) {
+                buf.readUnsignedByte(); // header
+                buf.readUnsignedByte(); // type
+                position.set(Position.KEY_DRIVER_UNIQUE_ID, ByteBufUtil.hexDump(buf.readSlice(4)));
+                buf.readUnsignedByte(); // checksum
+                buf.readUnsignedByte(); // footer
+                return position;
+            }
             return position;
 
         } else {
@@ -846,6 +868,7 @@ public class Lt05ProtocolDecoder extends BaseProtocolDecoder {
             int status = buf.readUnsignedByte();
             position.set(Position.KEY_IGNITION, BitUtil.check(status, 0));
             position.set(Position.KEY_DOOR, BitUtil.check(status, 1));
+            position.set("ac", BitUtil.check(status, 2));
             position.set(Position.KEY_EVENT, buf.readUnsignedByte()); // reason
             position.set(Position.KEY_ARCHIVE, buf.readUnsignedByte() > 0);
         }
