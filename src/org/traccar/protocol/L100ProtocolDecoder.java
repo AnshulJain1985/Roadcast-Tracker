@@ -217,13 +217,13 @@ public class L100ProtocolDecoder extends BaseProtocolDecoder {
         if (decodeBattery(battery) == 0 || !isCharge) {
             Position last = Context.getIdentityManager().getLastPosition(position.getDeviceId());
             if (last != null) {
-                if (last.getAttributes().containsKey(Position.KEY_CHARGE)
-                        && (position.getBoolean(Position.KEY_CHARGE) != isCharge)) {
-                    position.set(Position.KEY_ALARM, Position.ALARM_POWER_CUT);
-                }
                 if (last.getAttributes().containsKey(Position.KEY_BATTERY_LEVEL)
                         && (last.getLong(Position.KEY_BATTERY_LEVEL) != decodeBattery(battery))) {
                     position.set(Position.KEY_ALARM, Position.ALARM_LOW_BATTERY);
+                }
+                if (last.getAttributes().containsKey(Position.KEY_CHARGE)
+                        && (position.getBoolean(Position.KEY_CHARGE) != isCharge)) {
+                    position.set(Position.KEY_ALARM, Position.ALARM_POWER_CUT);
                 }
             }
         }
