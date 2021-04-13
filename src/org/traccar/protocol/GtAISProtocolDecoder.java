@@ -357,6 +357,10 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
         if (deviceSession == null) {
             return null;
         }
+        if (channel != null) {
+            channel.writeAndFlush(new NetworkMessage("$,NRM," + imei + ",1*", remoteAddress));
+        }
+
         position.setDeviceId(deviceSession.getDeviceId());
         position.set(Position.KEY_ALARM, decodeAlarm(channel, packetType));
         position.set(Position.KEY_ORIGINAL, parser.next());
@@ -418,20 +422,15 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
         String sentence = (String) msg;
         Position position = new Position(getProtocolName());
 
-//        LOGGER.info(channel.id().asShortText() + " - GTAIS String: " + sentence);
-
-
         Parser parser = new Parser(PATTERN_LOGIN, sentence);
         if (parser.matches()) {
             String currentDate = new SimpleDateFormat("ddMMyyyyHHmmss").format(new Date());
-//            channel.write("$LGN" + currentDate + "*");
             channel.writeAndFlush(new NetworkMessage("$LGN" + currentDate + "*", remoteAddress));
             return decodeLogin(position, channel, remoteAddress, parser);
         }
 
         parser = new Parser(PATTERN_HEARTBEAT, sentence);
         if (parser.matches()) {
-//            channel.write("$HBT*");
             channel.writeAndFlush(new NetworkMessage("$HBT*", remoteAddress));
             return decodeHeartbeat(position, channel, remoteAddress, parser);
         }

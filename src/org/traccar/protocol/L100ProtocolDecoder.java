@@ -58,8 +58,8 @@ public class L100ProtocolDecoder extends BaseProtocolDecoder {
             .text("#")
             .number("([01]+),")                  // io status
             .number("(d+.?d*|N.C),")             // adc
-            .expression("[^,]*,")                // reserved
-            .expression("[^,]*,")                // reserved
+            .number("(d+.?d*),")                // 1-Wire temperature reading
+            .expression("([^,]*),")                // I-button data
             .number("(d+.?d*),")                 // odometer
             .groupBegin()
             .number("(d+.?d*),")                 // temperature
@@ -206,8 +206,13 @@ public class L100ProtocolDecoder extends BaseProtocolDecoder {
 
         position.set(Position.KEY_STATUS, status);
         position.set(Position.PREFIX_ADC + 1, parser.next());
+        double temperature = parser.nextDouble(0);
+        position.set(Position.KEY_DRIVER_UNIQUE_ID, parser.next());
         position.set(Position.KEY_ODOMETER, parser.nextDouble());
         position.set(Position.PREFIX_TEMP + 1, parser.nextDouble());
+        if (temperature > 0) {
+            position.set(Position.PREFIX_TEMP + 1, temperature);
+        }
 
         double battery = parser.nextDouble();
         int batteryLevel = decodeBattery(battery);
