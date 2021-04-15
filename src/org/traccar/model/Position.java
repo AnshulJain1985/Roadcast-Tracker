@@ -39,6 +39,7 @@ public class Position extends Message {
     public static final String KEY_ODOMETER_TRIP = "tripOdometer"; // meters
     public static final String KEY_HOURS = "hours";
     public static final String KEY_STEPS = "steps";
+    public static final String KEY_HEART_RATE = "heartRate";
     public static final String KEY_INPUT = "input";
     public static final String KEY_OUTPUT = "output";
     public static final String KEY_IMAGE = "image";
@@ -48,9 +49,11 @@ public class Position extends Message {
     // The units for the below four KEYs currently vary.
     // The preferred units of measure are specified in the comment for each.
     public static final String KEY_POWER = "power"; // volts
+    public static final String KEY_EXTERNAL_BATTERY = "extBatt"; //volts
     public static final String KEY_BATTERY = "battery"; // volts
     public static final String KEY_BATTERY_LEVEL = "batteryLevel"; // percentage
     public static final String KEY_FUEL_LEVEL = "fuel"; // liters
+    public static final String KEY_FUEL_USED = "fuelUsed"; // liters
     public static final String KEY_FUEL_CONSUMPTION = "fuelConsumption"; // liters/hour
 
     public static final String KEY_VERSION_FW = "versionFw";
@@ -58,6 +61,7 @@ public class Position extends Message {
     public static final String KEY_TYPE = "type";
     public static final String KEY_IGNITION = "ignition";
     public static final String KEY_FLAGS = "flags";
+    public static final String KEY_ANTENNA = "antenna";
     public static final String KEY_CHARGE = "charge";
     public static final String KEY_IP = "ip";
     public static final String KEY_ARCHIVE = "archive";
@@ -86,6 +90,8 @@ public class Position extends Message {
 
     public static final String KEY_RESULT = "result";
 
+    public static final String KEY_G_SENSOR = "gSensor";
+
     public static final String KEY_DRIVER_UNIQUE_ID = "driverUniqueId";
 
     // Start with 1 not 0
@@ -109,6 +115,8 @@ public class Position extends Message {
     public static final String ALARM_POWER_OFF = "powerOff";
     public static final String ALARM_POWER_ON = "powerOn";
     public static final String ALARM_DOOR = "door";
+    public static final String ALARM_LOCK = "lock";
+    public static final String ALARM_UNLOCK = "unlock";
     public static final String ALARM_GEOFENCE = "geofence";
     public static final String ALARM_GEOFENCE_ENTER = "geofenceEnter";
     public static final String ALARM_GEOFENCE_EXIT = "geofenceExit";
@@ -131,9 +139,7 @@ public class Position extends Message {
     public static final String ALARM_OIL_LEAK = "oilLeak";
     public static final String ALARM_TAMPERING = "tampering";
     public static final String ALARM_REMOVING = "removing";
-    public static final String KEY_HEART_RATE = "heartRate";
     public static final String KEY_ICCID = "iccid";
-    public static final String KEY_FUEL_USED = "fuelUsed";
 
     public Position() {
     }

@@ -30,7 +30,10 @@ public class TeltonikaFrameDecoder extends FrameDecoder {
             Channel channel,
             ChannelBuffer buf) throws Exception {
 
-        // Check minimum length
+        while (buf.readable() && buf.getByte(buf.readerIndex()) == (byte) 0xff) {
+            buf.skipBytes(1);
+        }
+
         if (buf.readableBytes() < MESSAGE_MINIMUM_LENGTH) {
             return null;
         }
