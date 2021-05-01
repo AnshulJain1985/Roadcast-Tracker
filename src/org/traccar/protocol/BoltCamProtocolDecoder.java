@@ -20,6 +20,7 @@ import org.traccar.DeviceSession;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
+import org.traccar.helper.Log;
 import org.traccar.helper.BcdUtil;
 import org.traccar.helper.BitUtil;
 import org.traccar.helper.Checksum;
@@ -129,6 +130,8 @@ public class BoltCamProtocolDecoder extends BaseProtocolDecoder {
             Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
 
         ChannelBuffer buf = (ChannelBuffer) msg;
+
+        Log.info(String.format("%08X", channel.getId()) + " - Boltcam HEX: " + ChannelBuffers.hexDump(buf));
 
         if (buf.getByte(buf.readerIndex()) == '(') {
             return decodeResult(channel, remoteAddress, buf.toString(StandardCharsets.US_ASCII));
