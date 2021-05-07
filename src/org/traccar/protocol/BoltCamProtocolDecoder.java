@@ -43,6 +43,7 @@ public class BoltCamProtocolDecoder extends BaseProtocolDecoder {
 
     public static final int MSG_GENERAL_RESPONSE = 0x8001;
     public static final int MSG_GENERAL_RESPONSE_2 = 0x4401;
+    public static final int MSG_HEARTBEAT = 0x0002;
     public static final int MSG_TERMINAL_REGISTER = 0x0100;
     public static final int MSG_TERMINAL_REGISTER_RESPONSE = 0x8100;
     public static final int MSG_TERMINAL_CONTROL = 0x8105;
@@ -113,6 +114,9 @@ public class BoltCamProtocolDecoder extends BaseProtocolDecoder {
         if (BitUtil.check(value, 8)) {
             return Position.ALARM_POWER_OFF;
         }
+        if (BitUtil.check(value, 17)) {
+            return Position.ALARM_TAMPERING;
+        }
         if (BitUtil.check(value, 20)) {
             return Position.ALARM_GEOFENCE;
         }
@@ -168,7 +172,7 @@ public class BoltCamProtocolDecoder extends BaseProtocolDecoder {
                         remoteAddress);
             }
 
-        } else if (type == MSG_TERMINAL_AUTH) {
+        } else if (type == MSG_TERMINAL_AUTH || type == MSG_HEARTBEAT) {
 
             sendGeneralResponse(channel, remoteAddress, id, type, index);
 
@@ -210,16 +214,11 @@ public class BoltCamProtocolDecoder extends BaseProtocolDecoder {
 
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
-
         position.set(Position.KEY_ALARM, decodeAlarm(buf.readUnsignedInt()));
-
         int status = buf.readInt();
-
         position.set(Position.KEY_IGNITION, BitUtil.check(status, 0));
         position.set(Position.KEY_BLOCKED, BitUtil.check(status, 10));
-
         position.setValid(BitUtil.check(status, 1));
-
         double lat = buf.readUnsignedInt() * 0.000001;
         double lon = buf.readUnsignedInt() * 0.000001;
 
@@ -228,7 +227,6 @@ public class BoltCamProtocolDecoder extends BaseProtocolDecoder {
         } else {
             position.setLatitude(lat);
         }
-
         if (BitUtil.check(status, 3)) {
             position.setLongitude(-lon);
         } else {
@@ -248,6 +246,15 @@ public class BoltCamProtocolDecoder extends BaseProtocolDecoder {
                 .setSecond(BcdUtil.readInteger(buf, 2));
         position.setTime(dateBuilder.getDate());
 
+        if (buf.readableBytes() == 20) {
+            buf.skipBytes(4); // remaining battery and mileage
+            position.set(Position.KEY_ODOMETER, buf.readUnsignedInt() * 1000);
+            position.set(Position.KEY_BATTERY, buf.readUnsignedShort() * 0.1);
+            buf.readUnsignedInt(); // area id
+            position.set(Position.KEY_RSSI, buf.readUnsignedByte());
+            buf.skipBytes(3); // reserved
+            return position;
+        }
         while (buf.readableBytes() > 2) {
             int subtype = buf.readUnsignedByte();
             int length = buf.readUnsignedByte();
@@ -301,6 +308,7 @@ public class BoltCamProtocolDecoder extends BaseProtocolDecoder {
                     position.set(Position.KEY_POWER, buf.readUnsignedShort() * 0.1);
                     break;
                 case 0xD4:
+                case 0xFE:
                     position.set(Position.KEY_BATTERY_LEVEL, buf.readUnsignedByte());
                     break;
                 case 0xD5:
@@ -314,24 +322,36 @@ public class BoltCamProtocolDecoder extends BaseProtocolDecoder {
                     position.set("cover", BitUtil.check(deviceStatus, 3));
                     break;
                 case 0xEB:
-                    while (buf.readerIndex() < endIndex) {
-                        int extendedLength = buf.readUnsignedShort();
-                        int extendedType = buf.readUnsignedShort();
-                        switch (extendedType) {
-                            case 0x0001:
-                                position.set("fuel1", buf.readUnsignedShort() * 0.1);
-                                buf.readUnsignedByte(); // unused
-                                break;
-                            case 0x0023:
-                                position.set("fuel2",
-                                        Double.parseDouble(buf.readBytes(6).toString(StandardCharsets.US_ASCII)));
-                                break;
-                            case 0x00CE:
-                                position.set(Position.KEY_POWER, buf.readUnsignedShort() * 0.01);
-                                break;
-                            default:
-                                buf.skipBytes(extendedLength - 2);
-                                break;
+                    if (buf.getUnsignedShort(buf.readerIndex()) > 200) {
+                        Network network = new Network();
+                        int mcc = buf.readUnsignedShort();
+                        int mnc = buf.readUnsignedByte();
+                        while (buf.readerIndex() < endIndex) {
+                            network.addCellTower(CellTower.from(
+                                    mcc, mnc, buf.readUnsignedShort(), buf.readUnsignedShort(),
+                                    buf.readUnsignedByte()));
+                        }
+                        position.setNetwork(network);
+                    } else {
+                        while (buf.readerIndex() < endIndex) {
+                            int extendedLength = buf.readUnsignedShort();
+                            int extendedType = buf.readUnsignedShort();
+                            switch (extendedType) {
+                                case 0x0001:
+                                    position.set("fuel1", buf.readUnsignedShort() * 0.1);
+                                    buf.readUnsignedByte(); // unused
+                                    break;
+                                case 0x0023:
+                                    position.set("fuel2",
+                                            Double.parseDouble(buf.readBytes(6).toString(StandardCharsets.US_ASCII)));
+                                    break;
+                                case 0x00CE:
+                                    position.set(Position.KEY_POWER, buf.readUnsignedShort() * 0.01);
+                                    break;
+                                default:
+                                    buf.skipBytes(extendedLength - 2);
+                                    break;
+                            }
                         }
                     }
                     break;
@@ -340,7 +360,6 @@ public class BoltCamProtocolDecoder extends BaseProtocolDecoder {
             }
             buf.readerIndex(endIndex);
         }
-
         return position;
     }
 
