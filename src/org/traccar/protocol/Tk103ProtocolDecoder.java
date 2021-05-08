@@ -35,7 +35,7 @@ import java.util.regex.Pattern;
 
 public class Tk103ProtocolDecoder extends BaseProtocolDecoder {
 
-    private boolean decodeLow;
+    private final boolean decodeLow;
 
     public Tk103ProtocolDecoder(Protocol protocol) {
         super(protocol);
@@ -418,15 +418,17 @@ public class Tk103ProtocolDecoder extends BaseProtocolDecoder {
                 position.set(Position.KEY_BLOCKED, BitUtil.check(mask1, 3) ? 1 : 0);
             }
 
+            position.set(Position.KEY_DOOR, mask1 == 1);
+
             int mask2 = parser.nextHexInt();
             for (int i = 0; i < 3; i++) {
                 if (decodeLow || BitUtil.check(mask2, i)) {
                     position.set("hs" + (3 - i), BitUtil.check(mask2, i) ? 1 : 0);
                 }
             }
-            if (decodeLow || BitUtil.check(mask2, 3)) {
-                position.set(Position.KEY_DOOR, BitUtil.check(mask2, 3) ? 1 : 0);
-            }
+//            if (decodeLow || BitUtil.check(mask2, 3)) {
+//                position.set(Position.KEY_DOOR, BitUtil.check(mask2, 3) ? 1 : 0);
+//            }
 
             int mask3 = parser.nextHexInt();
             for (int i = 1; i <= 3; i++) {
