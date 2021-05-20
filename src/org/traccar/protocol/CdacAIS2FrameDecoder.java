@@ -79,6 +79,7 @@ public class CdacAIS2FrameDecoder extends BaseFrameDecoder {
             case "CMD":
                 return buf;
             default:
+                buf.clear();
                 break;
         }
 
