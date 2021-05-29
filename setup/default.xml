@@ -390,6 +390,9 @@
     <entry key='tk103st.port'>6002</entry>
     <entry key='tk103st.timeout'>100</entry>
 
+    <entry key='tk103bms.port'>6102</entry>
+    <entry key='tk103bms.timeout'>100</entry>
+
     <entry key='rdmais.port'>5328</entry>
     <entry key='rdmais.timeout'>100</entry>
 
