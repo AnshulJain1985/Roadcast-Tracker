@@ -52,7 +52,7 @@ public abstract class ExtendedObjectManager<T extends BaseModel> extends SimpleO
                 return new HashSet<>(result);
             } else {
                 return new HashSet<>();
-        }
+            }
         } finally {
             readUnlock();
         }
@@ -66,7 +66,7 @@ public abstract class ExtendedObjectManager<T extends BaseModel> extends SimpleO
                 return new HashSet<>(result);
             } else {
                 return new HashSet<>();
-        }
+            }
         } finally {
             readUnlock();
         }

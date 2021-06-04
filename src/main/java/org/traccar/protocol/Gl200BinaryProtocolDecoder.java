@@ -85,7 +85,7 @@ public class Gl200BinaryProtocolDecoder extends BaseProtocolDecoder {
 
         if (type == MSG_RSP_LCB) {
             buf.readUnsignedByte(); // phone length
-            for (int b = buf.readUnsignedByte();; b = buf.readUnsignedByte()) {
+            for (int b = buf.readUnsignedByte(); ; b = buf.readUnsignedByte()) {
                 if ((b & 0xf) == 0xf || (b & 0xf0) == 0xf0) {
                     break;
                 }

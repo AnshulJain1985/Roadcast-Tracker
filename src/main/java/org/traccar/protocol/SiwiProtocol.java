@@ -35,7 +35,7 @@ public class SiwiProtocol extends BaseProtocol {
                 pipeline.addLast(new LineBasedFrameDecoder(1024));
                 pipeline.addLast(new StringDecoder());
                 pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new SiwiProtocolEncoder());
+                pipeline.addLast(new SiwiProtocolEncoder(SiwiProtocol.this));
                 pipeline.addLast(new SiwiProtocolDecoder(SiwiProtocol.this));
             }
         });

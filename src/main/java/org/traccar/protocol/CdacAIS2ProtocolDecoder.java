@@ -211,7 +211,7 @@ public class CdacAIS2ProtocolDecoder extends BaseProtocolDecoder {
 
 
     private void decodeHealthPacket(Channel channel, SocketAddress remoteAddress, ByteBuf buf, Position position) {
-        String vendorId =  buf.readSlice(6).toString(StandardCharsets.US_ASCII);
+        String vendorId = buf.readSlice(6).toString(StandardCharsets.US_ASCII);
         position.set(Position.KEY_VERSION_FW, buf.readSlice(6).toString(StandardCharsets.US_ASCII));
         String imei = buf.readSlice(15).toString(StandardCharsets.US_ASCII);
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);

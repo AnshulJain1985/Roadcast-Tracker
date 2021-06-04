@@ -31,7 +31,7 @@ public class Gt06AssetProtocol extends BaseProtocol {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new Gt06AssetFrameDecoder());
-                pipeline.addLast(new Gt06AssetProtocolEncoder());
+                pipeline.addLast(new Gt06AssetProtocolEncoder(Gt06AssetProtocol.this));
                 pipeline.addLast(new Gt06AssetProtocolDecoder(Gt06AssetProtocol.this));
             }
         });

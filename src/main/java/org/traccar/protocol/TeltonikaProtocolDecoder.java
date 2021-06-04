@@ -24,6 +24,7 @@ import org.traccar.Context;
 import org.traccar.DeviceSession;
 import org.traccar.NetworkMessage;
 import org.traccar.Protocol;
+import org.traccar.config.Keys;
 import org.traccar.helper.BitUtil;
 import org.traccar.helper.Checksum;
 import org.traccar.helper.UnitsConverter;
@@ -54,7 +55,7 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
     public TeltonikaProtocolDecoder(Protocol protocol, boolean connectionless) {
         super(protocol);
         this.connectionless = connectionless;
-        this.extended = Context.getConfig().getBoolean(getProtocolName() + ".extended");
+        this.extended = Context.getConfig().getBoolean(Keys.PROTOCOL_EXTENDED.withPrefix(getProtocolName()));
     }
 
     private void parseIdentification(Channel channel, SocketAddress remoteAddress, ByteBuf buf) {
@@ -226,7 +227,7 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
             case 26:
             case 27:
             case 28:
-                position.set(Position.PREFIX_TEMP + (id - 24), readValue(buf, length, true) * 0.1);
+                position.set(Position.PREFIX_TEMP + (id - 24 + 4), readValue(buf, length, true) * 0.1);
                 break;
             case 66:
                 position.set(Position.KEY_EXTERNAL_BATTERY, readValue(buf, length, false) * 0.001);
@@ -238,11 +239,7 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
                 position.set("gpsStatus", readValue(buf, length, false));
                 break;
             case 72:
-                position.set(Position.PREFIX_TEMP + 1, readValue(buf, length, true) * 0.1);
-                break;
             case 73:
-                position.set(Position.PREFIX_TEMP + 2, readValue(buf, length, true) * 0.1);
-                break;
             case 74:
                 position.set(Position.PREFIX_TEMP + (id - 71), readValue(buf, length, true) * 0.1);
                 break;
@@ -327,6 +324,11 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
                         break;
                 }
                 break;
+            case 389:
+                if (BitUtil.between(readValue(buf, length, false), 4, 8) == 1) {
+                    position.set(Position.KEY_ALARM, Position.ALARM_SOS);
+                }
+                break;
             default:
                 position.set(Position.PREFIX_IO + id, readValue(buf, length, false));
                 break;
@@ -390,7 +392,7 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
         if (cid != 0 && lac != 0) {
             CellTower cellTower = CellTower.fromLacCid(lac, cid);
             long operator = position.getInteger(Position.KEY_OPERATOR);
-            if (operator > 999) {
+            if (operator != 0) {
                 cellTower.setOperator(operator);
             }
             position.setNetwork(new Network(cellTower));
@@ -552,7 +554,11 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
                 int id = buf.readUnsignedShort();
                 int length = buf.readUnsignedShort();
                 if (id == 256) {
-                    position.set(Position.KEY_VIN, buf.readSlice(length).toString(StandardCharsets.US_ASCII));
+                    position.set(Position.KEY_VIN,
+                            buf.readSlice(length).toString(StandardCharsets.US_ASCII));
+                } else if (id == 281) {
+                    position.set(Position.KEY_DTCS,
+                            buf.readSlice(length).toString(StandardCharsets.US_ASCII).replace(',', ' '));
                 } else if (id == 385) {
                     ByteBuf data = buf.readSlice(length);
                     data.readUnsignedByte(); // data part
@@ -632,24 +638,22 @@ public class TeltonikaProtocolDecoder extends BaseProtocolDecoder {
             }
 
             if (!position.getOutdated() || !position.getAttributes().isEmpty()) {
-            positions.add(position);
-        }
+                positions.add(position);
+            }
         }
 
         if (channel != null && codec != CODEC_12 && codec != CODEC_13) {
+            ByteBuf response = Unpooled.buffer();
             if (connectionless) {
-                ByteBuf response = Unpooled.buffer();
                 response.writeShort(5);
                 response.writeShort(0);
                 response.writeByte(0x01);
                 response.writeByte(locationPacketId);
                 response.writeByte(count);
-                channel.writeAndFlush(new NetworkMessage(response, remoteAddress));
             } else {
-                ByteBuf response = Unpooled.buffer();
                 response.writeInt(count);
-                channel.writeAndFlush(new NetworkMessage(response, remoteAddress));
             }
+            channel.writeAndFlush(new NetworkMessage(response, remoteAddress));
         }
 
         return positions.isEmpty() ? null : positions;

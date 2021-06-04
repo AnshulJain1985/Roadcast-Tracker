@@ -40,26 +40,26 @@ public class HuabaoFrameDecoder extends BaseFrameDecoder {
 
         } else {
 
-        int index = buf.indexOf(buf.readerIndex() + 1, buf.writerIndex(), (byte) 0x7e);
+            int index = buf.indexOf(buf.readerIndex() + 1, buf.writerIndex(), (byte) 0x7e);
             if (index >= 0) {
-            ByteBuf result = Unpooled.buffer(index + 1 - buf.readerIndex());
+                ByteBuf result = Unpooled.buffer(index + 1 - buf.readerIndex());
 
-            while (buf.readerIndex() <= index) {
-                int b = buf.readUnsignedByte();
-                if (b == 0x7d) {
-                    int ext = buf.readUnsignedByte();
-                    if (ext == 0x01) {
-                        result.writeByte(0x7d);
-                    } else if (ext == 0x02) {
-                        result.writeByte(0x7e);
+                while (buf.readerIndex() <= index) {
+                    int b = buf.readUnsignedByte();
+                    if (b == 0x7d) {
+                        int ext = buf.readUnsignedByte();
+                        if (ext == 0x01) {
+                            result.writeByte(0x7d);
+                        } else if (ext == 0x02) {
+                            result.writeByte(0x7e);
+                        }
+                    } else {
+                        result.writeByte(b);
                     }
-                } else {
-                    result.writeByte(b);
                 }
-            }
 
-            return result;
-        }
+                return result;
+            }
 
         }
 

@@ -15,9 +15,10 @@
  */
 package org.traccar;
 
-import org.traccar.database.ActiveDevice;
+import io.netty.channel.Channel;
 import org.traccar.model.Command;
 
+import java.net.SocketAddress;
 import java.util.Collection;
 
 public interface Protocol {
@@ -28,7 +29,7 @@ public interface Protocol {
 
     Collection<String> getSupportedDataCommands();
 
-    void sendDataCommand(ActiveDevice activeDevice, Command command);
+    void sendDataCommand(Channel channel, SocketAddress remoteAddress, Command command);
 
     Collection<String> getSupportedTextCommands();
 

@@ -16,7 +16,6 @@
 package org.traccar.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import org.traccar.database.QueryExtended;
 import org.traccar.database.QueryIgnore;
 import org.traccar.helper.Hashing;

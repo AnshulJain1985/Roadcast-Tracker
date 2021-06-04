@@ -38,13 +38,13 @@ public class Tk103STFrameDecoder extends BaseFrameDecoder {
         }
 
         int frameEndIndex, freeTextSymbolCounter;
-        for (frameEndIndex = frameStartIndex, freeTextSymbolCounter = 0;; frameEndIndex++) {
+        for (frameEndIndex = frameStartIndex, freeTextSymbolCounter = 0; ; frameEndIndex++) {
             int freeTextIndex = frameEndIndex;
             frameEndIndex = buf.indexOf(frameEndIndex, buf.writerIndex(), (byte) ')');
             if (frameEndIndex == -1) {
                 break;
             }
-            for (;; freeTextIndex++, freeTextSymbolCounter++) {
+            for (; ; freeTextIndex++, freeTextSymbolCounter++) {
                 freeTextIndex = buf.indexOf(freeTextIndex, frameEndIndex, (byte) '$');
                 if (freeTextIndex == -1 || freeTextIndex >= frameEndIndex) {
                     break;

@@ -25,13 +25,16 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-
 import org.apache.poi.ss.util.WorkbookUtil;
 import org.traccar.Context;
+import org.traccar.Main;
+import org.traccar.database.DeviceManager;
+import org.traccar.database.IdentityManager;
 import org.traccar.model.Device;
 import org.traccar.model.Group;
 import org.traccar.reports.model.DeviceReport;
 import org.traccar.reports.model.StopReport;
+
 
 public final class Stops {
 
@@ -40,10 +43,12 @@ public final class Stops {
 
     private static Collection<StopReport> detectStops(long deviceId, Date from, Date to) throws SQLException {
         boolean ignoreOdometer = Context.getDeviceManager()
-                .lookupAttributeBoolean(deviceId, "report.ignoreOdometer", false, true);
+                .lookupAttributeBoolean(deviceId, "report.ignoreOdometer", false, false, true);
 
+        IdentityManager identityManager = Main.getInjector().getInstance(IdentityManager.class);
+        DeviceManager deviceManager = Main.getInjector().getInstance(DeviceManager.class);
         return ReportUtils.detectTripsAndStops(
-                Context.getDataManager().getPositions(deviceId, from, to),
+                identityManager, deviceManager, Context.getDataManager().getPositions(deviceId, from, to),
                 Context.getTripsConfig(), ignoreOdometer, StopReport.class);
     }
 
@@ -52,7 +57,7 @@ public final class Stops {
             Date from, Date to) throws SQLException {
         ReportUtils.checkPeriodLimit(from, to);
         ArrayList<StopReport> result = new ArrayList<>();
-        for (long deviceId: ReportUtils.getDeviceList(deviceIds, groupIds)) {
+        for (long deviceId : ReportUtils.getDeviceList(deviceIds, groupIds)) {
             Context.getPermissionsManager().checkDevice(userId, deviceId);
             result.addAll(detectStops(deviceId, from, to));
         }
@@ -65,7 +70,7 @@ public final class Stops {
         ReportUtils.checkPeriodLimit(from, to);
         ArrayList<DeviceReport> devicesStops = new ArrayList<>();
         ArrayList<String> sheetNames = new ArrayList<>();
-        for (long deviceId: ReportUtils.getDeviceList(deviceIds, groupIds)) {
+        for (long deviceId : ReportUtils.getDeviceList(deviceIds, groupIds)) {
             Context.getPermissionsManager().checkDevice(userId, deviceId);
             Collection<StopReport> stops = detectStops(deviceId, from, to);
             DeviceReport deviceStops = new DeviceReport();

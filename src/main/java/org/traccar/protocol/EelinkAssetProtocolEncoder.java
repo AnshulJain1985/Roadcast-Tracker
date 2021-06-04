@@ -18,6 +18,7 @@ package org.traccar.protocol;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.traccar.BaseProtocolEncoder;
+import org.traccar.Protocol;
 import org.traccar.helper.DataConverter;
 import org.traccar.model.Command;
 
@@ -28,7 +29,8 @@ public class EelinkAssetProtocolEncoder extends BaseProtocolEncoder {
 
     private final boolean connectionless;
 
-    public EelinkAssetProtocolEncoder(boolean connectionless) {
+    public EelinkAssetProtocolEncoder(Protocol protocol, boolean connectionless) {
+        super(protocol);
         this.connectionless = connectionless;
     }
 

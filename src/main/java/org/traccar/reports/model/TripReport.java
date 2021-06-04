@@ -16,7 +16,6 @@
  */
 package org.traccar.reports.model;
 
-import java.util.Date;
 
 public class TripReport extends BaseReport {
 
@@ -80,15 +79,6 @@ public class TripReport extends BaseReport {
         this.endLon = endLon;
     }
 
-    private Date startTime;
-
-    public Date getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(Date startTime) {
-        this.startTime = startTime;
-    }
 
     private String startAddress;
 
@@ -98,16 +88,8 @@ public class TripReport extends BaseReport {
 
     public void setStartAddress(String address) {
         this.startAddress = address;
-    }
 
-    private Date endTime;
 
-    public Date getEndTime() {
-        return endTime;
-    }
-
-    public void setEndTime(Date endTime) {
-        this.endTime = endTime;
     }
 
     private String endAddress;

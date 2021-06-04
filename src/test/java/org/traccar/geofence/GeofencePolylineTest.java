@@ -1,8 +1,8 @@
 package org.traccar.geofence;
 
-import java.text.ParseException;
-
 import org.junit.Test;
+
+import java.text.ParseException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -16,7 +16,7 @@ public class GeofencePolylineTest {
         geofenceGeometry.fromWkt(test);
         assertEquals(geofenceGeometry.toWkt(), test);
     }
-    
+
     @Test
     public void testContainsPolyline1Interval() throws ParseException {
         String test = "LINESTRING (56.83777 60.59833, 56.83766 60.5968)";
@@ -35,7 +35,7 @@ public class GeofencePolylineTest {
         assertTrue(!geofenceGeometry.containsPoint(56.83861, 60.60822));
 
     }
-    
+
     @Test
     public void testContainsPolylineNear180() throws ParseException {
         String test = "LINESTRING (66.9494 179.838, 66.9508 -179.8496)";

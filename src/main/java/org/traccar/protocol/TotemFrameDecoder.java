@@ -18,11 +18,10 @@ package org.traccar.protocol;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-
 import java.nio.charset.StandardCharsets;
-
 import org.traccar.BaseFrameDecoder;
 import org.traccar.helper.BufferUtil;
+
 
 public class TotemFrameDecoder extends BaseFrameDecoder {
 

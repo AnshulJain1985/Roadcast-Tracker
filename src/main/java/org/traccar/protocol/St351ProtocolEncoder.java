@@ -16,10 +16,15 @@
 package org.traccar.protocol;
 
 import org.traccar.Context;
+import org.traccar.Protocol;
 import org.traccar.StringProtocolEncoder;
 import org.traccar.model.Command;
 
 public class St351ProtocolEncoder extends StringProtocolEncoder implements StringProtocolEncoder.ValueFormatter {
+
+    public St351ProtocolEncoder(Protocol protocol) {
+        super(protocol);
+    }
 
     protected String getUniqueId(long deviceId) {
         return Context.getIdentityManager().getById(deviceId).getUniqueId();

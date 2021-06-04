@@ -39,25 +39,25 @@ public abstract class WindowsService {
     private final Object waitObject = new Object();
 
     private final String serviceName;
-    private ServiceMain serviceMain;
-    private ServiceControl serviceControl;
     private SERVICE_STATUS_HANDLE serviceStatusHandle;
 
     public WindowsService(String serviceName) {
         this.serviceName = serviceName;
     }
 
-    public boolean install(
+    public void install(
             String displayName, String description, String[] dependencies,
             String account, String password, String config) throws URISyntaxException {
 
         String javaHome = System.getProperty("java.home");
-        String javaBinary = javaHome + "\\bin\\java.exe";
+        String javaBinary = "\"" + javaHome + "\\bin\\java.exe\"";
 
         File jar = new File(WindowsService.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-        String command = javaBinary + " -jar \"" + jar.getAbsolutePath() + "\" --service \"" + config + "\"";
+        String command = javaBinary
+                + " -Duser.dir=\"" + jar.getParentFile().getAbsolutePath() + "\""
+                + " -jar \"" + jar.getAbsolutePath() + "\""
+                + " --service \"" + config + "\"";
 
-        boolean success = false;
         StringBuilder dep = new StringBuilder();
 
         if (dependencies != null) {
@@ -81,16 +81,14 @@ public abstract class WindowsService {
                     null, null, dep.toString(), account, password);
 
             if (service != null) {
-                success = ADVAPI_32.ChangeServiceConfig2(service, Winsvc.SERVICE_CONFIG_DESCRIPTION, desc);
+                ADVAPI_32.ChangeServiceConfig2(service, Winsvc.SERVICE_CONFIG_DESCRIPTION, desc);
                 ADVAPI_32.CloseServiceHandle(service);
             }
             ADVAPI_32.CloseServiceHandle(serviceManager);
         }
-        return success;
     }
 
-    public boolean uninstall() {
-        boolean success = false;
+    public void uninstall() {
 
         SC_HANDLE serviceManager = openServiceControlManager(null, Winsvc.SC_MANAGER_ALL_ACCESS);
 
@@ -98,12 +96,11 @@ public abstract class WindowsService {
             SC_HANDLE service = ADVAPI_32.OpenService(serviceManager, serviceName, Winsvc.SERVICE_ALL_ACCESS);
 
             if (service != null) {
-                success = ADVAPI_32.DeleteService(service);
+                ADVAPI_32.DeleteService(service);
                 ADVAPI_32.CloseServiceHandle(service);
             }
             ADVAPI_32.CloseServiceHandle(serviceManager);
         }
-        return success;
     }
 
     public boolean start() {
@@ -148,9 +145,8 @@ public abstract class WindowsService {
                 WindowsService.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParent();
 
         POSIXFactory.getPOSIX().chdir(path);
-        System.setProperty("user.dir", path);
 
-        serviceMain = new ServiceMain();
+        ServiceMain serviceMain = new ServiceMain();
         SERVICE_TABLE_ENTRY entry = new SERVICE_TABLE_ENTRY();
         entry.lpServiceName = serviceName;
         entry.lpServiceProc = serviceMain;
@@ -178,7 +174,7 @@ public abstract class WindowsService {
     private class ServiceMain implements SERVICE_MAIN_FUNCTION {
 
         public void callback(int dwArgc, Pointer lpszArgv) {
-            serviceControl = new ServiceControl();
+            ServiceControl serviceControl = new ServiceControl();
             serviceStatusHandle = ADVAPI_32.RegisterServiceCtrlHandlerEx(serviceName, serviceControl, null);
 
             reportStatus(Winsvc.SERVICE_START_PENDING, WinError.NO_ERROR, 3000);
@@ -192,7 +188,8 @@ public abstract class WindowsService {
                 synchronized (waitObject) {
                     waitObject.wait();
                 }
-            } catch (InterruptedException ex) {
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
 
             reportStatus(Winsvc.SERVICE_STOPPED, WinError.NO_ERROR, 0);

@@ -15,11 +15,10 @@
  */
 package org.traccar.model;
 
+
 import java.util.HashSet;
 import java.util.Set;
-
 import org.traccar.database.QueryIgnore;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class Notification extends ScheduledModel {

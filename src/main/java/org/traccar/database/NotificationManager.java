@@ -19,8 +19,10 @@ package org.traccar.database;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -28,6 +30,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.traccar.Context;
+import org.traccar.config.Keys;
 import org.traccar.model.Calendar;
 import org.traccar.model.Event;
 import org.traccar.model.Notification;
@@ -42,7 +45,7 @@ public class NotificationManager extends ExtendedObjectManager<Notification> {
 
     public NotificationManager(DataManager dataManager) {
         super(dataManager, Notification.class);
-        geocodeOnRequest = Context.getConfig().getBoolean("geocoder.onRequest");
+        geocodeOnRequest = Context.getConfig().getBoolean(Keys.GEOCODER_ON_REQUEST);
     }
 
     private Set<Long> getEffectiveNotifications(long userId, long deviceId, Date time) {
@@ -67,10 +70,6 @@ public class NotificationManager extends ExtendedObjectManager<Notification> {
             LOGGER.warn("Event save error", error);
         }
 
-        if (position != null && geocodeOnRequest && Context.getGeocoder() != null && position.getAddress() == null) {
-            position.setAddress(Context.getGeocoder()
-                    .getAddress(position.getLatitude(), position.getLongitude(), null));
-        }
 
         long deviceId = event.getDeviceId();
         Set<Long> users = Context.getPermissionsManager().getDeviceUsers(deviceId);
@@ -87,20 +86,28 @@ public class NotificationManager extends ExtendedObjectManager<Notification> {
                     usersToForward.add(userId);
                 }
                 final Set<String> notificators = new HashSet<>();
-                for (long notificationId : getEffectiveNotifications(userId, deviceId, event.getServerTime())) {
+                for (long notificationId : getEffectiveNotifications(userId, deviceId, event.getEventTime())) {
                     Notification notification = getById(notificationId);
                     if (getById(notificationId).getType().equals(event.getType())) {
                         boolean filter = false;
                         if (event.getType().equals(Event.TYPE_ALARM)) {
-                            String alarms = notification.getString("alarms");
-                            if (alarms == null || !alarms.contains(event.getString(Position.KEY_ALARM))) {
+                            String alarmsAttribute = notification.getString("alarms");
+                            if (alarmsAttribute == null) {
                                 filter = true;
+                            } else {
+                                List<String> alarms = Arrays.asList(alarmsAttribute.split(","));
+                                filter = !alarms.contains(event.getString(Position.KEY_ALARM));
                             }
                         }
                         if (!filter) {
                             notificators.addAll(notification.getNotificatorsTypes());
                         }
                     }
+                }
+                if (position != null && position.getAddress() == null
+                        && geocodeOnRequest && Context.getGeocoder() != null) {
+                    position.setAddress(Context.getGeocoder()
+                            .getAddress(position.getLatitude(), position.getLongitude(), null));
                 }
                 for (String notificator : notificators) {
                     Context.getNotificatorManager().getNotificator(notificator).sendAsync(userId, event, position);

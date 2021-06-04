@@ -666,7 +666,7 @@ public class Lt05ProtocolDecoder extends BaseProtocolDecoder {
     }
 
     private Object decodeBasicOther(Channel channel, ByteBuf buf,
-            DeviceSession deviceSession, int type, int dataLength) throws Exception {
+                                    DeviceSession deviceSession, int type, int dataLength) throws Exception {
 
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
@@ -954,7 +954,7 @@ public class Lt05ProtocolDecoder extends BaseProtocolDecoder {
                 return position;
             } else if (subType == 0x0d) {
                 if (buf.getByte(buf.readerIndex()) != '!') {
-                buf.skipBytes(6);
+                    buf.skipBytes(6);
                 }
                 return decodeFuelData(position, buf.toString(
                         buf.readerIndex(), buf.readableBytes() - 4 - 2, StandardCharsets.US_ASCII));

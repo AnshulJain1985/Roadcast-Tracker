@@ -183,7 +183,8 @@ public class Rp05ProtocolDecoder extends BaseProtocolDecoder {
             response.writeShort(index);
             response.writeShort(Checksum.crc16(Checksum.CRC16_X25,
                     response.nioBuffer(2, response.writerIndex() - 2)));
-            response.writeByte('\r'); response.writeByte('\n'); // ending
+            response.writeByte('\r');
+            response.writeByte('\n'); // ending
             channel.writeAndFlush(new NetworkMessage(response, channel.remoteAddress()));
         }
     }
@@ -593,7 +594,7 @@ public class Rp05ProtocolDecoder extends BaseProtocolDecoder {
     }
 
     private Object decodeBasicOther(Channel channel, ByteBuf buf,
-            DeviceSession deviceSession, int type, int dataLength) throws Exception {
+                                    DeviceSession deviceSession, int type, int dataLength) throws Exception {
 
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
@@ -675,7 +676,7 @@ public class Rp05ProtocolDecoder extends BaseProtocolDecoder {
         } else {
 
             if (dataLength > 0) {
-            buf.skipBytes(dataLength);
+                buf.skipBytes(dataLength);
             }
             if (type != MSG_COMMAND_0 && type != MSG_COMMAND_1 && type != MSG_COMMAND_2) {
                 sendResponse(channel, false, type, buf.getShort(buf.writerIndex() - 6), null);

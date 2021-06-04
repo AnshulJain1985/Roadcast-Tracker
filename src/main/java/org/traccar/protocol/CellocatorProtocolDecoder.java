@@ -113,8 +113,7 @@ public class CellocatorProtocolDecoder extends BaseProtocolDecoder {
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
 
-        short hardwareVersion = buf.readUnsignedByte();
-        position.set(Position.KEY_VERSION_HW, hardwareVersion);
+        position.set(Position.KEY_VERSION_HW, buf.readUnsignedByte());
         position.set(Position.KEY_VERSION_FW, buf.readUnsignedByte());
         buf.readUnsignedByte(); // protocol version
 
@@ -153,9 +152,9 @@ public class CellocatorProtocolDecoder extends BaseProtocolDecoder {
 //            position.set(Position.KEY_IGNITION, BitUtil.check(input, 8 + 7));
 //            position.set(Position.KEY_CHARGE, BitUtil.check(input, 3 * 8 + 7));
 //        } else {
-            position.set(Position.KEY_DOOR, BitUtil.check(input, 3 * 8));
+        position.set(Position.KEY_DOOR, BitUtil.check(input, 3 * 8));
 //            position.set(Position.KEY_IGNITION, BitUtil.check(input, 2 * 8 + 7));
-            position.set(Position.KEY_CHARGE, BitUtil.check(input, 7));
+        position.set(Position.KEY_CHARGE, BitUtil.check(input, 7));
 //        }
         position.set(Position.KEY_INPUT, input);
 
@@ -298,7 +297,7 @@ public class CellocatorProtocolDecoder extends BaseProtocolDecoder {
         Position returnPosition = null;
 
         if (type == MSG_CLIENT_STATUS) {
-            returnPosition =  decodeStatus(buf, deviceSession, alternative);
+            returnPosition = decodeStatus(buf, deviceSession, alternative);
         } else if (type == MSG_CLIENT_MODULAR_EXT) {
             returnPosition = decodeModular(buf, deviceSession);
         }

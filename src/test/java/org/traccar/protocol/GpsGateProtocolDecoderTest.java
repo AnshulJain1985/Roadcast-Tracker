@@ -8,7 +8,7 @@ public class GpsGateProtocolDecoderTest extends ProtocolTest {
     @Test
     public void testDecode() throws Exception {
 
-        GpsGateProtocolDecoder decoder = new GpsGateProtocolDecoder(null);
+        var decoder = new GpsGateProtocolDecoder(null);
 
         verifyPosition(decoder, text(
                 "$FRCMD,0097,_SendMessage,,7618.51990,S,4002.26182,E,350.0,1.08,0.0,250816,183522.000,0*7F"));
@@ -27,13 +27,13 @@ public class GpsGateProtocolDecoderTest extends ProtocolTest {
 
         verifyNull(decoder, text(
                 "$FRLIN,,user1,8IVHF*7A"));
-        
+
         verifyNull(decoder, text(
                 "$FRLIN,,354503026292842,VGZTHKT*0C"));
 
         verifyNull(decoder, text(
                 "$FRLIN,IMEI,1234123412341234,*7B"));
-        
+
         verifyNull(decoder, text(
                 "$FRLIN,,saab93_device,KLRFBGIVDJ*28"));
 

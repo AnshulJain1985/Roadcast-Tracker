@@ -17,10 +17,13 @@ package org.traccar;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.traccar.config.Keys;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.BindException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -39,10 +42,9 @@ public class ServerManager {
     private final List<TrackerServer> serverList = new LinkedList<>();
     private final Map<String, BaseProtocol> protocolList = new ConcurrentHashMap<>();
 
-    public ServerManager() throws Exception {
+    private void loadPackage(String packageName) throws IOException, URISyntaxException, ReflectiveOperationException {
 
         List<String> names = new LinkedList<>();
-        String packageName = "org.traccar.protocol";
         String packagePath = packageName.replace('.', '/');
         URL packageUrl = getClass().getClassLoader().getResource(packagePath);
 
@@ -61,7 +63,7 @@ public class ServerManager {
             File folder = new File(new URI(packageUrl.toString()));
             File[] files = folder.listFiles();
             if (files != null) {
-                for (File actual: files) {
+                for (File actual : files) {
                     String entryName = actual.getName();
                     names.add(entryName.substring(0, entryName.lastIndexOf('.')));
                 }
@@ -69,14 +71,18 @@ public class ServerManager {
         }
 
         for (String name : names) {
-            Class protocolClass = Class.forName(packageName + '.' + name);
-            if (BaseProtocol.class.isAssignableFrom(protocolClass)
-                    && Context.getConfig().hasKey(BaseProtocol.nameFromClass(protocolClass) + ".port")) {
-                BaseProtocol protocol = (BaseProtocol) protocolClass.newInstance();
+            Class<?> protocolClass = Class.forName(packageName + '.' + name);
+            if (BaseProtocol.class.isAssignableFrom(protocolClass) && Context.getConfig().hasKey(
+                    Keys.PROTOCOL_PORT.withPrefix(BaseProtocol.nameFromClass(protocolClass)))) {
+                BaseProtocol protocol = (BaseProtocol) protocolClass.getDeclaredConstructor().newInstance();
                 serverList.addAll(protocol.getServerList());
                 protocolList.put(protocol.getName(), protocol);
             }
         }
+    }
+
+    public ServerManager() throws IOException, URISyntaxException, ReflectiveOperationException {
+        loadPackage("org.traccar.protocol");
     }
 
     public BaseProtocol getProtocol(String name) {
@@ -84,17 +90,17 @@ public class ServerManager {
     }
 
     public void start() throws Exception {
-        for (TrackerServer server: serverList) {
+        for (TrackerServer server : serverList) {
             try {
                 server.start();
             } catch (BindException e) {
-                LOGGER.warn("One of the protocols is disabled due to port conflict" + e.getMessage());
+                LOGGER.warn("Port {} is disabled due to conflict", server.getPort());
             }
         }
     }
 
     public void stop() {
-        for (TrackerServer server: serverList) {
+        for (TrackerServer server : serverList) {
             server.stop();
         }
         GlobalTimer.release();

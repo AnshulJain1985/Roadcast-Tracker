@@ -34,14 +34,14 @@ public class EelinkAssetProtocol extends BaseProtocol {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new LengthFieldBasedFrameDecoder(1024, 3, 2));
-                pipeline.addLast(new EelinkAssetProtocolEncoder(false));
+                pipeline.addLast(new EelinkAssetProtocolEncoder(EelinkAssetProtocol.this, false));
                 pipeline.addLast(new EelinkAssetProtocolDecoder(EelinkAssetProtocol.this));
             }
         });
         addServer(new TrackerServer(true, getName()) {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
-                pipeline.addLast(new EelinkAssetProtocolEncoder(true));
+                pipeline.addLast(new EelinkAssetProtocolEncoder(EelinkAssetProtocol.this, true));
                 pipeline.addLast(new EelinkAssetProtocolDecoder(EelinkAssetProtocol.this));
             }
         });

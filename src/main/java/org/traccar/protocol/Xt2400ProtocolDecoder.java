@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 - 2018 Anton Tananaev (anton@traccar.org)
+ * Copyright 2017 - 2020 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.traccar.BaseProtocolDecoder;
 import org.traccar.Context;
 import org.traccar.DeviceSession;
 import org.traccar.Protocol;
+import org.traccar.config.Keys;
 import org.traccar.helper.DataConverter;
 import org.traccar.helper.UnitsConverter;
 import org.traccar.model.Position;
@@ -38,7 +39,7 @@ public class Xt2400ProtocolDecoder extends BaseProtocolDecoder {
     public Xt2400ProtocolDecoder(Protocol protocol) {
         super(protocol);
 
-        String config = Context.getConfig().getString(getProtocolName() + ".config");
+        String config = Context.getConfig().getString(Keys.PROTOCOL_CONFIG.withPrefix(getProtocolName()));
         if (config != null) {
             setConfig(config);
         }
@@ -59,7 +60,7 @@ public class Xt2400ProtocolDecoder extends BaseProtocolDecoder {
                 0x26, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48,
                 0x49, 0x57, 0x58, 0x59, 0x5a, 0x6b, 0x6f, 0x7A,
                 0x7B, 0x7C, 0x7d, 0x7E, 0x7F, 0x80, 0x81, 0x82,
-                0x83, 0x84, 0x85, 0x86
+                0x83, 0x84, 0x85, 0x86, 0xc8
         };
         int[] l4 = {
                 0x03, 0x06, 0x07, 0x08, 0x0e, 0x0f, 0x10, 0x11,
@@ -80,12 +81,13 @@ public class Xt2400ProtocolDecoder extends BaseProtocolDecoder {
             TAG_LENGTH_MAP.put(i, 4);
         }
         TAG_LENGTH_MAP.put(0x95, 24);
+        TAG_LENGTH_MAP.put(0xD0, 21);
     }
 
     private static int getTagLength(int tag) {
         Integer length = TAG_LENGTH_MAP.get(tag);
         if (length == null) {
-            throw new IllegalArgumentException("Unknown tag: " + tag);
+            throw new IllegalArgumentException(String.format("Unknown tag: 0x%02X", tag));
         }
         return length;
     }
@@ -93,7 +95,7 @@ public class Xt2400ProtocolDecoder extends BaseProtocolDecoder {
     private final Map<Short, byte[]> formats = new HashMap<>();
 
     public void setConfig(String configString) {
-        Pattern pattern = Pattern.compile(":wycfg pcr\\[\\d+\\] ([0-9a-fA-F]{2})[0-9a-fA-F]{2}([0-9a-fA-F]+)");
+        Pattern pattern = Pattern.compile(":wycfg pcr\\[\\d+] ([0-9a-fA-F]{2})[0-9a-fA-F]{2}([0-9a-fA-F]+)");
         Matcher matcher = pattern.matcher(configString);
         while (matcher.find()) {
             formats.put(Short.parseShort(matcher.group(1), 16), DataConverter.parseHex(matcher.group(2)));
@@ -119,7 +121,8 @@ public class Xt2400ProtocolDecoder extends BaseProtocolDecoder {
 
         Position position = new Position(getProtocolName());
 
-        for (byte tag : format) {
+        for (byte b : format) {
+            int tag = b & 0xFF;
             switch (tag) {
                 case 0x03:
                     DeviceSession deviceSession = getDeviceSession(
@@ -176,6 +179,14 @@ public class Xt2400ProtocolDecoder extends BaseProtocolDecoder {
                     break;
                 case 0x65:
                     position.set(Position.KEY_VIN, buf.readSlice(17).toString(StandardCharsets.US_ASCII));
+                    break;
+                case 0x6C:
+                    buf.readUnsignedByte(); // mil
+                    int ecuCount = buf.readUnsignedByte();
+                    for (int i = 0; i < ecuCount; i++) {
+                        buf.readUnsignedByte(); // ecu id
+                        buf.skipBytes(buf.readUnsignedByte() * 6);
+                    }
                     break;
                 case 0x73:
                     position.set(Position.KEY_VERSION_FW, buf.readSlice(16).toString(StandardCharsets.US_ASCII).trim());

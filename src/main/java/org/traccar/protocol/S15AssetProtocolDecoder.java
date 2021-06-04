@@ -184,7 +184,8 @@ public class S15AssetProtocolDecoder extends BaseProtocolDecoder {
             response.writeShort(index);
             response.writeShort(Checksum.crc16(Checksum.CRC16_X25,
                     response.nioBuffer(2, response.writerIndex() - 2)));
-            response.writeByte('\r'); response.writeByte('\n'); // ending
+            response.writeByte('\r');
+            response.writeByte('\n'); // ending
             channel.writeAndFlush(new NetworkMessage(response, channel.remoteAddress()));
         }
     }

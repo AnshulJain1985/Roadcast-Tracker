@@ -33,7 +33,7 @@ public class St351Protocol extends BaseProtocol {
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new StringDecoder());
                 pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new St351ProtocolEncoder());
+                pipeline.addLast(new St351ProtocolEncoder(St351Protocol.this));
                 pipeline.addLast(new St351ProtocolDecoder(St351Protocol.this));
             }
         });
@@ -41,7 +41,7 @@ public class St351Protocol extends BaseProtocol {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new St351ProtocolEncoder());
+                pipeline.addLast(new St351ProtocolEncoder(St351Protocol.this));
                 pipeline.addLast(new St351ProtocolDecoder(St351Protocol.this));
             }
         });

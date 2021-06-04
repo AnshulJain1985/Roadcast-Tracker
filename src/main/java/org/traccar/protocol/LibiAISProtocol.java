@@ -35,7 +35,7 @@ public class LibiAISProtocol extends BaseProtocol {
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new StringDecoder());
                 pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new LibiAISProtocolEncoder());
+                pipeline.addLast(new LibiAISProtocolEncoder(LibiAISProtocol.this));
                 pipeline.addLast(new LibiAISProtocolDecoder(LibiAISProtocol.this));
             }
         });
@@ -43,7 +43,7 @@ public class LibiAISProtocol extends BaseProtocol {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new LibiAISProtocolEncoder());
+                pipeline.addLast(new LibiAISProtocolEncoder(LibiAISProtocol.this));
                 pipeline.addLast(new LibiAISProtocolDecoder(LibiAISProtocol.this));
             }
         });

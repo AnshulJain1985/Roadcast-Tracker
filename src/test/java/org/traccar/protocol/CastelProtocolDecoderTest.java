@@ -2,13 +2,21 @@ package org.traccar.protocol;
 
 import org.junit.Test;
 import org.traccar.ProtocolTest;
+import org.traccar.model.Position;
 
 public class CastelProtocolDecoderTest extends ProtocolTest {
 
     @Test
     public void testDecode() throws Exception {
 
-        CastelProtocolDecoder decoder = new CastelProtocolDecoder(null);
+        var decoder = new CastelProtocolDecoder(null);
+
+        verifyAttribute(decoder, binary(
+                "40403a00043231334744503230313830323133343300000000a002000001000001012011004d414c43333831434d4b4d353637313438c8fc0d0a"),
+                Position.KEY_RESULT, "MALC381CMKM567148");
+
+        verifyAttributes(decoder, binary(
+                "404043000432313357503230313830303138323400000000004005f064d95c8365d95c9f2f0100c50200004006000000000000040003440068000000000100f3660d0a"));
 
         verifyAttributes(decoder, binary(
                 "40403a00043231335750323031373030363135360000000000a00200000100000101201100344a474446364545374a4230373632363056ff0d0a"));
@@ -135,7 +143,7 @@ public class CastelProtocolDecoderTest extends ProtocolTest {
 
         verifyPositions(decoder, binary(
                 "40405900043130303131313235323939383700000000000000400101C1F06952E7F069529C9111000000000069830000070000000400036401014C00030001190A0D0412041480D60488C57218000000009F01E803ED9A0D0A"));
-        
+
         verifyPositions(decoder, binary(
                 "40405900043335343034333035303834343134330000000000400100f61a7355c11b7355710000000b00000000000000000000000400000000240e0200020106060f100b2d5a78a7076ec0fb1d00008c065f010000ac220d0a"));
 

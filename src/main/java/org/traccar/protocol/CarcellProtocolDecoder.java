@@ -17,7 +17,6 @@ package org.traccar.protocol;
 
 import java.net.SocketAddress;
 import java.util.regex.Pattern;
-
 import io.netty.channel.Channel;
 import org.traccar.BaseProtocolDecoder;
 import org.traccar.DeviceSession;
@@ -27,6 +26,7 @@ import org.traccar.helper.Parser.CoordinateFormat;
 import org.traccar.helper.PatternBuilder;
 import org.traccar.helper.UnitsConverter;
 import org.traccar.model.Position;
+
 
 public class CarcellProtocolDecoder extends BaseProtocolDecoder {
 
@@ -155,7 +155,7 @@ public class CarcellProtocolDecoder extends BaseProtocolDecoder {
             Double mainVoltage = parser.nextDouble(0) / 100d;
             position.set(Position.KEY_POWER, mainVoltage);
 
-            position.set("iccid", parser.next());
+            position.set(Position.KEY_ICCID, parser.next());
         }
 
         return position;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 - 2018 Anton Tananaev (anton@traccar.org)
+ * Copyright 2013 - 2021 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package org.traccar.protocol;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import org.traccar.BaseProtocolDecoder;
@@ -23,6 +24,9 @@ import org.traccar.Context;
 import org.traccar.DeviceSession;
 import org.traccar.NetworkMessage;
 import org.traccar.Protocol;
+import org.traccar.config.Keys;
+import org.traccar.helper.BitUtil;
+import org.traccar.helper.DataConverter;
 import org.traccar.helper.DateBuilder;
 import org.traccar.helper.Parser;
 import org.traccar.helper.PatternBuilder;
@@ -52,26 +56,32 @@ public class AtrackProtocolDecoder extends BaseProtocolDecoder {
     private boolean longDate;
     private final boolean decimalFuel;
     private boolean custom;
-    private final String form;
+    private String form;
+
+    private ByteBuf photo;
 
     private final Map<Integer, String> alarmMap = new HashMap<>();
 
     public AtrackProtocolDecoder(Protocol protocol) {
         super(protocol);
 
-        longDate = Context.getConfig().getBoolean(getProtocolName() + ".longDate");
-        decimalFuel = Context.getConfig().getBoolean(getProtocolName() + ".decimalFuel");
+        longDate = Context.getConfig().getBoolean(Keys.PROTOCOL_LONG_DATE.withPrefix(getProtocolName()));
+        decimalFuel = Context.getConfig().getBoolean(Keys.PROTOCOL_DECIMAL_FUEL.withPrefix(getProtocolName()));
 
-        custom = Context.getConfig().getBoolean(getProtocolName() + ".custom");
-        form = Context.getConfig().getString(getProtocolName() + ".form");
+        custom = Context.getConfig().getBoolean(Keys.PROTOCOL_CUSTOM.withPrefix(getProtocolName()));
+        form = Context.getConfig().getString(Keys.PROTOCOL_FORM.withPrefix(getProtocolName()));
         if (form != null) {
             custom = true;
         }
 
-        for (String pair : Context.getConfig().getString(getProtocolName() + ".alarmMap", "").split(",")) {
-            if (!pair.isEmpty()) {
-                alarmMap.put(
-                        Integer.parseInt(pair.substring(0, pair.indexOf('='))), pair.substring(pair.indexOf('=') + 1));
+        String alarmMapString = Context.getConfig().getString(Keys.PROTOCOL_ALARM_MAP.withPrefix(getProtocolName()));
+        if (alarmMapString != null) {
+            for (String pair : alarmMapString.split(",")) {
+                if (!pair.isEmpty()) {
+                    alarmMap.put(
+                            Integer.parseInt(pair.substring(0, pair.indexOf('='))),
+                            pair.substring(pair.indexOf('=') + 1));
+                }
             }
         }
     }
@@ -82,6 +92,10 @@ public class AtrackProtocolDecoder extends BaseProtocolDecoder {
 
     public void setCustom(boolean custom) {
         this.custom = custom;
+    }
+
+    public void setForm(String form) {
+        this.form = form;
     }
 
     private static void sendResponse(Channel channel, SocketAddress remoteAddress, long rawId, int index) {
@@ -102,6 +116,89 @@ public class AtrackProtocolDecoder extends BaseProtocolDecoder {
         }
         buf.readByte();
         return result;
+    }
+
+    private void decodeBeaconData(Position position, int mode, int mask, ByteBuf data) {
+        int i = 1;
+        while (data.isReadable()) {
+            if (BitUtil.check(mask, 7)) {
+                position.set("tag" + i + "Id", ByteBufUtil.hexDump(data.readSlice(6)));
+            }
+            switch (mode) {
+                case 1:
+                    if (BitUtil.check(mask, 6)) {
+                        data.readUnsignedShort(); // major
+                    }
+                    if (BitUtil.check(mask, 5)) {
+                        data.readUnsignedShort(); // minor
+                    }
+                    if (BitUtil.check(mask, 4)) {
+                        data.readUnsignedByte(); // tx power
+                    }
+                    if (BitUtil.check(mask, 3)) {
+                        position.set("tag" + i + "Rssi", data.readUnsignedByte());
+                    }
+                    break;
+                case 2:
+                    if (BitUtil.check(mask, 6)) {
+                        data.readUnsignedShort(); // battery voltage
+                    }
+                    if (BitUtil.check(mask, 5)) {
+                        position.set("tag" + i + "Temp", data.readUnsignedShort());
+                    }
+                    if (BitUtil.check(mask, 4)) {
+                        data.readUnsignedByte(); // tx power
+                    }
+                    if (BitUtil.check(mask, 3)) {
+                        position.set("tag" + i + "Rssi", data.readUnsignedByte());
+                    }
+                    break;
+                case 3:
+                    if (BitUtil.check(mask, 6)) {
+                        position.set("tag" + i + "Humidity", data.readUnsignedShort());
+                    }
+                    if (BitUtil.check(mask, 5)) {
+                        position.set("tag" + i + "Temp", data.readUnsignedShort());
+                    }
+                    if (BitUtil.check(mask, 3)) {
+                        position.set("tag" + i + "Rssi", data.readUnsignedByte());
+                    }
+                    if (BitUtil.check(mask, 2)) {
+                        data.readUnsignedShort();
+                    }
+                    break;
+                case 4:
+                    if (BitUtil.check(mask, 6)) {
+                        int hardwareId = data.readUnsignedByte();
+                        if (BitUtil.check(mask, 5)) {
+                            switch (hardwareId) {
+                                case 1:
+                                case 4:
+                                    data.skipBytes(11); // fuel
+                                    break;
+                                case 2:
+                                    data.skipBytes(2); // temperature
+                                    break;
+                                case 3:
+                                    data.skipBytes(6); // temperature and luminosity
+                                    break;
+                                case 5:
+                                    data.skipBytes(10); // temperature, humidity, luminosity and pressure
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                    }
+                    if (BitUtil.check(mask, 4)) {
+                        data.skipBytes(9); // name
+                    }
+                    break;
+                default:
+                    break;
+            }
+            i += 1;
+        }
     }
 
     private void readTextCustomData(Position position, String data, String form) {
@@ -156,7 +253,7 @@ public class AtrackProtocolDecoder extends BaseProtocolDecoder {
                     position.set(Position.KEY_THROTTLE, Integer.parseInt(values[i]));
                     break;
                 case "ET":
-                    position.set(Position.PREFIX_TEMP + 1, Integer.parseInt(values[i]));
+                    position.set(Position.KEY_COOLANT_TEMP, Integer.parseInt(values[i]));
                     break;
                 case "FL":
                     position.set(Position.KEY_FUEL_LEVEL, Integer.parseInt(values[i]));
@@ -166,6 +263,42 @@ public class AtrackProtocolDecoder extends BaseProtocolDecoder {
                     break;
                 case "AV1":
                     position.set(Position.PREFIX_ADC + 1, Integer.parseInt(values[i]));
+                    break;
+                case "CD":
+                    position.set(Position.KEY_ICCID, values[i]);
+                    break;
+                case "EH":
+                    position.set(Position.KEY_HOURS, UnitsConverter.msFromHours(Integer.parseInt(values[i]) * 0.1));
+                    break;
+                case "IA":
+                    position.set("intakeTemp", Integer.parseInt(values[i]));
+                    break;
+                case "EL":
+                    position.set(Position.KEY_ENGINE_LOAD, Integer.parseInt(values[i]));
+                    break;
+                case "HA":
+                    if (Integer.parseInt(values[i]) > 0) {
+                        position.set(Position.KEY_ALARM, Position.ALARM_ACCELERATION);
+                    }
+                    break;
+                case "HB":
+                    if (Integer.parseInt(values[i]) > 0) {
+                        position.set(Position.KEY_ALARM, Position.ALARM_BRAKING);
+                    }
+                    break;
+                case "HC":
+                    if (Integer.parseInt(values[i]) > 0) {
+                        position.set(Position.KEY_ALARM, Position.ALARM_CORNERING);
+                    }
+                    break;
+                case "MT":
+                    position.set(Position.KEY_MOTION, Integer.parseInt(values[i]) > 0);
+                    break;
+                case "BC":
+                    String[] beaconValues = values[i].split(":");
+                    decodeBeaconData(
+                            position, Integer.parseInt(beaconValues[0]), Integer.parseInt(beaconValues[1]),
+                            Unpooled.wrappedBuffer(DataConverter.parseHex(beaconValues[2])));
                     break;
                 default:
                     break;
@@ -274,7 +407,7 @@ public class AtrackProtocolDecoder extends BaseProtocolDecoder {
                     buf.readUnsignedByte(); // pending code status
                     break;
                 case "CD":
-                    readString(buf); // sim cid
+                    position.set(Position.KEY_ICCID, readString(buf));
                     break;
                 case "CM":
                     buf.readLong(); // imsi
@@ -300,9 +433,9 @@ public class AtrackProtocolDecoder extends BaseProtocolDecoder {
         }
 
         if (cellTower.getMobileCountryCode() != null
-            && cellTower.getMobileNetworkCode() != null
-            && cellTower.getCellId() != null && cellTower.getCellId() != 0
-            && cellTower.getLocationAreaCode() != null) {
+                && cellTower.getMobileNetworkCode() != null
+                && cellTower.getCellId() != null && cellTower.getCellId() != 0
+                && cellTower.getLocationAreaCode() != null) {
             position.setNetwork(new Network(cellTower));
         } else if (cellTower.getSignalStrength() != null) {
             position.set(Position.KEY_RSSI, cellTower.getSignalStrength());
@@ -381,7 +514,7 @@ public class AtrackProtocolDecoder extends BaseProtocolDecoder {
             .number("(d+),")                     // speed
             .number("(d+),")                     // outputs
             .number("(d+),")                     // adc
-            .number("[^,]*,")                    // driver
+            .number("([^,]+)?,")                 // driver
             .number("(d+),")                     // temp1
             .number("(d+),")                     // temp2
             .expression("[^,]*,")                // text message
@@ -391,7 +524,7 @@ public class AtrackProtocolDecoder extends BaseProtocolDecoder {
 
     private List<Position> decodeText(Channel channel, SocketAddress remoteAddress, String sentence) {
 
-        int startIndex = 0;
+        int startIndex = -1;
         for (int i = 0; i < 4; i++) {
             startIndex = sentence.indexOf(',', startIndex + 1);
         }
@@ -455,6 +588,11 @@ public class AtrackProtocolDecoder extends BaseProtocolDecoder {
 
         position.set(Position.KEY_OUTPUT, parser.nextInt());
         position.set(Position.PREFIX_ADC + 1, parser.nextInt());
+
+        if (parser.hasNext()) {
+            position.set(Position.KEY_DRIVER_UNIQUE_ID, parser.next());
+        }
+
         position.set(Position.PREFIX_TEMP + 1, parser.nextInt());
         position.set(Position.PREFIX_TEMP + 2, parser.nextInt());
 
@@ -471,20 +609,34 @@ public class AtrackProtocolDecoder extends BaseProtocolDecoder {
         return position;
     }
 
-    private List<Position> decodeBinary(Channel channel, SocketAddress remoteAddress, ByteBuf buf) {
+    private Position decodePhoto(DeviceSession deviceSession, ByteBuf buf, long id) {
 
-        buf.skipBytes(2); // prefix
-        buf.readUnsignedShort(); // checksum
-        buf.readUnsignedShort(); // length
-        int index = buf.readUnsignedShort();
+        long time = buf.readUnsignedInt();
+        int index = buf.readUnsignedByte();
+        int count = buf.readUnsignedByte();
 
-        long id = buf.readLong();
-        DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, String.valueOf(id));
-        if (deviceSession == null) {
-            return null;
+        if (photo == null) {
+            photo = Unpooled.buffer();
+        }
+        photo.writeBytes(buf.readSlice(buf.readUnsignedShort()));
+
+        if (index == count - 1) {
+            Position position = new Position(getProtocolName());
+            position.setDeviceId(deviceSession.getDeviceId());
+
+            getLastLocation(position, new Date(time * 1000));
+
+            position.set(Position.KEY_IMAGE, Context.getMediaManager().writeFile(String.valueOf(id), photo, "jpg"));
+            photo.release();
+            photo = null;
+
+            return position;
         }
 
-        sendResponse(channel, remoteAddress, id, index);
+        return null;
+    }
+
+    private List<Position> decodeBinary(DeviceSession deviceSession, ByteBuf buf) {
 
         List<Position> positions = new LinkedList<>();
 
@@ -574,7 +726,26 @@ public class AtrackProtocolDecoder extends BaseProtocolDecoder {
         } else if (buf.getByte(buf.readerIndex() + 2) == ',') {
             return decodeText(channel, remoteAddress, buf.toString(StandardCharsets.US_ASCII).trim());
         } else {
-            return decodeBinary(channel, remoteAddress, buf);
+
+            String prefix = buf.readCharSequence(2, StandardCharsets.US_ASCII).toString();
+            buf.readUnsignedShort(); // checksum
+            buf.readUnsignedShort(); // length
+            int index = buf.readUnsignedShort();
+
+            long id = buf.readLong();
+            DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, String.valueOf(id));
+            if (deviceSession == null) {
+                return null;
+            }
+
+            sendResponse(channel, remoteAddress, id, index);
+
+            if (prefix.equals("@R")) {
+                return decodePhoto(deviceSession, buf, id);
+            } else {
+                return decodeBinary(deviceSession, buf);
+            }
+
         }
     }
 

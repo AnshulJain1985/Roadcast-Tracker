@@ -30,7 +30,7 @@ public class GElockProtocol extends BaseProtocol {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new GElockFrameDecoder());
-                pipeline.addLast(new GElockProtocolEncoder());
+                pipeline.addLast(new GElockProtocolEncoder(GElockProtocol.this));
                 pipeline.addLast(new GElockProtocolDecoder(GElockProtocol.this));
             }
         });

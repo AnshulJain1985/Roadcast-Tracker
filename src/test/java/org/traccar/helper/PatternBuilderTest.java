@@ -5,7 +5,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public class PatternBuilderTest {
-    
+
     @Test
     public void testPatternBuilder() {
         assertEquals("\\$GPRMC", new PatternBuilder().text("$GPRMC").toString());

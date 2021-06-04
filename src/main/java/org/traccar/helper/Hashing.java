@@ -28,6 +28,7 @@ public final class Hashing {
     public static final int HASH_SIZE = 24;
 
     private static SecretKeyFactory factory;
+
     static {
         try {
             factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");

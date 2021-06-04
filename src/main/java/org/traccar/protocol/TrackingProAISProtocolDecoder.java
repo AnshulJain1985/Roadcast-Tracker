@@ -28,6 +28,7 @@ import org.traccar.helper.UnitsConverter;
 import org.traccar.model.CellTower;
 import org.traccar.model.Network;
 import org.traccar.model.Position;
+
 import java.net.SocketAddress;
 import java.util.Date;
 import java.util.regex.Pattern;

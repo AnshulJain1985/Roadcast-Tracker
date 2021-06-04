@@ -30,6 +30,10 @@ public class Network {
         addCellTower(cellTower);
     }
 
+    public Network(WifiAccessPoint wifiAccessPoint) {
+        addWifiAccessPoint(wifiAccessPoint);
+    }
+
     private Integer homeMobileCountryCode;
 
     public Integer getHomeMobileCountryCode() {

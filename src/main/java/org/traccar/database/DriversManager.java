@@ -16,6 +16,7 @@
  */
 package org.traccar.database;
 
+
 import org.traccar.model.Driver;
 
 import java.util.Map;

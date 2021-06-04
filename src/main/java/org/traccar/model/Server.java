@@ -15,18 +15,13 @@
  */
 package org.traccar.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.traccar.Context;
 import org.traccar.database.QueryIgnore;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Server extends ExtendedModel {
 
-    @QueryIgnore
-    public String getVersion() {
-        return Context.getAppVersion();
-    }
-
-    public void setVersion(String version) {
-    }
 
     private boolean registration;
 
@@ -166,5 +161,25 @@ public class Server extends ExtendedModel {
 
     public void setPoiLayer(String poiLayer) {
         this.poiLayer = poiLayer;
+    }
+
+    private String announcement;
+
+    public String getAnnouncement() {
+        return announcement;
+    }
+
+    public void setAnnouncement(String announcement) {
+        this.announcement = announcement;
+    }
+
+    @QueryIgnore
+    public String getVersion() {
+        return getClass().getPackage().getImplementationVersion();
+    }
+
+    @QueryIgnore
+    public Boolean getEmailEnabled() {
+        return Context.getMailManager().getEmailEnabled();
     }
 }

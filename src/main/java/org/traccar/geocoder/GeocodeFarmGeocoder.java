@@ -30,6 +30,7 @@ public class GeocodeFarmGeocoder extends JsonGeocoder {
         }
         return url;
     }
+
     public GeocodeFarmGeocoder(String key, String language, int cacheSize, AddressFormat addressFormat) {
         super(formatUrl(key, language), cacheSize, addressFormat);
     }

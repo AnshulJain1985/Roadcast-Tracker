@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 - 2018 Anton Tananaev (anton@traccar.org)
+ * Copyright 2013 - 2021 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import org.traccar.BaseProtocolDecoder;
+import org.traccar.Context;
 import org.traccar.DeviceSession;
 import org.traccar.NetworkMessage;
 import org.traccar.Protocol;
@@ -34,6 +35,8 @@ import java.util.List;
 
 public class RuptelaProtocolDecoder extends BaseProtocolDecoder {
 
+    private ByteBuf photo;
+
     public RuptelaProtocolDecoder(Protocol protocol) {
         super(protocol);
     }
@@ -48,6 +51,7 @@ public class RuptelaProtocolDecoder extends BaseProtocolDecoder {
     public static final int MSG_SMS_VIA_GPRS = 8;
     public static final int MSG_DTCS = 9;
     public static final int MSG_SET_IO = 17;
+    public static final int MSG_FILES = 37;
     public static final int MSG_EXTENDED_RECORDS = 68;
 
     private Position decodeCommandResponse(DeviceSession deviceSession, int type, ByteBuf buf) {
@@ -105,6 +109,16 @@ public class RuptelaProtocolDecoder extends BaseProtocolDecoder {
             case 79:
             case 80:
                 position.set(Position.PREFIX_TEMP + (id - 78), readValue(buf, length, true) * 0.1);
+                break;
+            case 198:
+                position.set(Position.KEY_ALARM, Position.ALARM_OVERSPEED);
+                break;
+            case 199:
+            case 200:
+                position.set(Position.KEY_ALARM, Position.ALARM_BRAKING);
+                break;
+            case 201:
+                position.set(Position.KEY_ALARM, Position.ALARM_ACCELERATION);
                 break;
             default:
                 position.set(Position.PREFIX_IO + id, readValue(buf, length, false));
@@ -194,6 +208,14 @@ public class RuptelaProtocolDecoder extends BaseProtocolDecoder {
                     decodeParameter(position, id, buf, 8);
                 }
 
+                Long driverIdPart1 = (Long) position.getAttributes().remove(Position.PREFIX_IO + 126);
+                Long driverIdPart2 = (Long) position.getAttributes().remove(Position.PREFIX_IO + 127);
+                if (driverIdPart1 != null && driverIdPart2 != null) {
+                    ByteBuf driverId = Unpooled.copyLong(driverIdPart1, driverIdPart2);
+                    position.set(Position.KEY_DRIVER_UNIQUE_ID, driverId.toString(StandardCharsets.US_ASCII));
+                    driverId.release();
+                }
+
                 positions.add(position);
             }
 
@@ -237,6 +259,43 @@ public class RuptelaProtocolDecoder extends BaseProtocolDecoder {
             }
 
             return positions;
+
+        } else if (type == MSG_FILES) {
+
+            int subtype = buf.readUnsignedByte();
+            int source = buf.readUnsignedByte();
+
+            if (subtype == 2) {
+                ByteBuf filename = buf.readSlice(8);
+                int total = buf.readUnsignedShort();
+                int current = buf.readUnsignedShort();
+                if (photo == null) {
+                    photo = Unpooled.buffer();
+                }
+                photo.writeBytes(buf.readSlice(buf.readableBytes() - 2));
+                if (current < total - 1) {
+                    ByteBuf content = Unpooled.buffer();
+                    content.writeByte(subtype);
+                    content.writeByte(source);
+                    content.writeBytes(filename);
+                    content.writeShort(current + 1);
+                    ByteBuf response = RuptelaProtocolEncoder.encodeContent(type, content);
+                    content.release();
+                    if (channel != null) {
+                        channel.writeAndFlush(new NetworkMessage(response, remoteAddress));
+                    }
+                } else {
+                    Position position = new Position(getProtocolName());
+                    position.setDeviceId(deviceSession.getDeviceId());
+                    getLastLocation(position, null);
+                    position.set(Position.KEY_IMAGE, Context.getMediaManager().writeFile(imei, photo, "jpg"));
+                    photo.release();
+                    photo = null;
+                    return position;
+                }
+            }
+
+            return null;
 
         } else {
 

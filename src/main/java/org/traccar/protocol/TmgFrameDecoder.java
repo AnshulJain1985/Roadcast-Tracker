@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 - 2018 Anton Tananaev (anton@traccar.org)
+ * Copyright 2017 - 2020 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package org.traccar.protocol;
 
 import org.traccar.BaseFrameDecoder;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -31,12 +30,12 @@ public class TmgFrameDecoder extends BaseFrameDecoder {
         int guessedIndex = buffer.indexOf(buffer.readerIndex(), buffer.writerIndex(), (byte) '$');
         while (guessedIndex != -1 && buffer.writerIndex() - guessedIndex >= 5) {
             if (buffer.getByte(guessedIndex + 4) == ','
-                        && isLetter(buffer.getByte(guessedIndex + 1))
-                        && isLetter(buffer.getByte(guessedIndex + 2))
-                        && isLetter(buffer.getByte(guessedIndex + 3))) {
+                    && isLetter(buffer.getByte(guessedIndex + 1))
+                    && isLetter(buffer.getByte(guessedIndex + 2))
+                    && isLetter(buffer.getByte(guessedIndex + 3))) {
                 return guessedIndex;
             }
-            guessedIndex = buffer.indexOf(guessedIndex, buffer.writerIndex(), (byte) '$');
+            guessedIndex = buffer.indexOf(guessedIndex + 1, buffer.writerIndex(), (byte) '$');
         }
         return -1;
     }

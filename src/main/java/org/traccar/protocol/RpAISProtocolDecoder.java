@@ -27,6 +27,7 @@ import org.traccar.helper.UnitsConverter;
 import org.traccar.model.CellTower;
 import org.traccar.model.Network;
 import org.traccar.model.Position;
+
 import java.net.SocketAddress;
 import java.util.Date;
 import java.util.regex.Pattern;
@@ -49,7 +50,7 @@ public class RpAISProtocolDecoder extends BaseProtocolDecoder {
             .text("*")
             .compile();
 
-//    $HLM,ROADRPA,1.9AIS,869867036058354,98,20,0,60,60,0000,11*
+    //    $HLM,ROADRPA,1.9AIS,869867036058354,98,20,0,60,60,0000,11*
     private static final Pattern PATTERN_HEARTBEAT = new PatternBuilder()
             .text("$HLM,")
             .expression("([A-Z]+),")                // Vendor Id

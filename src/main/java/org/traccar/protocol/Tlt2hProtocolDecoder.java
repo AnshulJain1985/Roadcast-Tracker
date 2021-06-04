@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 - 2018 Anton Tananaev (anton@traccar.org)
+ * Copyright 2013 - 2021 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,9 @@ import org.traccar.Protocol;
 import org.traccar.helper.DateBuilder;
 import org.traccar.helper.Parser;
 import org.traccar.helper.PatternBuilder;
+import org.traccar.model.Network;
 import org.traccar.model.Position;
+import org.traccar.model.WifiAccessPoint;
 
 import java.net.SocketAddress;
 import java.util.LinkedList;
@@ -36,17 +38,26 @@ public class Tlt2hProtocolDecoder extends BaseProtocolDecoder {
     }
 
     private static final Pattern PATTERN_HEADER = new PatternBuilder()
-            .number("#(d+)#")                    // imei
-            .any()
-            .expression("([^#]+)#")              // status
-            .number("d+")                        // number of records
+            .number("#(d+)")                     // imei
+            .expression("#[^#]*")                // user
+            .number("#d*")                       // password
+            .groupBegin()
+            .number("#([01])")                   // door
+            .number("#(d+)")                     // fuel voltage
+            .number("#(d+)")                     // power
+            .number("#(d+)")                     // battery
+            .number("#(d+)")                     // temperature
+            .groupEnd("?")
+            .expression("#([^#]+)")              // status
+            .number("#d+")                       // number of records
             .compile();
 
     private static final Pattern PATTERN_POSITION = new PatternBuilder()
-            .number("#(x+)?")                    // cell info
+            .text("#")
+            .number("(?:(dd)|x*)")               // cell or voltage
             .text("$GPRMC,")
             .number("(dd)(dd)(dd).d+,")          // time (hhmmss.sss)
-            .expression("([AV]),")               // validity
+            .expression("([AVL]),")              // validity
             .number("(d+)(dd.d+),")              // latitude
             .expression("([NS]),")
             .number("(d+)(dd.d+),")              // longitude
@@ -55,6 +66,18 @@ public class Tlt2hProtocolDecoder extends BaseProtocolDecoder {
             .number("(d+.?d*)?,")                // course
             .number("(dd)(dd)(dd)")              // date (ddmmyy)
             .any()
+            .compile();
+
+    private static final Pattern PATTERN_WIFI = new PatternBuilder()
+            .text("#")
+            .number("(?:(dd)|x+)")               // cell or voltage
+            .text("$WIFI,")
+            .number("(dd)(dd)(dd).d+,")          // time (hhmmss.sss)
+            .expression("[AVL],")                // validity
+            .expression("(.*)")                  // access points
+            .number("(dd)(dd)(dd)")              // date (ddmmyy)
+            .text("*")
+            .number("xx")                        // checksum
             .compile();
 
     private void decodeStatus(Position position, String status) {
@@ -114,39 +137,93 @@ public class Tlt2hProtocolDecoder extends BaseProtocolDecoder {
             return null;
         }
 
+        Boolean door = null;
+        Double adc = null;
+        Double power = null;
+        Double battery = null;
+        Double temperature = null;
+        if (parser.hasNext(5)) {
+            door = parser.nextInt() == 1;
+            adc = parser.nextInt() * 0.1;
+            power = parser.nextInt() * 0.1;
+            battery = parser.nextInt() * 0.1;
+            temperature = parser.nextInt() * 0.1;
+        }
+
         String status = parser.next();
 
         String[] messages = sentence.substring(sentence.indexOf('\n') + 1).split("\r\n");
         List<Position> positions = new LinkedList<>();
 
         for (String message : messages) {
-            parser = new Parser(PATTERN_POSITION, message);
-            if (parser.matches()) {
+            Position position = new Position(getProtocolName());
+            position.setDeviceId(deviceSession.getDeviceId());
 
-                Position position = new Position(getProtocolName());
-                position.setDeviceId(deviceSession.getDeviceId());
+            if (message.contains("$GPRMC")) {
 
-                parser.next(); // base station info
+                parser = new Parser(PATTERN_POSITION, message);
+                if (parser.matches()) {
 
-                DateBuilder dateBuilder = new DateBuilder()
-                        .setTime(parser.nextInt(0), parser.nextInt(0), parser.nextInt(0));
+                    if (parser.hasNext()) {
+                        position.set(Position.KEY_BATTERY, parser.nextInt() * 0.1);
+                    }
 
-                position.setValid(parser.next().equals("A"));
-                position.setLatitude(parser.nextCoordinate());
-                position.setLongitude(parser.nextCoordinate());
-                position.setSpeed(parser.nextDouble(0));
-                position.setCourse(parser.nextDouble(0));
+                    DateBuilder dateBuilder = new DateBuilder()
+                            .setTime(parser.nextInt(), parser.nextInt(), parser.nextInt());
 
-                dateBuilder.setDateReverse(parser.nextInt(0), parser.nextInt(0), parser.nextInt(0));
-                position.setTime(dateBuilder.getDate());
+                    position.setValid(parser.next().equals("A"));
+                    position.setLatitude(parser.nextCoordinate());
+                    position.setLongitude(parser.nextCoordinate());
+                    position.setSpeed(parser.nextDouble(0));
+                    position.setCourse(parser.nextDouble(0));
 
-                decodeStatus(position, status);
+                    dateBuilder.setDateReverse(parser.nextInt(), parser.nextInt(), parser.nextInt());
+                    position.setTime(dateBuilder.getDate());
 
-                positions.add(position);
+                } else {
+                    continue;
+                }
+
+            } else if (message.contains("$WIFI")) {
+
+                parser = new Parser(PATTERN_WIFI, message);
+                if (parser.matches()) {
+
+                    position.set(Position.KEY_BATTERY, parser.nextInt() * 0.1);
+
+                    DateBuilder dateBuilder = new DateBuilder()
+                            .setTime(parser.nextInt(), parser.nextInt(), parser.nextInt());
+
+                    String[] values = parser.next().split(",");
+                    Network network = new Network();
+                    for (int i = 0; i < values.length / 2; i++) {
+                        String mac = values[i * 2 + 1].replaceAll("(..)", "$1:").substring(0, 17);
+                        network.addWifiAccessPoint(WifiAccessPoint.from(mac, Integer.parseInt(values[i * 2])));
+                    }
+                    position.setNetwork(network);
+
+                    dateBuilder.setDateReverse(parser.nextInt(), parser.nextInt(), parser.nextInt());
+
+                    getLastLocation(position, dateBuilder.getDate());
+                }
+
+            } else {
+
+                getLastLocation(position, null);
+
             }
+
+            position.set(Position.KEY_DOOR, door);
+            position.set(Position.PREFIX_ADC + 1, adc);
+            position.set(Position.KEY_POWER, power);
+            position.set(Position.KEY_BATTERY, battery);
+            position.set(Position.PREFIX_TEMP + 1, temperature);
+            decodeStatus(position, status);
+
+            positions.add(position);
         }
 
-        return positions;
+        return positions.isEmpty() ? null : positions;
     }
 
 }

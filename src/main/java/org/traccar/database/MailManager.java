@@ -19,6 +19,7 @@ package org.traccar.database;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.traccar.Context;
+import org.traccar.Main;
 import org.traccar.model.User;
 import org.traccar.notification.PropertiesProvider;
 
@@ -86,6 +87,10 @@ public final class MailManager {
         return properties;
     }
 
+    public boolean getEmailEnabled() {
+        return Context.getConfig().hasKey("mail.smtp.host");
+    }
+
     public void sendMessage(
             long userId, String subject, String body) throws MessagingException {
         sendMessage(userId, subject, body, null);
@@ -134,7 +139,7 @@ public final class MailManager {
         }
 
         try (Transport transport = session.getTransport()) {
-            Context.getStatisticsManager().registerMail();
+            Main.getInjector().getInstance(StatisticsManager.class).registerMail();
             transport.connect(
                     properties.getProperty("mail.smtp.host"),
                     properties.getProperty("mail.smtp.username"),

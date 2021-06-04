@@ -21,6 +21,7 @@ import org.traccar.BaseProtocol;
 import org.traccar.Context;
 import org.traccar.PipelineBuilder;
 import org.traccar.TrackerServer;
+import org.traccar.config.Keys;
 import org.traccar.model.Command;
 
 public class PrimeProtocol extends BaseProtocol {
@@ -32,10 +33,10 @@ public class PrimeProtocol extends BaseProtocol {
         addServer(new TrackerServer(false, getName()) {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
-                int messageLength = Context.getConfig().getInteger(getName() + ".messageLength");
+                int messageLength = Context.getConfig().getInteger(Keys.PROTOCOL_MESSAGE_LENGTH.withPrefix(getName()));
                 pipeline.addLast(new PrimeFrameDecoder(messageLength));
                 pipeline.addLast(new StringDecoder());
-                pipeline.addLast(new PrimeProtocolEncoder());
+                pipeline.addLast(new PrimeProtocolEncoder(PrimeProtocol.this));
                 pipeline.addLast(new PrimeProtocolDecoder(PrimeProtocol.this));
             }
         });
@@ -44,7 +45,7 @@ public class PrimeProtocol extends BaseProtocol {
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new StringEncoder());
                 pipeline.addLast(new StringDecoder());
-                pipeline.addLast(new PrimeProtocolEncoder());
+                pipeline.addLast(new PrimeProtocolEncoder(PrimeProtocol.this));
                 pipeline.addLast(new PrimeProtocolDecoder(PrimeProtocol.this));
             }
         });

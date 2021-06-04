@@ -19,12 +19,17 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.traccar.BaseProtocolEncoder;
 import org.traccar.Context;
+import org.traccar.Protocol;
 import org.traccar.helper.DataConverter;
 import org.traccar.model.Command;
 
 import java.nio.charset.StandardCharsets;
 
 public class TranssyncProtocolEncoder extends BaseProtocolEncoder {
+
+    public TranssyncProtocolEncoder(Protocol protocol) {
+        super(protocol);
+    }
 
     protected String getUniqueId(long deviceId) {
         return Context.getIdentityManager().getById(deviceId).getUniqueId();

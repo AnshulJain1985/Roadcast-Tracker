@@ -18,12 +18,17 @@ package org.traccar.protocol;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.traccar.Protocol;
 import org.traccar.StringProtocolEncoder;
 import org.traccar.model.Command;
 
 public class PrimeProtocolEncoder extends StringProtocolEncoder {
 
     private static final String MARKER = "HQ";
+
+    public PrimeProtocolEncoder(Protocol protocol) {
+        super(protocol);
+    }
 
     private Object formatCommand(DateTime time, String uniqueId, String type, String... params) {
 

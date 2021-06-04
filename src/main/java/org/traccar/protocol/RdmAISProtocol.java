@@ -17,7 +17,7 @@ public class RdmAISProtocol extends BaseProtocol {
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new StringDecoder());
                 pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new RdmAISProtocolEncoder());
+                pipeline.addLast(new RdmAISProtocolEncoder(RdmAISProtocol.this));
                 pipeline.addLast(new RdmAISProtocolDecoder(RdmAISProtocol.this));
             }
         });
@@ -25,7 +25,7 @@ public class RdmAISProtocol extends BaseProtocol {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new RdmAISProtocolEncoder());
+                pipeline.addLast(new RdmAISProtocolEncoder(RdmAISProtocol.this));
                 pipeline.addLast(new RdmAISProtocolDecoder(RdmAISProtocol.this));
             }
         });

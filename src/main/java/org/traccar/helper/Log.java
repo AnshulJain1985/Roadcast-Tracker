@@ -15,7 +15,8 @@
  */
 package org.traccar.helper;
 
-import org.traccar.Config;
+import org.traccar.config.Config;
+import org.traccar.config.Keys;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -25,6 +26,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -48,21 +50,26 @@ public final class Log {
         private final String name;
         private String suffix;
         private Writer writer;
+        private final boolean rotate;
 
-        RollingFileHandler(String name) {
+        RollingFileHandler(String name, boolean rotate) {
             this.name = name;
+            this.rotate = rotate;
         }
 
         @Override
         public synchronized void publish(LogRecord record) {
             if (isLoggable(record)) {
                 try {
-                    String suffix = new SimpleDateFormat("yyyyMMdd").format(new Date(record.getMillis()));
-                    if (writer != null && !suffix.equals(this.suffix)) {
-                        writer.close();
-                        writer = null;
-                        if (!new File(name).renameTo(new File(name + "." + this.suffix))) {
-                            throw new RuntimeException("Log file renaiming failed");
+                    String suffix = "";
+                    if (rotate) {
+                        suffix = new SimpleDateFormat("yyyyMMdd").format(new Date(record.getMillis()));
+                        if (writer != null && !suffix.equals(this.suffix)) {
+                            writer.close();
+                            writer = null;
+                            if (!new File(name).renameTo(new File(name + "." + this.suffix))) {
+                                throw new RuntimeException("Log file renaming failed");
+                            }
                         }
                     }
                     if (writer == null) {
@@ -157,23 +164,30 @@ public final class Log {
     }
 
     public static void setupDefaultLogger() {
-        File jarPath = new File(ClassLoader.getSystemClassLoader().getResource(".").getPath());
-        File logsPath = new File(jarPath, "logs");
-        if (!logsPath.exists() || !logsPath.isDirectory()) {
-            logsPath = jarPath;
+        String path = null;
+        URL url = ClassLoader.getSystemClassLoader().getResource(".");
+        if (url != null) {
+            File jarPath = new File(url.getPath());
+            File logsPath = new File(jarPath, "logs");
+            if (!logsPath.exists() || !logsPath.isDirectory()) {
+                logsPath = jarPath;
+            }
+            path = new File(logsPath, "tracker-server.log").getPath();
         }
-        setupLogger(false, new File(logsPath, "tracker-server.log").getPath(), Level.WARNING.getName(), false);
+        setupLogger(path == null, path, Level.WARNING.getName(), false, true);
     }
 
     public static void setupLogger(Config config) {
         setupLogger(
-                config.getBoolean("logger.console"),
-                config.getString("logger.file"),
-                config.getString("logger.level"),
-                config.getBoolean("logger.fullStackTraces"));
+                config.getBoolean(Keys.LOGGER_CONSOLE),
+                config.getString(Keys.LOGGER_FILE),
+                config.getString(Keys.LOGGER_LEVEL),
+                config.getBoolean(Keys.LOGGER_FULL_STACK_TRACES),
+                config.getBoolean(Keys.LOGGER_ROTATE));
     }
 
-    private static void setupLogger(boolean console, String file, String levelString, boolean fullStackTraces) {
+    private static void setupLogger(
+            boolean console, String file, String levelString, boolean fullStackTraces, boolean rotate) {
 
         Logger rootLogger = Logger.getLogger("");
         for (Handler handler : rootLogger.getHandlers()) {
@@ -184,7 +198,7 @@ public final class Log {
         if (console) {
             handler = new ConsoleHandler();
         } else {
-            handler = new RollingFileHandler(file);
+            handler = new RollingFileHandler(file, rotate);
         }
 
         handler.setFormatter(new LogFormatter(fullStackTraces));
@@ -198,6 +212,11 @@ public final class Log {
     }
 
     public static String exceptionStack(Throwable exception) {
+        Throwable cause = exception.getCause();
+        while (cause != null && exception != cause) {
+            exception = cause;
+            cause = cause.getCause();
+        }
         StringBuilder s = new StringBuilder();
         String exceptionMsg = exception.getMessage();
         if (exceptionMsg != null) {

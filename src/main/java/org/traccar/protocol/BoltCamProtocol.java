@@ -31,7 +31,7 @@ public class BoltCamProtocol extends BaseProtocol {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new BoltCamFrameDecoder());
-                pipeline.addLast(new BoltCamProtocolEncoder());
+                pipeline.addLast(new BoltCamProtocolEncoder(BoltCamProtocol.this));
                 pipeline.addLast(new BoltCamProtocolDecoder(BoltCamProtocol.this));
             }
         });

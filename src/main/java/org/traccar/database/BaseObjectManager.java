@@ -16,10 +16,6 @@
  */
 package org.traccar.database;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.traccar.model.BaseModel;
-
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashSet;
@@ -30,6 +26,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.traccar.model.BaseModel;
+
 public class BaseObjectManager<T extends BaseModel> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseObjectManager.class);
@@ -38,8 +38,8 @@ public class BaseObjectManager<T extends BaseModel> {
 
     private final DataManager dataManager;
 
-    private Map<Long, T> items;
     private final Class<T> baseClass;
+    private Map<Long, T> items;
 
     protected BaseObjectManager(DataManager dataManager, Class<T> baseClass) {
         this.dataManager = dataManager;
@@ -158,7 +158,10 @@ public class BaseObjectManager<T extends BaseModel> {
     public final Collection<T> getItems(Set<Long> itemIds) {
         Collection<T> result = new LinkedList<>();
         for (long itemId : itemIds) {
-            result.add(getById(itemId));
+            T item = getById(itemId);
+            if (item != null) {
+                result.add(item);
+            }
         }
         return result;
     }

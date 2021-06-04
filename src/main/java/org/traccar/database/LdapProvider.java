@@ -15,6 +15,12 @@
  */
 package org.traccar.database;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.traccar.config.Config;
+import org.traccar.config.Keys;
+import org.traccar.model.User;
+
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
@@ -22,12 +28,6 @@ import javax.naming.directory.Attribute;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.traccar.Config;
-import org.traccar.model.User;
-
 import java.util.Hashtable;
 
 public class LdapProvider {
@@ -40,29 +40,33 @@ public class LdapProvider {
     private final String nameAttribute;
     private final String mailAttribute;
     private final String searchFilter;
-    private String adminFilter;
+    private final String adminFilter;
     private final String serviceUser;
     private final String servicePassword;
 
     public LdapProvider(Config config) {
-        String url = config.getString("ldap.url");
-        if (url != null) {
-            this.url = url;
+        url = config.getString(Keys.LDAP_URL);
+        searchBase = config.getString(Keys.LDAP_BASE);
+        idAttribute = config.getString(Keys.LDAP_ID_ATTRIBUTE);
+        nameAttribute = config.getString(Keys.LDAP_NAME_ATTRIBUTE);
+        mailAttribute = config.getString(Keys.LDAP_MAIN_ATTRIBUTE);
+        if (config.hasKey(Keys.LDAP_SEARCH_FILTER)) {
+            searchFilter = config.getString(Keys.LDAP_SEARCH_FILTER);
         } else {
-            this.url = "ldap://" + config.getString("ldap.server") + ":" + config.getInteger("ldap.port", 389);
+            searchFilter = "(" + idAttribute + "=:login)";
         }
-        this.searchBase = config.getString("ldap.base");
-        this.idAttribute = config.getString("ldap.idAttribute", "uid");
-        this.nameAttribute = config.getString("ldap.nameAttribute", "cn");
-        this.mailAttribute = config.getString("ldap.mailAttribute", "mail");
-        this.searchFilter = config.getString("ldap.searchFilter", "(" + idAttribute + "=:login)");
-        String adminGroup = config.getString("ldap.adminGroup");
-        this.adminFilter = config.getString("ldap.adminFilter");
-        if (this.adminFilter == null && adminGroup != null) {
-            this.adminFilter = "(&(" + idAttribute + "=:login)(memberOf=" + adminGroup + "))";
+        if (config.hasKey(Keys.LDAP_ADMIN_FILTER)) {
+            adminFilter = config.getString(Keys.LDAP_ADMIN_FILTER);
+        } else {
+            String adminGroup = config.getString(Keys.LDAP_ADMIN_GROUP);
+            if (adminGroup != null) {
+                adminFilter = "(&(" + idAttribute + "=:login)(memberOf=" + adminGroup + "))";
+            } else {
+                adminFilter = null;
+            }
         }
-        this.serviceUser = config.getString("ldap.user");
-        this.servicePassword = config.getString("ldap.password");
+        serviceUser = config.getString(Keys.LDAP_USER);
+        servicePassword = config.getString(Keys.LDAP_PASSWORD);
     }
 
     private InitialDirContext auth(String accountName, String password) throws NamingException {
@@ -81,7 +85,7 @@ public class LdapProvider {
         if (this.adminFilter != null) {
             try {
                 InitialDirContext context = initContext();
-                String searchString = adminFilter.replace(":login", accountName);
+                String searchString = adminFilter.replace(":login", encodeForLdap(accountName));
                 SearchControls searchControls = new SearchControls();
                 searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE);
                 NamingEnumeration<SearchResult> results = context.search(searchBase, searchString, searchControls);
@@ -107,7 +111,7 @@ public class LdapProvider {
     private SearchResult lookupUser(String accountName) throws NamingException {
         InitialDirContext context = initContext();
 
-        String searchString = searchFilter.replace(":login", accountName);
+        String searchString = searchFilter.replace(":login", encodeForLdap(accountName));
 
         SearchControls searchControls = new SearchControls();
         String[] attributeFilter = {idAttribute, nameAttribute, mailAttribute};
@@ -176,4 +180,33 @@ public class LdapProvider {
         return false;
     }
 
+    public String encodeForLdap(String input) {
+        if (input == null) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < input.length(); i++) {
+            char c = input.charAt(i);
+            switch (c) {
+                case '\\':
+                    sb.append("\\5c");
+                    break;
+                case '*':
+                    sb.append("\\2a");
+                    break;
+                case '(':
+                    sb.append("\\28");
+                    break;
+                case ')':
+                    sb.append("\\29");
+                    break;
+                case '\0':
+                    sb.append("\\00");
+                    break;
+                default:
+                    sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
 }

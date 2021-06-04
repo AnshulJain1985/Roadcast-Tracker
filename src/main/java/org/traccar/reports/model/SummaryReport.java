@@ -28,7 +28,4 @@ public class SummaryReport extends BaseReport {
         this.engineHours = engineHours;
     }
 
-    public void addEngineHours(long engineHours) {
-        this.engineHours += engineHours;
-    }
 }

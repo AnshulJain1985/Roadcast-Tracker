@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.traccar.Context;
@@ -30,7 +29,10 @@ import org.traccar.notificators.NotificatorMail;
 import org.traccar.notificators.NotificatorNull;
 import org.traccar.notificators.Notificator;
 import org.traccar.notificators.NotificatorSms;
+import org.traccar.notificators.NotificatorTraccar;
 import org.traccar.notificators.NotificatorWeb;
+import org.traccar.notificators.NotificatorTelegram;
+import org.traccar.notificators.NotificatorPushover;
 
 public final class NotificatorManager {
 
@@ -56,6 +58,15 @@ public final class NotificatorManager {
                     break;
                 case "firebase":
                     defaultNotificator = NotificatorFirebase.class.getCanonicalName();
+                    break;
+                case "traccar":
+                    defaultNotificator = NotificatorTraccar.class.getCanonicalName();
+                    break;
+                case "telegram":
+                    defaultNotificator = NotificatorTelegram.class.getCanonicalName();
+                    break;
+                case "pushover":
+                    defaultNotificator = NotificatorPushover.class.getCanonicalName();
                     break;
                 default:
                     break;

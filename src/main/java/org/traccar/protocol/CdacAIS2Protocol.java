@@ -33,7 +33,7 @@ public class CdacAIS2Protocol extends BaseProtocol {
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new CdacAIS2FrameDecoder());
                 pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new CdacAIS2ProtocolEncoder());
+                pipeline.addLast(new CdacAIS2ProtocolEncoder(CdacAIS2Protocol.this));
                 pipeline.addLast(new CdacAIS2ProtocolDecoder(CdacAIS2Protocol.this));
             }
         });

@@ -5,7 +5,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public class BitBufferTest {
-    
+
     @Test
     public void test() {
         BitBuffer buffer = new BitBuffer();

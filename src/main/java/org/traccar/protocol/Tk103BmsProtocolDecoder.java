@@ -416,7 +416,7 @@ public class Tk103BmsProtocolDecoder extends BaseProtocolDecoder {
 
     }
 
-@Override
+    @Override
     protected Object decode(
             Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
 

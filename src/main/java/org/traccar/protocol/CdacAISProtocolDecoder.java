@@ -126,14 +126,14 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
 
 
         if (buf.readableBytes() == 5 || isGeofenceId) {
-            String geofenceId =  buf.readSlice(5).toString(StandardCharsets.US_ASCII);
+            String geofenceId = buf.readSlice(5).toString(StandardCharsets.US_ASCII);
         }
 
         if (buf.readableBytes() > 5 && !isBatch) {
 //            Full Packet parsing
-            String vendorId =  buf.readSlice(6).toString(StandardCharsets.US_ASCII);
+            String vendorId = buf.readSlice(6).toString(StandardCharsets.US_ASCII);
             position.set(Position.KEY_VERSION_FW, buf.readSlice(6).toString(StandardCharsets.US_ASCII));
-            String vehicleRegNo =  buf.readSlice(16).toString(StandardCharsets.US_ASCII);
+            String vehicleRegNo = buf.readSlice(16).toString(StandardCharsets.US_ASCII);
             position.setAltitude(Double.parseDouble(buf.readSlice(7).toString(StandardCharsets.US_ASCII)));
             position.set(Position.KEY_PDOP, Double.parseDouble(buf.readSlice(2).toString(StandardCharsets.US_ASCII)));
             position.set(Position.KEY_OPERATOR, buf.readSlice(6).toString(StandardCharsets.US_ASCII));
@@ -151,15 +151,15 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
             position.set(Position.KEY_BATTERY,
                     Double.parseDouble(buf.readSlice(5).toString(StandardCharsets.US_ASCII)));
 
-            String tamper =  buf.readSlice(1).toString(StandardCharsets.US_ASCII);
+            String tamper = buf.readSlice(1).toString(StandardCharsets.US_ASCII);
 
             for (int i = 1; i <= 4; i++) {
                 int tempDio = Integer.parseInt(buf.readSlice(1).toString(StandardCharsets.US_ASCII));
                 position.set(Position.PREFIX_IN + i, tempDio);
             }
 
-            String frameNumber =  buf.readSlice(6).toString(StandardCharsets.US_ASCII);
-            String checksum =  buf.readSlice(8).toString(StandardCharsets.US_ASCII);
+            String frameNumber = buf.readSlice(6).toString(StandardCharsets.US_ASCII);
+            String checksum = buf.readSlice(8).toString(StandardCharsets.US_ASCII);
         }
     }
 
@@ -199,7 +199,7 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
 
 
     private void decodeHealthPacket(Channel channel, SocketAddress remoteAddress, ByteBuf buf, Position position) {
-        String vendorId =  buf.readSlice(6).toString(StandardCharsets.US_ASCII);
+        String vendorId = buf.readSlice(6).toString(StandardCharsets.US_ASCII);
         position.set(Position.KEY_VERSION_FW, buf.readSlice(6).toString(StandardCharsets.US_ASCII));
         String imei = buf.readSlice(15).toString(StandardCharsets.US_ASCII);
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
@@ -247,27 +247,27 @@ public class CdacAISProtocolDecoder extends BaseHttpProtocolDecoder {
         Position position = new Position(getProtocolName());
 
         if (parameter.equals("vltdata")) {
-        String header = buf.readSlice(3).toString(StandardCharsets.US_ASCII);
+            String header = buf.readSlice(3).toString(StandardCharsets.US_ASCII);
 
-        switch (header) {
-            case "NRM":
-            case "EPB":
-            case "CRT":
-            case "ALT":
-            case "FUL":
-                decodeNormalPacket(channel, remoteAddress, buf, position);
-                break;
-            case "BTH":
-                sendResponse(channel, HttpResponseStatus.OK);
-                return decodeBatchPacket(channel, remoteAddress, buf);
-            case "HLM":
-                decodeHealthPacket(channel, remoteAddress, buf, position);
-                break;
-            case "ACK":
-            case "LGN":
-            default:
-                break;
-        }
+            switch (header) {
+                case "NRM":
+                case "EPB":
+                case "CRT":
+                case "ALT":
+                case "FUL":
+                    decodeNormalPacket(channel, remoteAddress, buf, position);
+                    break;
+                case "BTH":
+                    sendResponse(channel, HttpResponseStatus.OK);
+                    return decodeBatchPacket(channel, remoteAddress, buf);
+                case "HLM":
+                    decodeHealthPacket(channel, remoteAddress, buf, position);
+                    break;
+                case "ACK":
+                case "LGN":
+                default:
+                    break;
+            }
         }
 
         if (position.getDeviceId() != 0) {

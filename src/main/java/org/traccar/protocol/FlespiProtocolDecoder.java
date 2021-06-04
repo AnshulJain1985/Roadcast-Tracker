@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 - 2018 Anton Tananaev (anton@traccar.org)
+ * Copyright 2017 - 2020 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import org.traccar.BaseHttpProtocolDecoder;
 import org.traccar.DeviceSession;
 import org.traccar.Protocol;
+import org.traccar.helper.UnitsConverter;
 import org.traccar.model.Position;
 
 import javax.json.Json;
@@ -63,6 +64,7 @@ public class FlespiProtocolDecoder extends BaseHttpProtocolDecoder {
             }
             Position position = new Position(getProtocolName());
             position.setDeviceId(deviceSession.getDeviceId());
+            position.setValid(true);
             decodePosition(message, position);
             positions.add(position);
         }
@@ -102,7 +104,7 @@ public class FlespiProtocolDecoder extends BaseHttpProtocolDecoder {
                 position.setLongitude(((JsonNumber) value).doubleValue());
                 return true;
             case "position.speed":
-                position.setSpeed(((JsonNumber) value).doubleValue());
+                position.setSpeed(UnitsConverter.knotsFromKph(((JsonNumber) value).doubleValue()));
                 return true;
             case "position.direction":
                 position.setCourse(((JsonNumber) value).doubleValue());
@@ -124,8 +126,11 @@ public class FlespiProtocolDecoder extends BaseHttpProtocolDecoder {
                 return true;
             case "din":
             case "dout":
-                position.set(name.equals("din") ? Position.KEY_INPUT : Position.KEY_OUTPUT,
-                        ((JsonNumber) value).intValue());
+                if (name.equals("din")) {
+                    position.set(Position.KEY_INPUT, ((JsonNumber) value).intValue());
+                } else {
+                    position.set(Position.KEY_OUTPUT, ((JsonNumber) value).intValue());
+                }
                 return true;
             case "gps.vehicle.mileage":
                 position.set(Position.KEY_ODOMETER, ((JsonNumber) value).doubleValue());
@@ -145,7 +150,7 @@ public class FlespiProtocolDecoder extends BaseHttpProtocolDecoder {
                 position.set(Position.KEY_RPM, ((JsonNumber) value).doubleValue());
                 return true;
             case "can.engine.temperature":
-                position.set(Position.PREFIX_TEMP + (index > 0 ? index : 0), ((JsonNumber) value).doubleValue());
+                position.set(Position.PREFIX_TEMP + Math.max(index, 0), ((JsonNumber) value).doubleValue());
                 return true;
             case "engine.ignition.status":
                 position.set(Position.KEY_IGNITION, value == JsonValue.TRUE);

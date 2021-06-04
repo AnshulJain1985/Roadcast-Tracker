@@ -17,13 +17,18 @@ package org.traccar.protocol;
 
 import io.netty.buffer.Unpooled;
 import org.traccar.BaseProtocolEncoder;
+import org.traccar.Protocol;
 import org.traccar.model.Command;
 
 import java.nio.charset.StandardCharsets;
 
 public class AquilaProtocolEncoder extends BaseProtocolEncoder {
 
-//    set$123456789@aquila123#SET_D01:1*
+    public AquilaProtocolEncoder(Protocol protocol) {
+        super(protocol);
+    }
+
+    //    set$123456789@aquila123#SET_D01:1*
     private Object formatCommand(Command command, String content) {
         String uniqueId = getUniqueId(command.getDeviceId());
         String result = String.format("#set$%s@aquila123#%s*" + "\r\n", uniqueId, content);

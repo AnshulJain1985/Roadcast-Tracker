@@ -15,10 +15,15 @@
  */
 package org.traccar.protocol;
 
+import org.traccar.Protocol;
 import org.traccar.StringProtocolEncoder;
 import org.traccar.model.Command;
 
 public class L100ProtocolEncoder extends StringProtocolEncoder {
+
+    public L100ProtocolEncoder(Protocol protocol) {
+        super(protocol);
+    }
 
     @Override
     protected Object encodeCommand(Command command) {

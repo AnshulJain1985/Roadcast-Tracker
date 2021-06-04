@@ -16,26 +16,26 @@
  */
 package org.traccar.database;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.traccar.BaseProtocol;
-import org.traccar.Context;
-import org.traccar.model.Command;
-import org.traccar.model.Position;
-import org.traccar.model.Typed;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class CommandsManager  extends ExtendedObjectManager<Command> {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.traccar.BaseProtocol;
+import org.traccar.Context;
+import org.traccar.model.Command;
+import org.traccar.model.Typed;
+import org.traccar.model.Position;
+
+public class CommandsManager extends ExtendedObjectManager<Command> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CommandsManager.class);
 
@@ -76,7 +76,12 @@ public class CommandsManager  extends ExtendedObjectManager<Command> {
         } else {
             ActiveDevice activeDevice = Context.getConnectionManager().getActiveDevice(deviceId);
             if (activeDevice != null) {
-                activeDevice.sendCommand(command);
+                if (activeDevice.supportsLiveCommands()) {
+                    activeDevice.sendCommand(command);
+                } else {
+                    getDeviceQueue(deviceId).add(command);
+                    return false;
+                }
             } else if (!queueing) {
                 throw new RuntimeException("Device is not online");
             } else {
@@ -118,11 +123,11 @@ public class CommandsManager  extends ExtendedObjectManager<Command> {
     public Collection<Typed> getCommandTypes(String protocolName, boolean textChannel) {
         List<Typed> result = new ArrayList<>();
         BaseProtocol protocol = Context.getServerManager().getProtocol(protocolName);
-            Collection<String> commands;
-            commands = textChannel ? protocol.getSupportedTextCommands() : protocol.getSupportedDataCommands();
-            for (String commandKey : commands) {
-                result.add(new Typed(commandKey));
-            }
+        Collection<String> commands;
+        commands = textChannel ? protocol.getSupportedTextCommands() : protocol.getSupportedDataCommands();
+        for (String commandKey : commands) {
+            result.add(new Typed(commandKey));
+        }
         return result;
     }
 
@@ -157,25 +162,31 @@ public class CommandsManager  extends ExtendedObjectManager<Command> {
                 return deviceQueues.computeIfAbsent(deviceId, key -> new ConcurrentLinkedQueue<>());
             } finally {
                 writeUnlock();
-        }
+            }
         }
     }
 
-    public void sendQueuedCommands(ActiveDevice activeDevice) {
+    public Collection<Command> readQueuedCommands(long deviceId) {
+        return readQueuedCommands(deviceId, Integer.MAX_VALUE);
+    }
+
+    public Collection<Command> readQueuedCommands(long deviceId, int count) {
         Queue<Command> deviceQueue;
         try {
             readLock();
-            deviceQueue = deviceQueues.get(activeDevice.getDeviceId());
+            deviceQueue = deviceQueues.get(deviceId);
         } finally {
             readUnlock();
         }
+        Collection<Command> result = new ArrayList<>();
         if (deviceQueue != null) {
             Command command = deviceQueue.poll();
-            while (command != null) {
-                activeDevice.sendCommand(command);
+            while (command != null && result.size() < count) {
+                result.add(command);
                 command = deviceQueue.poll();
             }
         }
+        return result;
     }
 
 }

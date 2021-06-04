@@ -15,12 +15,14 @@
  */
 package org.traccar;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import io.netty.handler.codec.string.StringEncoder;
-import org.traccar.database.ActiveDevice;
 import org.traccar.helper.DataConverter;
 import org.traccar.model.Command;
 
+import java.net.SocketAddress;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -68,10 +70,6 @@ public abstract class BaseProtocol implements Protocol {
         supportedTextCommands.addAll(Arrays.asList(commands));
     }
 
-    public void setSupportedCommands(String... commands) {
-        supportedDataCommands.addAll(Arrays.asList(commands));
-        supportedTextCommands.addAll(Arrays.asList(commands));
-    }
 
     @Override
     public Collection<String> getSupportedDataCommands() {
@@ -88,15 +86,16 @@ public abstract class BaseProtocol implements Protocol {
     }
 
     @Override
-    public void sendDataCommand(ActiveDevice activeDevice, Command command) {
+    public void sendDataCommand(Channel channel, SocketAddress remoteAddress, Command command) {
         if (supportedDataCommands.contains(command.getType())) {
-            activeDevice.write(command);
+            channel.writeAndFlush(new NetworkMessage(command, remoteAddress));
         } else if (command.getType().equals(Command.TYPE_CUSTOM)) {
             String data = command.getString(Command.KEY_DATA);
-            if (BasePipelineFactory.getHandler(activeDevice.getChannel().pipeline(), StringEncoder.class) != null) {
-                activeDevice.write(data);
+            if (BasePipelineFactory.getHandler(channel.pipeline(), StringEncoder.class) != null) {
+                channel.writeAndFlush(new NetworkMessage(data, remoteAddress));
             } else {
-                activeDevice.write(Unpooled.wrappedBuffer(DataConverter.parseHex(data)));
+                ByteBuf buf = Unpooled.wrappedBuffer(DataConverter.parseHex(data));
+                channel.writeAndFlush(new NetworkMessage(buf, remoteAddress));
             }
         } else {
             throw new RuntimeException("Command " + command.getType() + " is not supported in protocol " + getName());

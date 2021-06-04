@@ -21,6 +21,7 @@ import org.traccar.PipelineBuilder;
 import org.traccar.TrackerServer;
 
 import java.nio.ByteOrder;
+
 public class RecodaProtocol extends BaseProtocol {
 
     public RecodaProtocol() {

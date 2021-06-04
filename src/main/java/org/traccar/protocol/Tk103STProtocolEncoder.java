@@ -16,12 +16,15 @@
  */
 package org.traccar.protocol;
 
+import org.traccar.Protocol;
 import org.traccar.StringProtocolEncoder;
 import org.traccar.model.Command;
 
 public class Tk103STProtocolEncoder extends StringProtocolEncoder {
 
-    public Tk103STProtocolEncoder() { }
+    public Tk103STProtocolEncoder(Protocol protocol) {
+        super(protocol);
+    }
 
 
     @Override

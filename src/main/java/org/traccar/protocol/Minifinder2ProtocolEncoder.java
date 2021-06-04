@@ -18,12 +18,17 @@ package org.traccar.protocol;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.traccar.BaseProtocolEncoder;
+import org.traccar.Protocol;
 import org.traccar.helper.Checksum;
 import org.traccar.model.Command;
 
 import java.nio.charset.StandardCharsets;
 
 public class Minifinder2ProtocolEncoder extends BaseProtocolEncoder {
+
+    public Minifinder2ProtocolEncoder(Protocol protocol) {
+        super(protocol);
+    }
 
     private ByteBuf encodeContent(ByteBuf content) {
 

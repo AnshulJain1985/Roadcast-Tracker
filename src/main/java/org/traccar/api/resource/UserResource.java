@@ -17,6 +17,7 @@ package org.traccar.api.resource;
 
 import org.traccar.Context;
 import org.traccar.api.BaseObjectResource;
+import org.traccar.config.Keys;
 import org.traccar.database.UsersManager;
 import org.traccar.helper.LogAction;
 import org.traccar.model.ManagedUser;
@@ -48,7 +49,7 @@ public class UserResource extends BaseObjectResource<User> {
     @GET
     public Collection<User> get(@QueryParam("userId") long userId) throws SQLException {
         UsersManager usersManager = Context.getUsersManager();
-        Set<Long> result = null;
+        Set<Long> result;
         if (Context.getPermissionsManager().getUserAdmin(getUserId())) {
             if (userId != 0) {
                 result = usersManager.getUserItems(userId);
@@ -73,11 +74,11 @@ public class UserResource extends BaseObjectResource<User> {
                 Context.getPermissionsManager().checkUserLimit(getUserId());
             } else {
                 Context.getPermissionsManager().checkRegistration(getUserId());
-                entity.setDeviceLimit(Context.getConfig().getInteger("users.defaultDeviceLimit", -1));
-                int expirationDays = Context.getConfig().getInteger("users.defaultExpirationDays");
+                entity.setDeviceLimit(Context.getConfig().getInteger(Keys.USERS_DEFAULT_DEVICE_LIMIT));
+                int expirationDays = Context.getConfig().getInteger(Keys.USERS_DEFAULT_EXPIRATION_DAYS);
                 if (expirationDays > 0) {
                     entity.setExpirationTime(
-                        new Date(System.currentTimeMillis() + (long) expirationDays * 24 * 3600 * 1000));
+                            new Date(System.currentTimeMillis() + (long) expirationDays * 24 * 3600 * 1000));
                 }
             }
         }

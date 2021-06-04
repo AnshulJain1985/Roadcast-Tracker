@@ -19,8 +19,12 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.traccar.BaseProtocolEncoder;
 import org.traccar.model.Command;
+import org.traccar.Protocol;
 
 public class CellocatorProtocolEncoder extends BaseProtocolEncoder {
+    public CellocatorProtocolEncoder(Protocol protocol) {
+        super(protocol);
+    }
 
     public static ByteBuf encodeContent(int type, int uniqueId, int packetNumber, ByteBuf content) {
 

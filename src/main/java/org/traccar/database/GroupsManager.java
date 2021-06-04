@@ -16,27 +16,18 @@
  */
 package org.traccar.database;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.traccar.Context;
 import org.traccar.model.Group;
 
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class GroupsManager extends BaseObjectManager<Group> implements ManagableObjects {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(GroupsManager.class);
-
-    private final AtomicLong groupsLastUpdate = new AtomicLong();
-    private final long dataRefreshDelay;
 
     public GroupsManager(DataManager dataManager) {
         super(dataManager, Group.class);
-        dataRefreshDelay = Context.getConfig().getLong("database.refreshDelay",
-                DeviceManager.DEFAULT_REFRESH_DELAY) * 1000;
     }
 
     private void checkGroupCycles(Group group) {
@@ -50,19 +41,12 @@ public class GroupsManager extends BaseObjectManager<Group> implements Managable
         }
     }
 
-    public void updateGroupCache(boolean force) {
-        long lastUpdate = groupsLastUpdate.get();
-        if ((force || System.currentTimeMillis() - lastUpdate > dataRefreshDelay)
-                && groupsLastUpdate.compareAndSet(lastUpdate, System.currentTimeMillis())) {
-            refreshItems();
-        }
-    }
 
     @Override
     public Set<Long> getAllItems() {
         Set<Long> result = super.getAllItems();
         if (result.isEmpty()) {
-            updateGroupCache(true);
+            refreshItems();
             result = super.getAllItems();
         }
         return result;

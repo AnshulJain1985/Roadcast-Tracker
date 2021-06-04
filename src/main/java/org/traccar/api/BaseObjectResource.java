@@ -20,6 +20,7 @@ import java.sql.SQLException;
 import java.util.Set;
 
 import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -53,8 +54,8 @@ public abstract class BaseObjectResource<T extends BaseModel> extends BaseResour
         return baseClass;
     }
 
-    protected final Set<Long> getSimpleManagerItems(BaseObjectManager<T> manager, boolean all,  long userId) {
-        Set<Long> result = null;
+    protected final Set<Long> getSimpleManagerItems(BaseObjectManager<T> manager, boolean all, long userId) {
+        Set<Long> result;
         if (all) {
             if (Context.getPermissionsManager().getUserAdmin(getUserId())) {
                 result = manager.getAllItems();
@@ -70,6 +71,19 @@ public abstract class BaseObjectResource<T extends BaseModel> extends BaseResour
             result = ((ManagableObjects) manager).getUserItems(userId);
         }
         return result;
+    }
+
+    @Path("{id}")
+    @GET
+    public Response getSingle(@PathParam("id") long id) throws SQLException {
+        Context.getPermissionsManager().checkPermission(baseClass, getUserId(), id);
+        BaseObjectManager<T> manager = Context.getManager(baseClass);
+        T entity = manager.getById(id);
+        if (entity != null) {
+            return Response.ok(entity).build();
+        } else {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
     }
 
     @POST
@@ -157,7 +171,7 @@ public abstract class BaseObjectResource<T extends BaseModel> extends BaseResour
         }
         if (baseClass.equals(Group.class) || baseClass.equals(Device.class) || baseClass.equals(User.class)) {
             if (baseClass.equals(Group.class)) {
-                Context.getGroupsManager().updateGroupCache(true);
+                Context.getGroupsManager().refreshItems();
                 Context.getDeviceManager().updateDeviceCache(true);
             }
             Context.getPermissionsManager().refreshDeviceAndGroupPermissions();

@@ -35,7 +35,7 @@ public class L100Protocol extends BaseProtocol {
                 pipeline.addLast(new L100FrameDecoder());
                 pipeline.addLast(new StringEncoder());
                 pipeline.addLast(new StringDecoder());
-                pipeline.addLast(new L100ProtocolEncoder());
+                pipeline.addLast(new L100ProtocolEncoder(L100Protocol.this));
                 pipeline.addLast(new L100ProtocolDecoder(L100Protocol.this));
             }
         });
@@ -44,7 +44,7 @@ public class L100Protocol extends BaseProtocol {
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new StringEncoder());
                 pipeline.addLast(new StringDecoder());
-                pipeline.addLast(new L100ProtocolEncoder());
+                pipeline.addLast(new L100ProtocolEncoder(L100Protocol.this));
                 pipeline.addLast(new L100ProtocolDecoder(L100Protocol.this));
             }
         });

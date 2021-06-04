@@ -33,7 +33,7 @@ import org.traccar.Context;
 import org.traccar.api.ExtendedObjectResource;
 import org.traccar.model.Attribute;
 import org.traccar.model.Position;
-import org.traccar.processing.ComputedAttributesHandler;
+import org.traccar.handler.ComputedAttributesHandler;
 
 @Path("attributes/computed")
 @Produces(MediaType.APPLICATION_JSON)
@@ -46,12 +46,15 @@ public class AttributeResource extends ExtendedObjectResource<Attribute> {
 
     @POST
     @Path("test")
-    public Response test(@QueryParam("deviceId") long deviceId, Attribute entity) throws SQLException {
+    public Response test(@QueryParam("deviceId") long deviceId, Attribute entity) {
         Context.getPermissionsManager().checkAdmin(getUserId());
         Context.getPermissionsManager().checkDevice(getUserId(), deviceId);
         Position last = Context.getIdentityManager().getLastPosition(deviceId);
         if (last != null) {
-            Object result = new ComputedAttributesHandler().computeAttribute(entity, last);
+            Object result = new ComputedAttributesHandler(
+                    Context.getConfig(),
+                    Context.getIdentityManager(),
+                    Context.getAttributesManager()).computeAttribute(entity, last);
             if (result != null) {
                 switch (entity.getType()) {
                     case "number":

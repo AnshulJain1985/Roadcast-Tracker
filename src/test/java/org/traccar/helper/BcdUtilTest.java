@@ -6,7 +6,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public class BcdUtilTest {
-    
+
     @Test
     public void testReadInteger() {
         byte[] buf = {0x01, (byte) 0x90, 0x34};

@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2019 Anton Tananaev (anton@traccar.org)
  *
@@ -16,10 +15,15 @@
  */
 package org.traccar.protocol;
 
+import org.traccar.Protocol;
 import org.traccar.StringProtocolEncoder;
 import org.traccar.model.Command;
 
 public class ItsProtocolEncoder extends StringProtocolEncoder {
+
+    public ItsProtocolEncoder(Protocol protocol) {
+        super(protocol);
+    }
 
     @Override
     protected Object encodeCommand(Command command) {

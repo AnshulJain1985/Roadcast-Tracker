@@ -22,7 +22,7 @@ public class TripsConfig {
     }
 
     public TripsConfig(double minimalTripDistance, long minimalTripDuration, long minimalParkingDuration,
-            long minimalNoDataDuration, boolean useIgnition, boolean processInvalidPositions, double speedThreshold) {
+                       long minimalNoDataDuration, boolean useIgnition, boolean processInvalidPositions, double speedThreshold) {
         this.minimalTripDistance = minimalTripDistance;
         this.minimalTripDuration = minimalTripDuration;
         this.minimalParkingDuration = minimalParkingDuration;

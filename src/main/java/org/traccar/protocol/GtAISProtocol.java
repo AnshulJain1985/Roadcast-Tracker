@@ -34,7 +34,7 @@ public class GtAISProtocol extends BaseProtocol {
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new StringDecoder());
                 pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new GtAISProtocolEncoder());
+                pipeline.addLast(new GtAISProtocolEncoder(GtAISProtocol.this));
                 pipeline.addLast(new GtAISProtocolDecoder(GtAISProtocol.this));
             }
         });
@@ -42,7 +42,7 @@ public class GtAISProtocol extends BaseProtocol {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new GtAISProtocolEncoder());
+                pipeline.addLast(new GtAISProtocolEncoder(GtAISProtocol.this));
                 pipeline.addLast(new GtAISProtocolDecoder(GtAISProtocol.this));
             }
         });

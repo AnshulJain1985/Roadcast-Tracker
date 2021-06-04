@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Anton Tananaev (anton@traccar.org)
+ * Copyright 2018 - 2020 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package org.traccar.protocol;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import org.traccar.BaseProtocolDecoder;
@@ -38,6 +39,8 @@ public class EgtsProtocolDecoder extends BaseProtocolDecoder {
     public EgtsProtocolDecoder(Protocol protocol) {
         super(protocol);
     }
+
+    private boolean useObjectIdAsDeviceId = true;
 
     public static final int PT_RESPONSE = 0;
     public static final int PT_APPDATA = 1;
@@ -68,7 +71,7 @@ public class EgtsProtocolDecoder extends BaseProtocolDecoder {
     public static final int MSG_ABS_CNTR_DATA = 25;
     public static final int MSG_ABS_LOOPIN_DATA = 26;
     public static final int MSG_LIQUID_LEVEL_SENSOR = 27;
-    public static final int MSG_PASSENGERS_COUNTERS  = 28;
+    public static final int MSG_PASSENGERS_COUNTERS = 28;
 
     private int packetId;
 
@@ -121,11 +124,18 @@ public class EgtsProtocolDecoder extends BaseProtocolDecoder {
 
         ByteBuf buf = (ByteBuf) msg;
 
-        int index = buf.getUnsignedShort(buf.readerIndex() + 5 + 2);
-        buf.skipBytes(buf.getUnsignedByte(buf.readerIndex() + 3));
-
         List<Position> positions = new LinkedList<>();
 
+        short headerLength = buf.getUnsignedByte(buf.readerIndex() + 3);
+        int index = buf.getUnsignedShort(buf.readerIndex() + 5 + 2);
+        short packetType = buf.getUnsignedByte(buf.readerIndex() + 5 + 2 + 2);
+        buf.skipBytes(headerLength);
+
+        if (packetType == PT_RESPONSE) {
+            return null;
+        }
+
+        long objectId = 0L;
         while (buf.readableBytes() > 2) {
 
             int length = buf.readUnsignedShortLE();
@@ -133,7 +143,7 @@ public class EgtsProtocolDecoder extends BaseProtocolDecoder {
             int recordFlags = buf.readUnsignedByte();
 
             if (BitUtil.check(recordFlags, 0)) {
-                buf.readUnsignedIntLE(); // object id
+                objectId = buf.readUnsignedIntLE();
             }
 
             if (BitUtil.check(recordFlags, 1)) {
@@ -164,6 +174,7 @@ public class EgtsProtocolDecoder extends BaseProtocolDecoder {
                 int end = buf.readUnsignedShortLE() + buf.readerIndex();
 
                 if (type == MSG_TERM_IDENTITY) {
+                    useObjectIdAsDeviceId = false;
 
                     buf.readUnsignedIntLE(); // object id
                     int flags = buf.readUnsignedByte();
@@ -243,19 +254,51 @@ public class EgtsProtocolDecoder extends BaseProtocolDecoder {
 
                 } else if (type == MSG_AD_SENSORS_DATA) {
 
-                    buf.readUnsignedByte(); // inputs flags
+                    int inputMask = buf.readUnsignedByte();
 
                     position.set(Position.KEY_OUTPUT, buf.readUnsignedByte());
 
-                    buf.readUnsignedByte(); // adc flags
+                    int adcMask = buf.readUnsignedByte();
+
+                    for (int i = 0; i < 8; i++) {
+                        if (BitUtil.check(inputMask, i)) {
+                            buf.readUnsignedByte(); // input
+                        }
+                    }
+
+                    for (int i = 0; i < 8; i++) {
+                        if (BitUtil.check(adcMask, i)) {
+                            position.set(Position.PREFIX_ADC + (i + 1), buf.readUnsignedMediumLE());
+                        }
+                    }
+
+                } else if (type == MSG_LIQUID_LEVEL_SENSOR) {
+
+                    int flags = buf.readUnsignedByte();
+
+                    buf.readUnsignedShortLE(); // address
+
+                    if (BitUtil.check(flags, 3)) {
+                        position.set("liquidRaw", ByteBufUtil.hexDump(buf.readSlice(end - buf.readerIndex())));
+                    } else {
+                        position.set("liquid", buf.readUnsignedIntLE());
+                    }
 
                 }
 
                 buf.readerIndex(end);
             }
 
-            if (serviceType == SERVICE_TELEDATA && deviceSession != null) {
-                positions.add(position);
+            if (serviceType == SERVICE_TELEDATA && position.getValid()) {
+                if (useObjectIdAsDeviceId && objectId != 0L) {
+                    deviceSession = getDeviceSession(channel, remoteAddress, true, String.valueOf(objectId));
+                    if (deviceSession != null) {
+                        position.setDeviceId(deviceSession.getDeviceId());
+                    }
+                }
+                if (deviceSession != null) {
+                    positions.add(position);
+                }
             }
         }
 

@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+
 public abstract class SimpleObjectManager<T extends BaseModel> extends BaseObjectManager<T>
         implements ManagableObjects {
 
@@ -49,7 +50,7 @@ public abstract class SimpleObjectManager<T extends BaseModel> extends BaseObjec
                 return new HashSet<>(result);
             } else {
                 return new HashSet<>();
-        }
+            }
         } finally {
             readUnlock();
         }
@@ -78,7 +79,7 @@ public abstract class SimpleObjectManager<T extends BaseModel> extends BaseObjec
         if (getDataManager() != null) {
             try {
                 writeLock();
-                    userItems = new ConcurrentHashMap<>();
+                userItems = new ConcurrentHashMap<>();
                 for (Permission permission : getDataManager().getPermissions(User.class, getBaseClass())) {
                     Set<Long> items = userItems.computeIfAbsent(permission.getOwnerId(), key -> new HashSet<>());
                     items.add(permission.getPropertyId());

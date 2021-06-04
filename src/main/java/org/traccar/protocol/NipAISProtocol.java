@@ -35,7 +35,7 @@ public class NipAISProtocol extends BaseProtocol {
 //                pipeline.addLast(new CharacterDelimiterFrameDecoder(2048, false, "\r\n", "\n", ";", "*"));
                 pipeline.addLast(new StringEncoder());
                 pipeline.addLast(new StringDecoder());
-                pipeline.addLast(new NipAISProtocolEncoder());
+                pipeline.addLast(new NipAISProtocolEncoder(NipAISProtocol.this));
                 pipeline.addLast(new NipAISProtocolDecoder(NipAISProtocol.this));
             }
         });
@@ -44,7 +44,7 @@ public class NipAISProtocol extends BaseProtocol {
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new StringEncoder());
                 pipeline.addLast(new StringDecoder());
-                pipeline.addLast(new NipAISProtocolEncoder());
+                pipeline.addLast(new NipAISProtocolEncoder(NipAISProtocol.this));
                 pipeline.addLast(new NipAISProtocolDecoder(NipAISProtocol.this));
             }
         });

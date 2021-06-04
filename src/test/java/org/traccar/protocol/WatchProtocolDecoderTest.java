@@ -1,14 +1,31 @@
 package org.traccar.protocol;
 
+import io.netty.buffer.ByteBuf;
 import org.junit.Test;
+import org.traccar.Context;
 import org.traccar.ProtocolTest;
+import org.traccar.model.Position;
+
+import static org.junit.Assert.assertEquals;
 
 public class WatchProtocolDecoderTest extends ProtocolTest {
 
     @Test
     public void testDecode() throws Exception {
 
-        WatchProtocolDecoder decoder = new WatchProtocolDecoder(null);
+        var decoder = new WatchProtocolDecoder(null);
+
+        verifyPosition(decoder, buffer(
+                "[3G*358839237678820*0122*ALCUSTOMER1,251120,081821,V,0.0,N,0.0,E,2.58,317.462,35.147,14,100,2,11089,0,00100008,1,1,460,01,42308,101992452,100,5,shizhou1,44:56:e2:03:ea:2a,-69,FART3,30:0d:9e:bb:fa:4d,-70,ZKY-A209,88:c3:97:c1:f4:7f,-73,ChinaNet-HNeD,e8:84:c6:21:7c:dc,-77,,30:45:96:10:14:5d,-79,1.2035439]"));
+
+        verifyPosition(decoder, buffer(
+                "[3G*0304187088*0100*UD_WCDMA,100720,094202,V,0.0,N,0.0,E,22.0,0,-1,21,75,92,0,0,00000000,1,1,425,01,10192,1282125,75,5,Inet,04:f0:21:46:1f:57,-54,iNetSecurity,00:1e:42:25:2f:3e,-71,Gilad,58:d5:6e:9d:1b:af,-80,weekend,14:ae:db:cb:99:25,-82,advancemed1,04:f0:21:4c:c8:3e,-89,0.0]"));
+
+        verifyPosition(decoder, buffer(
+                "[3G*8809008845*00C0*AL,271219,094744,V,00.000000,N, 0.0000000,E,0.00,0.0,0.0,0,100,81,0,0,00010000,7,0,460,0,9336,3981,141,9336,3912,141,9336,3982,140,9765,4233,134,9765,4071,134,9765,4321,134,9336,4353,132,0,0.0]"));
+
+        verifyPosition(decoder, buffer(
+                "[3G*2104134718*00A1*UD_WCDMA,161019,134938,A,43.373367,N,71.157615,W,22.0,350.206,279.717,17,28,79,0,0,00000000,1,1,310,410,23999,132013696,28,1,Home2,60:45:cb:cb:34:68,-93,8.263865]"));
 
         verifyPosition(decoder, buffer(
                 "[ZJ*014111001332708*0075*0064*AL,040418,052156,A,22.536207,N,113.938673,E,0,0,0,5,100,82,1000,50,00100000,1,255,460,0,9340,3663,35]"));
@@ -18,6 +35,9 @@ public class WatchProtocolDecoderTest extends ProtocolTest {
 
         verifyAttributes(decoder, buffer(
                 "[3G*4700609403*0013*bphrt,120,79,73,,,,]"));
+
+        verifyAttributes(decoder, buffer(
+                "[ZJ*357653059860416*0007*000c*BLOOD,109,68]"));
 
         verifyPosition(decoder, buffer(
                 "[3G*8308373902*0080*AL,230817,095346,A,47.083950,N,15.4821850,E,7.60,273.8,0.0,4,15,44,0,0,00200010,2,255,232,1,7605,42530,118,7605,58036,119,0,65.8]"));
@@ -101,6 +121,22 @@ public class WatchProtocolDecoderTest extends ProtocolTest {
 
         verifyPosition(decoder, buffer(
                 "[ZJ*014111001350304*0038*008a*UD,070318,021027,V,00.000000,N,000.000000,E,0,0,0,0,100,18,1000,50,00000000,4,255,460,0,9346,5223,42,9346,5214,20,9784,4083,11,9346,5221,5]"));
+
+    }
+
+    @Test
+    public void testDecodeVoiceMessage() throws Exception {
+
+        var decoder = new WatchProtocolDecoder(null);
+
+        verifyNull(decoder.decode(null, null, buffer("[CS*1234567890*0004*TK,1]")));
+
+        ByteBuf data = binary("7d5b5d2c2aff");
+
+        Object decodedObject = decoder.decode(null, null, concatenateBuffers(buffer("[CS*1234567890*000e*TK,#!AMR"), data.resetReaderIndex(), buffer("]")));
+        assertEquals("1234567890/mock.amr", ((Position) decodedObject).getAttributes().get("audio"));
+
+        verifyFrame(concatenateBuffers(buffer("#!AMR"), data.resetReaderIndex()), ((MockMediaManager) Context.getMediaManager()).readFile("1234567890/mock.amr"));
 
     }
 

@@ -19,6 +19,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.traccar.BaseProtocolEncoder;
 import org.traccar.Context;
+import org.traccar.Protocol;
 import org.traccar.helper.Checksum;
 import org.traccar.model.Command;
 
@@ -26,9 +27,13 @@ import java.nio.charset.StandardCharsets;
 
 public class Lt05ProtocolEncoder extends BaseProtocolEncoder {
 
+    public Lt05ProtocolEncoder(Protocol protocol) {
+        super(protocol);
+    }
+
     private ByteBuf encodeContent(long deviceId, String content) {
 
-        boolean language = Context.getIdentityManager().lookupAttributeBoolean(deviceId, "lt05.language", false, true);
+        boolean language = Context.getIdentityManager().lookupAttributeBoolean(deviceId, "lt05.language", false, false, true);
 
         ByteBuf buf = Unpooled.buffer();
 
@@ -61,7 +66,7 @@ public class Lt05ProtocolEncoder extends BaseProtocolEncoder {
     protected Object encodeCommand(Command command) {
 
         boolean alternative = Context.getIdentityManager().lookupAttributeBoolean(
-                command.getDeviceId(), "lt05.alternative", false, true);
+                command.getDeviceId(), "lt05.alternative", false, false, true);
 
         switch (command.getType()) {
             case Command.TYPE_ENGINE_STOP:

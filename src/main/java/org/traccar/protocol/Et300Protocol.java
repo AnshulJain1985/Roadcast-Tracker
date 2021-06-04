@@ -31,7 +31,7 @@ public class Et300Protocol extends BaseProtocol {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new Et300FrameDecoder());
-                pipeline.addLast(new Et300ProtocolEncoder());
+                pipeline.addLast(new Et300ProtocolEncoder(Et300Protocol.this));
                 pipeline.addLast(new Et300ProtocolDecoder(Et300Protocol.this));
             }
         });

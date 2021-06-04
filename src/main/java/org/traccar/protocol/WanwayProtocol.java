@@ -31,7 +31,7 @@ public class WanwayProtocol extends BaseProtocol {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new WanwayFrameDecoder());
-                pipeline.addLast(new WanwayProtocolEncoder());
+                pipeline.addLast(new WanwayProtocolEncoder(WanwayProtocol.this));
                 pipeline.addLast(new WanwayProtocolDecoder(WanwayProtocol.this));
             }
         });

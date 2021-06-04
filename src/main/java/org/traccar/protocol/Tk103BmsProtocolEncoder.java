@@ -17,6 +17,7 @@
 package org.traccar.protocol;
 
 import org.traccar.Context;
+import org.traccar.Protocol;
 import org.traccar.StringProtocolEncoder;
 import org.traccar.model.Command;
 
@@ -24,11 +25,13 @@ public class Tk103BmsProtocolEncoder extends StringProtocolEncoder {
 
     private final boolean forceAlternative;
 
-    public Tk103BmsProtocolEncoder() {
+    public Tk103BmsProtocolEncoder(Protocol protocol) {
+        super(protocol);
         this.forceAlternative = false;
     }
 
-    public Tk103BmsProtocolEncoder(boolean forceAlternative) {
+    public Tk103BmsProtocolEncoder(Protocol protocol, boolean forceAlternative) {
+        super(protocol);
         this.forceAlternative = forceAlternative;
     }
 
@@ -40,7 +43,7 @@ public class Tk103BmsProtocolEncoder extends StringProtocolEncoder {
     protected Object encodeCommand(Command command) {
 
         boolean alternative = forceAlternative || Context.getIdentityManager().lookupAttributeBoolean(
-                command.getDeviceId(), "tk103.alternative", false, true);
+                command.getDeviceId(), "tk103.alternative", false, false, true);
 
         initDevicePassword(command, "123456");
 

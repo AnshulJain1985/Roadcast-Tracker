@@ -31,7 +31,7 @@ public class Rp05Protocol extends BaseProtocol {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new Rp05FrameDecoder());
-                pipeline.addLast(new Rp05ProtocolEncoder());
+                pipeline.addLast(new Rp05ProtocolEncoder(Rp05Protocol.this));
                 pipeline.addLast(new Rp05ProtocolDecoder(Rp05Protocol.this));
             }
         });

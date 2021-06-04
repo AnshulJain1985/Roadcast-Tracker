@@ -16,6 +16,7 @@
  */
 package org.traccar.reports;
 
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,7 +27,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-
 import org.apache.poi.ss.util.WorkbookUtil;
 import org.traccar.Context;
 import org.traccar.model.Device;
@@ -42,10 +42,10 @@ public final class Events {
     }
 
     public static Collection<Event> getObjects(long userId, Collection<Long> deviceIds, Collection<Long> groupIds,
-            Collection<String> types, Date from, Date to) throws SQLException {
+                                               Collection<String> types, Date from, Date to) throws SQLException {
         ReportUtils.checkPeriodLimit(from, to);
         ArrayList<Event> result = new ArrayList<>();
-        for (long deviceId: ReportUtils.getDeviceList(deviceIds, groupIds)) {
+        for (long deviceId : ReportUtils.getDeviceList(deviceIds, groupIds)) {
             Context.getPermissionsManager().checkDevice(userId, deviceId);
             Collection<Event> events = Context.getDataManager().getEvents(deviceId, from, to);
             boolean all = types.isEmpty() || types.contains(Event.ALL_EVENTS);
@@ -56,7 +56,7 @@ public final class Events {
                     if ((geofenceId == 0 || Context.getGeofenceManager().checkItemPermission(userId, geofenceId))
                             && (maintenanceId == 0
                             || Context.getMaintenancesManager().checkItemPermission(userId, maintenanceId))) {
-                       result.add(event);
+                        result.add(event);
                     }
                 }
             }
@@ -65,14 +65,14 @@ public final class Events {
     }
 
     public static void getExcel(OutputStream outputStream,
-            long userId, Collection<Long> deviceIds, Collection<Long> groupIds,
-            Collection<String> types, Date from, Date to) throws SQLException, IOException {
+                                long userId, Collection<Long> deviceIds, Collection<Long> groupIds,
+                                Collection<String> types, Date from, Date to) throws SQLException, IOException {
         ReportUtils.checkPeriodLimit(from, to);
         ArrayList<DeviceReport> devicesEvents = new ArrayList<>();
         ArrayList<String> sheetNames = new ArrayList<>();
         HashMap<Long, String> geofenceNames = new HashMap<>();
         HashMap<Long, String> maintenanceNames = new HashMap<>();
-        for (long deviceId: ReportUtils.getDeviceList(deviceIds, groupIds)) {
+        for (long deviceId : ReportUtils.getDeviceList(deviceIds, groupIds)) {
             Context.getPermissionsManager().checkDevice(userId, deviceId);
             Collection<Event> events = Context.getDataManager().getEvents(deviceId, from, to);
             boolean all = types.isEmpty() || types.contains(Event.ALL_EVENTS);

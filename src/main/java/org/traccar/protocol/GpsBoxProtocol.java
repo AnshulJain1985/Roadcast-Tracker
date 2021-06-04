@@ -35,7 +35,7 @@ public class GpsBoxProtocol extends BaseProtocol {
                 pipeline.addLast(new CharacterDelimiterFrameDecoder(2048, false, "\r\n", "\n", ";", "*"));
                 pipeline.addLast(new StringEncoder());
                 pipeline.addLast(new StringDecoder());
-                pipeline.addLast(new GpsBoxProtocolEncoder());
+                pipeline.addLast(new GpsBoxProtocolEncoder(GpsBoxProtocol.this));
                 pipeline.addLast(new GpsBoxProtocolDecoder(GpsBoxProtocol.this));
             }
         });
@@ -44,7 +44,7 @@ public class GpsBoxProtocol extends BaseProtocol {
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new StringEncoder());
                 pipeline.addLast(new StringDecoder());
-                pipeline.addLast(new GpsBoxProtocolEncoder());
+                pipeline.addLast(new GpsBoxProtocolEncoder(GpsBoxProtocol.this));
                 pipeline.addLast(new GpsBoxProtocolDecoder(GpsBoxProtocol.this));
             }
         });

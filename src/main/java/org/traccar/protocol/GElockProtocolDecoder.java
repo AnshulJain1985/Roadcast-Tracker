@@ -153,48 +153,48 @@ public class GElockProtocolDecoder extends BaseProtocolDecoder {
 
     private Position decodeLocation(DeviceSession deviceSession, ByteBuf buf) {
 
-            Position position = new Position(getProtocolName());
-            position.setDeviceId(deviceSession.getDeviceId());
+        Position position = new Position(getProtocolName());
+        position.setDeviceId(deviceSession.getDeviceId());
 
-            position.set(Position.KEY_ALARM, decodeAlarm(buf.readUnsignedInt()));
+        position.set(Position.KEY_ALARM, decodeAlarm(buf.readUnsignedInt()));
 
-            int flags = buf.readInt();
+        int flags = buf.readInt();
 
-            position.set(Position.KEY_IGNITION, BitUtil.check(flags, 0));
+        position.set(Position.KEY_IGNITION, BitUtil.check(flags, 0));
 
-            position.setValid(BitUtil.check(flags, 1));
+        position.setValid(BitUtil.check(flags, 1));
 
-            double lat = buf.readUnsignedInt() * 0.000001;
-            double lon = buf.readUnsignedInt() * 0.000001;
+        double lat = buf.readUnsignedInt() * 0.000001;
+        double lon = buf.readUnsignedInt() * 0.000001;
 
-            if (BitUtil.check(flags, 2)) {
-                position.setLatitude(-lat);
-            } else {
-                position.setLatitude(lat);
-            }
+        if (BitUtil.check(flags, 2)) {
+            position.setLatitude(-lat);
+        } else {
+            position.setLatitude(lat);
+        }
 
-            if (BitUtil.check(flags, 3)) {
-                position.setLongitude(-lon);
-            } else {
-                position.setLongitude(lon);
-            }
+        if (BitUtil.check(flags, 3)) {
+            position.setLongitude(-lon);
+        } else {
+            position.setLongitude(lon);
+        }
 
-            position.setAltitude(buf.readShort());
-            position.setSpeed(UnitsConverter.knotsFromKph(buf.readUnsignedShort() * 0.1));
-            position.setCourse(buf.readUnsignedShort());
+        position.setAltitude(buf.readShort());
+        position.setSpeed(UnitsConverter.knotsFromKph(buf.readUnsignedShort() * 0.1));
+        position.setCourse(buf.readUnsignedShort());
 
         DateBuilder dateBuilder = new DateBuilder(deviceSession.getTimeZone())
-                    .setYear(BcdUtil.readInteger(buf, 2))
-                    .setMonth(BcdUtil.readInteger(buf, 2))
-                    .setDay(BcdUtil.readInteger(buf, 2))
-                    .setHour(BcdUtil.readInteger(buf, 2))
-                    .setMinute(BcdUtil.readInteger(buf, 2))
-                    .setSecond(BcdUtil.readInteger(buf, 2));
-            position.setTime(dateBuilder.getDate());
+                .setYear(BcdUtil.readInteger(buf, 2))
+                .setMonth(BcdUtil.readInteger(buf, 2))
+                .setDay(BcdUtil.readInteger(buf, 2))
+                .setHour(BcdUtil.readInteger(buf, 2))
+                .setMinute(BcdUtil.readInteger(buf, 2))
+                .setSecond(BcdUtil.readInteger(buf, 2));
+        position.setTime(dateBuilder.getDate());
 
-            // additional information
+        // additional information
 
-            return position;
+        return position;
     }
 
     private List<Position> decodeLocationBatch(DeviceSession deviceSession, ByteBuf buf) {

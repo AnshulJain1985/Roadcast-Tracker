@@ -24,8 +24,8 @@ import org.traccar.DeviceSession;
 import org.traccar.Protocol;
 import org.traccar.helper.BitUtil;
 import org.traccar.helper.DateBuilder;
-import org.traccar.helper.UnitsConverter;
 import org.traccar.helper.DistanceCalculator;
+import org.traccar.helper.UnitsConverter;
 import org.traccar.model.Position;
 
 import java.math.BigDecimal;
@@ -36,8 +36,8 @@ import java.util.TimeZone;
 
 public class TranssyncProtocolDecoder extends BaseProtocolDecoder {
 
-    private final int distanceFilter = Context.getConfig().getInteger(getProtocolName() + ".distanceFilter");
-
+    //    private final int distanceFilter = Context.getConfig().getInteger(getProtocolName() + ".distanceFilter");
+    private final int distanceFilter = 50;
 
     public TranssyncProtocolDecoder(Protocol protocol) {
         super(protocol);

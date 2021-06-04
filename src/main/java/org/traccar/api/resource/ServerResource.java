@@ -38,8 +38,12 @@ public class ServerResource extends BaseResource {
 
     @PermitAll
     @GET
-    public Server get() throws SQLException {
-        return Context.getPermissionsManager().getServer();
+    public Server get(@QueryParam("force") boolean force) throws SQLException {
+        if (force) {
+            return Context.getDataManager().getServer();
+        } else {
+            return Context.getPermissionsManager().getServer();
+        }
     }
 
     @PUT

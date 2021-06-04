@@ -17,24 +17,21 @@ package org.traccar;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.Properties;
-
 import com.fasterxml.jackson.datatype.jsr353.JSR353Module;
 import org.apache.velocity.app.VelocityEngine;
 import org.eclipse.jetty.util.URIUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.traccar.database.CalendarManager;
-import org.traccar.database.CommandsManager;
+import org.traccar.config.Config;
+import org.traccar.config.Keys;
 import org.traccar.database.AttributesManager;
 import org.traccar.database.BaseObjectManager;
+import org.traccar.database.CalendarManager;
+import org.traccar.database.CommandsManager;
 import org.traccar.database.ConnectionManager;
 import org.traccar.database.DataManager;
 import org.traccar.database.DeviceManager;
 import org.traccar.database.DriversManager;
+import org.traccar.database.GeofenceManager;
+import org.traccar.database.GroupsManager;
 import org.traccar.database.IdentityManager;
 import org.traccar.database.LdapProvider;
 import org.traccar.database.MailManager;
@@ -42,25 +39,8 @@ import org.traccar.database.MaintenancesManager;
 import org.traccar.database.MediaManager;
 import org.traccar.database.NotificationManager;
 import org.traccar.database.PermissionsManager;
-import org.traccar.database.GeofenceManager;
-import org.traccar.database.GroupsManager;
-import org.traccar.database.StatisticsManager;
 import org.traccar.database.UsersManager;
-import org.traccar.events.MotionEventHandler;
-import org.traccar.events.OverspeedEventHandler;
-import org.traccar.geocoder.AddressFormat;
-import org.traccar.geocoder.BingMapsGeocoder;
-import org.traccar.geocoder.FactualGeocoder;
-import org.traccar.geocoder.GeocodeFarmGeocoder;
-import org.traccar.geocoder.GeocodeXyzGeocoder;
-import org.traccar.geocoder.GisgraphyGeocoder;
-import org.traccar.geocoder.BanGeocoder;
-import org.traccar.geocoder.GoogleGeocoder;
-import org.traccar.geocoder.MapQuestGeocoder;
-import org.traccar.geocoder.NominatimGeocoder;
-import org.traccar.geocoder.OpenCageGeocoder;
 import org.traccar.geocoder.Geocoder;
-import org.traccar.geolocation.UnwiredGeolocationProvider;
 import org.traccar.helper.Log;
 import org.traccar.helper.SanitizerModule;
 import org.traccar.model.Attribute;
@@ -74,31 +54,27 @@ import org.traccar.model.Group;
 import org.traccar.model.Maintenance;
 import org.traccar.model.Notification;
 import org.traccar.model.User;
-import org.traccar.geolocation.GoogleGeolocationProvider;
-import org.traccar.geolocation.GeolocationProvider;
-import org.traccar.geolocation.MozillaGeolocationProvider;
-import org.traccar.geolocation.OpenCellIdGeolocationProvider;
 import org.traccar.notification.EventForwarder;
-import org.traccar.notification.JsonTypeEventForwarder;
 import org.traccar.notification.NotificatorManager;
 import org.traccar.reports.model.TripsConfig;
+import org.traccar.schedule.ScheduleManager;
+import org.traccar.sms.HttpSmsClient;
 import org.traccar.sms.SmsManager;
-import org.traccar.sms.smpp.SmppClient;
+import org.traccar.sms.SnsSmsClient;
 import org.traccar.web.WebServer;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.ext.ContextResolver;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Properties;
 
 public final class Context {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Context.class);
 
     private Context() {
-    }
 
-    public static String getAppVersion() {
-        return Context.class.getPackage().getImplementationVersion();
     }
 
     private static Config config;
@@ -173,16 +149,11 @@ public final class Context {
         return permissionsManager;
     }
 
-    private static Geocoder geocoder;
 
     public static Geocoder getGeocoder() {
-        return geocoder;
-    }
+        return Main.getInjector() != null ? Main.getInjector().getInstance(Geocoder.class) : null;
 
-    private static GeolocationProvider geolocationProvider;
 
-    public static GeolocationProvider getGeolocationProvider() {
-        return geolocationProvider;
     }
 
     private static WebServer webServer;
@@ -195,6 +166,12 @@ public final class Context {
 
     public static ServerManager getServerManager() {
         return serverManager;
+    }
+
+    private static ScheduleManager scheduleManager;
+
+    public static ScheduleManager getScheduleManager() {
+        return scheduleManager;
     }
 
     private static GeofenceManager geofenceManager;
@@ -263,11 +240,6 @@ public final class Context {
         return maintenancesManager;
     }
 
-    private static StatisticsManager statisticsManager;
-
-    public static StatisticsManager getStatisticsManager() {
-        return statisticsManager;
-    }
 
     private static SmsManager smsManager;
 
@@ -275,17 +247,6 @@ public final class Context {
         return smsManager;
     }
 
-    private static MotionEventHandler motionEventHandler;
-
-    public static MotionEventHandler getMotionEventHandler() {
-        return motionEventHandler;
-    }
-
-    private static OverspeedEventHandler overspeedEventHandler;
-
-    public static OverspeedEventHandler getOverspeedEventHandler() {
-        return overspeedEventHandler;
-    }
 
     private static TripsConfig tripsConfig;
 
@@ -295,13 +256,13 @@ public final class Context {
 
     public static TripsConfig initTripsConfig() {
         return new TripsConfig(
-                config.getLong("report.trip.minimalTripDistance", 500),
-                config.getLong("report.trip.minimalTripDuration", 300) * 1000,
-                config.getLong("report.trip.minimalParkingDuration", 300) * 1000,
-                config.getLong("report.trip.minimalNoDataDuration", 3600) * 1000,
-                config.getBoolean("report.trip.useIgnition"),
-                config.getBoolean("event.motion.processInvalidPositions"),
-                config.getDouble("event.motion.speedThreshold", 0.01));
+                config.getLong(Keys.REPORT_TRIP_MINIMAL_TRIP_DISTANCE),
+                config.getLong(Keys.REPORT_TRIP_MINIMAL_TRIP_DURATION) * 1000,
+                config.getLong(Keys.REPORT_TRIP_MINIMAL_PARKING_DURATION) * 1000,
+                config.getLong(Keys.REPORT_TRIP_MINIMAL_NO_DATA_DURATION) * 1000,
+                config.getBoolean(Keys.REPORT_TRIP_USE_IGNITION),
+                config.getBoolean(Keys.EVENT_MOTION_PROCESS_INVALID_POSITIONS),
+                config.getDouble(Keys.EVENT_MOTION_SPEED_THRESHOLD));
     }
 
     private static class ObjectMapperContextResolver implements ContextResolver<ObjectMapper> {
@@ -313,82 +274,39 @@ public final class Context {
 
     }
 
-    public static Geocoder initGeocoder() {
-        String type = config.getString("geocoder.type", "google");
-        String url = config.getString("geocoder.url");
-        String key = config.getString("geocoder.key");
-        String language = config.getString("geocoder.language");
-
-        String formatString = config.getString("geocoder.format");
-        AddressFormat addressFormat;
-        if (formatString != null) {
-            addressFormat = new AddressFormat(formatString);
-        } else {
-            addressFormat = new AddressFormat();
-        }
-
-        int cacheSize = config.getInteger("geocoder.cacheSize");
-        switch (type) {
-            case "nominatim":
-                return new NominatimGeocoder(url, key, language, cacheSize, addressFormat);
-            case "gisgraphy":
-                return new GisgraphyGeocoder(url, cacheSize, addressFormat);
-            case "mapquest":
-                return new MapQuestGeocoder(url, key, cacheSize, addressFormat);
-            case "opencage":
-                return new OpenCageGeocoder(url, key, cacheSize, addressFormat);
-            case "bingmaps":
-                return new BingMapsGeocoder(url, key, cacheSize, addressFormat);
-            case "factual":
-                return new FactualGeocoder(url, key, cacheSize, addressFormat);
-            case "geocodefarm":
-                return new GeocodeFarmGeocoder(key, language, cacheSize, addressFormat);
-            case "geocodexyz":
-                return new GeocodeXyzGeocoder(key, cacheSize, addressFormat);
-            case "ban":
-                return new BanGeocoder(cacheSize, addressFormat);
-            default:
-                return new GoogleGeocoder(key, language, cacheSize, addressFormat);
-        }
-    }
 
     public static void init(String configFile) throws Exception {
 
         try {
-            config = new Config();
-            config.load(configFile);
+            config = new Config(configFile);
+            Log.setupLogger(config);
         } catch (Exception e) {
+            config = new Config();
             Log.setupDefaultLogger();
             throw e;
         }
 
-        if (config.getBoolean("logger.enable")) {
-            Log.setupLogger(config);
-        }
 
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new SanitizerModule());
         objectMapper.registerModule(new JSR353Module());
         objectMapper.setConfig(
                 objectMapper.getSerializationConfig().without(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS));
-        if (Context.getConfig().getBoolean("mapper.prettyPrintedJson")) {
-            objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-        }
 
         client = ClientBuilder.newClient().register(new ObjectMapperContextResolver());
 
 
-        if (config.hasKey("database.url")) {
+        if (config.hasKey(Keys.DATABASE_URL)) {
             dataManager = new DataManager(config);
         }
 
-        if (config.getBoolean("ldap.enable")) {
+        if (config.hasKey(Keys.LDAP_URL)) {
             ldapProvider = new LdapProvider(config);
         }
 
         mailManager = new MailManager();
 
-        mediaManager = new MediaManager(config.getString("media.path"));
+        mediaManager = new MediaManager(config.getString(Keys.MEDIA_PATH));
 
         if (dataManager != null) {
             usersManager = new UsersManager(dataManager);
@@ -398,15 +316,9 @@ public final class Context {
 
         identityManager = deviceManager;
 
-        if (config.getBoolean("geocoder.enable")) {
-            geocoder = initGeocoder();
-        }
+        if (config.hasKey(Keys.WEB_PORT)) {
 
-        if (config.getBoolean("geolocation.enable")) {
-            initGeolocationModule();
-        }
 
-        if (config.getBoolean("web.enable")) {
             webServer = new WebServer(config);
         }
 
@@ -416,55 +328,28 @@ public final class Context {
 
         tripsConfig = initTripsConfig();
 
-        if (config.getBoolean("sms.enable")) {
-            final String smsManagerClass = config.getString("sms.manager.class", SmppClient.class.getCanonicalName());
-            try {
-                smsManager = (SmsManager) Class.forName(smsManagerClass).newInstance();
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                LOGGER.warn("Error loading SMS Manager class : " + smsManagerClass, e);
-            }
+        if (config.hasKey(Keys.SMS_HTTP_URL)) {
+            smsManager = new HttpSmsClient();
+        } else if (config.hasKey(Keys.SMS_AWS_REGION)) {
+            smsManager = new SnsSmsClient();
         }
 
-        if (config.getBoolean("event.enable")) {
-            initEventsModule();
-        }
+        initEventsModule();
 
         serverManager = new ServerManager();
+        scheduleManager = new ScheduleManager();
 
-        if (config.getBoolean("event.forward.enable")) {
-            eventForwarder = new JsonTypeEventForwarder();
+        if (config.hasKey(Keys.EVENT_FORWARD_URL)) {
+            eventForwarder = new EventForwarder();
         }
 
         attributesManager = new AttributesManager(dataManager);
 
         driversManager = new DriversManager(dataManager);
 
-        commandsManager = new CommandsManager(dataManager, config.getBoolean("commands.queueing"));
+        commandsManager = new CommandsManager(dataManager, config.getBoolean(Keys.COMMANDS_QUEUEING));
 
-        statisticsManager = new StatisticsManager();
 
-    }
-
-    private static void initGeolocationModule() {
-
-        String type = config.getString("geolocation.type", "mozilla");
-        String url = config.getString("geolocation.url");
-        String key = config.getString("geolocation.key");
-
-        switch (type) {
-            case "google":
-                geolocationProvider = new GoogleGeolocationProvider(key);
-                break;
-            case "opencellid":
-                geolocationProvider = new OpenCellIdGeolocationProvider(key);
-                break;
-            case "unwired":
-                geolocationProvider = new UnwiredGeolocationProvider(url, key);
-                break;
-            default:
-                geolocationProvider = new MozillaGeolocationProvider(url, key);
-                break;
-        }
     }
 
     private static void initEventsModule() {
@@ -482,31 +367,27 @@ public final class Context {
 
         String address;
         try {
-            address = config.getString("web.address", InetAddress.getLocalHost().getHostAddress());
+            address = config.getString(Keys.WEB_ADDRESS, InetAddress.getLocalHost().getHostAddress());
         } catch (UnknownHostException e) {
             address = "localhost";
         }
 
-        String webUrl = URIUtil.newURI("http", address, config.getInteger("web.port", 8082), "", "");
+        String webUrl = URIUtil.newURI("http", address, config.getInteger(Keys.WEB_PORT), "", "");
         webUrl = Context.getConfig().getString("web.url", webUrl);
         velocityProperties.setProperty("web.url", webUrl);
 
         velocityEngine = new VelocityEngine();
         velocityEngine.init(velocityProperties);
 
-        motionEventHandler = new MotionEventHandler(tripsConfig);
-        overspeedEventHandler = new OverspeedEventHandler(
-                Context.getConfig().getLong("event.overspeed.minimalDuration") * 1000,
-                Context.getConfig().getBoolean("event.overspeed.notRepeat"),
-                Context.getConfig().getBoolean("event.overspeed.preferLowest"));
     }
 
-    public static void init(IdentityManager testIdentityManager) {
+    public static void init(IdentityManager testIdentityManager, MediaManager testMediaManager) {
         config = new Config();
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JSR353Module());
         client = ClientBuilder.newClient().register(new ObjectMapperContextResolver());
         identityManager = testIdentityManager;
+        mediaManager = testMediaManager;
     }
 
     public static <T extends BaseModel> BaseObjectManager<T> getManager(Class<T> clazz) {

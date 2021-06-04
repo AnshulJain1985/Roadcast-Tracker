@@ -17,6 +17,7 @@
 package org.traccar.protocol;
 
 import org.traccar.Context;
+import org.traccar.Protocol;
 import org.traccar.StringProtocolEncoder;
 import org.traccar.model.Command;
 
@@ -25,6 +26,10 @@ import java.util.Date;
 public class H02LibiOBDProtocolEncoder extends StringProtocolEncoder {
 
     private static final String MARKER = "HQ";
+
+    public H02LibiOBDProtocolEncoder(Protocol protocol) {
+        super(protocol);
+    }
 
     private Object formatCommand(Date time, String uniqueId, String type, String... params) {
 
@@ -55,7 +60,7 @@ public class H02LibiOBDProtocolEncoder extends StringProtocolEncoder {
             case Command.TYPE_POSITION_PERIODIC:
                 String frequency = command.getAttributes().get(Command.KEY_FREQUENCY).toString();
                 if (Context.getIdentityManager().lookupAttributeBoolean(
-                        command.getDeviceId(), "h02.alternative", false, true)) {
+                        command.getDeviceId(), "h02.alternative", false, false, true)) {
                     return formatCommand(time, uniqueId, "D1", frequency);
                 } else {
                     return formatCommand(time, uniqueId, "S71", "22", frequency);

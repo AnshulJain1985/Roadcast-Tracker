@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.traccar.Context;
+import org.traccar.config.Keys;
 import org.traccar.model.Event;
 import org.traccar.model.Position;
 import org.traccar.model.User;
@@ -32,13 +33,15 @@ public class NotificatorFirebase extends Notificator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NotificatorFirebase.class);
 
-    private static final String URL = "https://fcm.googleapis.com/fcm/send";
+    private final String url;
 
     private final String key;
 
     public static class Notification {
         @JsonProperty("body")
         private String body;
+        @JsonProperty("sound")
+        private String sound;
     }
 
     public static class Message {
@@ -49,7 +52,14 @@ public class NotificatorFirebase extends Notificator {
     }
 
     public NotificatorFirebase() {
-        key = Context.getConfig().getString("notificator.firebase.key");
+        this(
+                "https://fcm.googleapis.com/fcm/send",
+                Context.getConfig().getString(Keys.NOTIFICATOR_FIREBASE_KEY));
+    }
+
+    protected NotificatorFirebase(String url, String key) {
+        this.url = url;
+        this.key = key;
     }
 
     @Override
@@ -59,12 +69,13 @@ public class NotificatorFirebase extends Notificator {
 
             Notification notification = new Notification();
             notification.body = NotificationFormatter.formatShortMessage(userId, event, position).trim();
+            notification.sound = "default";
 
             Message message = new Message();
             message.tokens = user.getString("notificationTokens").split("[, ]");
             message.notification = notification;
 
-            Context.getClient().target(URL).request()
+            Context.getClient().target(url).request()
                     .header("Authorization", "key=" + key)
                     .async().post(Entity.json(message), new InvocationCallback<Object>() {
                 @Override

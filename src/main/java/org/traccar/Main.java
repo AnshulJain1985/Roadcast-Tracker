@@ -19,22 +19,21 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.traccar.api.HealthCheckService;
 
+import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.nio.charset.Charset;
-import java.sql.SQLException;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.Locale;
+import java.util.Timer;
 
 public final class Main {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
-    private static final long CLEAN_PERIOD = 24 * 60 * 60 * 1000;
 
     private static Injector injector;
 
@@ -75,13 +74,17 @@ public final class Main {
     public static void main(String[] args) throws Exception {
         Locale.setDefault(Locale.ENGLISH);
 
+        final String configFile;
         if (args.length <= 0) {
-            throw new RuntimeException("Configuration file is not provided");
+            configFile = "./debug.xml";
+            if (!new File(configFile).exists()) {
+                throw new RuntimeException("Configuration file is not provided");
+            }
+        } else {
+            configFile = args[args.length - 1];
         }
 
-        final String configFile = args[args.length - 1];
-
-        if (args[0].startsWith("--")) {
+        if (args.length > 0 && args[0].startsWith("--")) {
             WindowsService windowsService = new WindowsService("traccar") {
                 @Override
                 public void run() {
@@ -105,12 +108,20 @@ public final class Main {
         }
     }
 
+    private static void scheduleHealthCheck() {
+        HealthCheckService service = new HealthCheckService();
+        if (service.isEnabled()) {
+            new Timer().scheduleAtFixedRate(
+                    service.createTask(), service.getPeriod(), service.getPeriod());
+        }
+    }
+
     public static void run(String configFile) {
         try {
             Context.init(configFile);
             injector = Guice.createInjector(new MainModule());
             logSystemInfo();
-            LOGGER.info("Version: " + Context.getAppVersion());
+            LOGGER.info("Version: " + Main.class.getPackage().getImplementationVersion());
             LOGGER.info("Starting server...");
 
             Context.getServerManager().start();
@@ -118,35 +129,21 @@ public final class Main {
                 Context.getWebServer().start();
             }
 
-            new Timer().scheduleAtFixedRate(new TimerTask() {
-                @Override
-                public void run() {
-                    try {
-                        Context.getDataManager().clearHistory();
-                    } catch (SQLException error) {
-                        LOGGER.warn("Clear history error", error);
-                    }
-                }
-            }, 0, CLEAN_PERIOD);
+            Context.getScheduleManager().start();
 
-            Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-                @Override
-                public void uncaughtException(Thread t, Throwable e) {
-                    LOGGER.error("Thread exception", e);
-                }
-            });
+            scheduleHealthCheck();
 
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                @Override
-                public void run() {
-                    LOGGER.info("Shutting down server...");
+            Thread.setDefaultUncaughtExceptionHandler((t, e) -> LOGGER.error("Thread exception", e));
 
-                    if (Context.getWebServer() != null) {
-                        Context.getWebServer().stop();
-                    }
-                    Context.getServerManager().stop();
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                LOGGER.info("Shutting down server...");
+
+                Context.getScheduleManager().stop();
+                if (Context.getWebServer() != null) {
+                    Context.getWebServer().stop();
                 }
-            });
+                Context.getServerManager().stop();
+            }));
         } catch (Exception e) {
             LOGGER.error("Main method error", e);
             throw new RuntimeException(e);

@@ -36,7 +36,7 @@ public class AquilaProtocol extends BaseProtocol {
                 pipeline.addLast(new LineBasedFrameDecoder(1024));
                 pipeline.addLast(new StringDecoder());
                 pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new AquilaProtocolEncoder());
+                pipeline.addLast(new AquilaProtocolEncoder(AquilaProtocol.this));
                 pipeline.addLast(new AquilaProtocolDecoder(AquilaProtocol.this));
             }
         });

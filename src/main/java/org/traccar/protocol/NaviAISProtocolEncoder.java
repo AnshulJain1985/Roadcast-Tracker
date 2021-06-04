@@ -15,11 +15,16 @@
  */
 package org.traccar.protocol;
 
+import org.traccar.Protocol;
 import org.traccar.StringProtocolEncoder;
 import org.traccar.model.Command;
 
 public class NaviAISProtocolEncoder extends StringProtocolEncoder
         implements StringProtocolEncoder.ValueFormatter {
+
+    public NaviAISProtocolEncoder(Protocol protocol) {
+        super(protocol);
+    }
 
     @Override
     public String formatValue(String key, Object value) {

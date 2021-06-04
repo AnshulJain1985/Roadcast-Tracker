@@ -653,7 +653,7 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
     }
 
     private Position decodeBasicOther(Channel channel, ByteBuf buf,
-                                    DeviceSession deviceSession, int type, int dataLength) {
+                                      DeviceSession deviceSession, int type, int dataLength) {
 
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());

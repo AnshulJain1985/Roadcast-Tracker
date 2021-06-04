@@ -31,7 +31,7 @@ public class Lt05Protocol extends BaseProtocol {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new Lt05FrameDecoder());
-                pipeline.addLast(new Lt05ProtocolEncoder());
+                pipeline.addLast(new Lt05ProtocolEncoder(Lt05Protocol.this));
                 pipeline.addLast(new Lt05ProtocolDecoder(Lt05Protocol.this));
             }
         });

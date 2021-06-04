@@ -31,7 +31,7 @@ public class JCX00Protocol extends BaseProtocol {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new JCX00FrameDecoder());
-                pipeline.addLast(new JCX00ProtocolEncoder());
+                pipeline.addLast(new JCX00ProtocolEncoder(JCX00Protocol.this));
                 pipeline.addLast(new JCX00ProtocolDecoder(JCX00Protocol.this));
             }
         });

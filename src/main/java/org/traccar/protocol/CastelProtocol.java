@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 - 2018 Anton Tananaev (anton@traccar.org)
+ * Copyright 2015 - 2019 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.traccar.TrackerServer;
 import org.traccar.model.Command;
 
 import java.nio.ByteOrder;
+
 public class CastelProtocol extends BaseProtocol {
 
     public CastelProtocol() {
@@ -32,14 +33,14 @@ public class CastelProtocol extends BaseProtocol {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new LengthFieldBasedFrameDecoder(ByteOrder.LITTLE_ENDIAN, 1024, 2, 2, -4, 0, true));
-                pipeline.addLast(new CastelProtocolEncoder());
+                pipeline.addLast(new CastelProtocolEncoder(CastelProtocol.this));
                 pipeline.addLast(new CastelProtocolDecoder(CastelProtocol.this));
             }
         });
         addServer(new TrackerServer(true, getName()) {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
-                pipeline.addLast(new CastelProtocolEncoder());
+                pipeline.addLast(new CastelProtocolEncoder(CastelProtocol.this));
                 pipeline.addLast(new CastelProtocolDecoder(CastelProtocol.this));
             }
         });

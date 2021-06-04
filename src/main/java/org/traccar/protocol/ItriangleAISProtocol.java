@@ -34,7 +34,7 @@ public class ItriangleAISProtocol extends BaseProtocol {
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new StringDecoder());
                 pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new ItriangleAISProtocolEncoder());
+                pipeline.addLast(new ItriangleAISProtocolEncoder(ItriangleAISProtocol.this));
                 pipeline.addLast(new ItriangleAISProtocolDecoder(ItriangleAISProtocol.this));
             }
         });

@@ -15,11 +15,22 @@
  */
 package org.traccar.database;
 
+import java.sql.SQLException;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.traccar.Config;
+import org.traccar.config.Config;
 import org.traccar.Context;
-
+import org.traccar.config.Keys;
+import org.traccar.model.Command;
 import org.traccar.model.Device;
 import org.traccar.model.DeviceState;
 import org.traccar.model.DeviceAccumulators;
@@ -27,25 +38,13 @@ import org.traccar.model.Group;
 import org.traccar.model.Position;
 import org.traccar.model.Server;
 
-import java.sql.SQLException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.List;
-import java.util.LinkedList;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
-
 public class DeviceManager extends BaseObjectManager<Device> implements IdentityManager, ManagableObjects {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DeviceManager.class);
 
-    public static final long DEFAULT_REFRESH_DELAY = 300;
 
     private final Config config;
     private final long dataRefreshDelay;
-    private final boolean lookupGroupsAttribute;
 
     private Map<String, Device> devicesByUniqueId;
     private Map<String, Device> devicesByPhone;
@@ -69,8 +68,7 @@ public class DeviceManager extends BaseObjectManager<Device> implements Identity
         } finally {
             writeUnlock();
         }
-        dataRefreshDelay = config.getLong("database.refreshDelay", DEFAULT_REFRESH_DELAY) * 1000;
-        lookupGroupsAttribute = config.getBoolean("deviceManager.lookupGroupsAttribute");
+        dataRefreshDelay = config.getLong(Keys.DATABASE_REFRESH_DELAY) * 1000;
         refreshLastPositions();
     }
 
@@ -79,9 +77,9 @@ public class DeviceManager extends BaseObjectManager<Device> implements Identity
         Device device = new Device();
         device.setName(uniqueId);
         device.setUniqueId(uniqueId);
-        device.setCategory(Context.getConfig().getString("database.registerUnknown.defaultCategory"));
+        device.setCategory(Context.getConfig().getString(Keys.DATABASE_REGISTER_UNKNOWN_DEFAULT_CATEGORY));
 
-        long defaultGroupId = Context.getConfig().getLong("database.registerUnknown.defaultGroupId");
+        long defaultGroupId = Context.getConfig().getLong(Keys.DATABASE_REGISTER_UNKNOWN_DEFAULT_GROUP_ID);
         if (defaultGroupId != 0) {
             device.setGroupId(defaultGroupId);
         }
@@ -103,7 +101,7 @@ public class DeviceManager extends BaseObjectManager<Device> implements Identity
         }
     }
 
-    public void updateDeviceCache(boolean force) {
+    public void updateDeviceCache(boolean force) throws SQLException {
         long lastUpdate = devicesLastUpdate.get();
         if ((force || System.currentTimeMillis() - lastUpdate > dataRefreshDelay)
                 && devicesLastUpdate.compareAndSet(lastUpdate, System.currentTimeMillis())) {
@@ -116,7 +114,7 @@ public class DeviceManager extends BaseObjectManager<Device> implements Identity
         boolean forceUpdate;
         try {
             readLock();
-            forceUpdate = !devicesByUniqueId.containsKey(uniqueId) && !config.getBoolean("database.ignoreUnknown");
+            forceUpdate = !devicesByUniqueId.containsKey(uniqueId) && !config.getBoolean(Keys.DATABASE_IGNORE_UNKNOWN);
         } finally {
             readUnlock();
         }
@@ -127,6 +125,21 @@ public class DeviceManager extends BaseObjectManager<Device> implements Identity
         } finally {
             readUnlock();
         }
+    }
+
+    @Override
+    public String getDevicePassword(long id, String protocol, String defaultPassword) {
+        String password = lookupAttributeString(id, Command.KEY_DEVICE_PASSWORD, null, false, false);
+        if (password != null) {
+            return password;
+        }
+        if (protocol != null) {
+            password = Context.getConfig().getString(Keys.PROTOCOL_DEVICE_PASSWORD.withPrefix(protocol));
+            if (password != null) {
+                return password;
+            }
+        }
+        return defaultPassword;
     }
 
     public Device getDeviceByPhone(String phone) {
@@ -142,7 +155,11 @@ public class DeviceManager extends BaseObjectManager<Device> implements Identity
     public Set<Long> getAllItems() {
         Set<Long> result = super.getAllItems();
         if (result.isEmpty()) {
-            updateDeviceCache(true);
+            try {
+                updateDeviceCache(true);
+            } catch (SQLException e) {
+                LOGGER.warn("Update device cache error", e);
+            }
             result = super.getAllItems();
         }
         return result;
@@ -242,7 +259,7 @@ public class DeviceManager extends BaseObjectManager<Device> implements Identity
     protected void addNewItem(Device device) {
         super.addNewItem(device);
         addByUniqueId(device);
-        if (device.getPhone() != null  && !device.getPhone().isEmpty()) {
+        if (device.getPhone() != null && !device.getPhone().isEmpty()) {
             addByPhone(device);
         }
         if (Context.getGeofenceManager() != null) {
@@ -355,32 +372,37 @@ public class DeviceManager extends BaseObjectManager<Device> implements Identity
         return result;
     }
 
+    @Override
     public boolean lookupAttributeBoolean(
-            long deviceId, String attributeName, boolean defaultValue, boolean lookupConfig) {
-        Object result = lookupAttribute(deviceId, attributeName, lookupConfig);
+            long deviceId, String attributeName, boolean defaultValue, boolean lookupServer, boolean lookupConfig) {
+        Object result = lookupAttribute(deviceId, attributeName, lookupServer, lookupConfig);
         if (result != null) {
             return result instanceof String ? Boolean.parseBoolean((String) result) : (Boolean) result;
         }
         return defaultValue;
     }
 
+    @Override
     public String lookupAttributeString(
-            long deviceId, String attributeName, String defaultValue, boolean lookupConfig) {
-        Object result = lookupAttribute(deviceId, attributeName, lookupConfig);
+            long deviceId, String attributeName, String defaultValue, boolean lookupServer, boolean lookupConfig) {
+        Object result = lookupAttribute(deviceId, attributeName, lookupServer, lookupConfig);
         return result != null ? (String) result : defaultValue;
     }
 
-    public int lookupAttributeInteger(long deviceId, String attributeName, int defaultValue, boolean lookupConfig) {
-        Object result = lookupAttribute(deviceId, attributeName, lookupConfig);
+    @Override
+    public int lookupAttributeInteger(
+            long deviceId, String attributeName, int defaultValue, boolean lookupServer, boolean lookupConfig) {
+        Object result = lookupAttribute(deviceId, attributeName, lookupServer, lookupConfig);
         if (result != null) {
             return result instanceof String ? Integer.parseInt((String) result) : ((Number) result).intValue();
         }
         return defaultValue;
     }
 
+    @Override
     public long lookupAttributeLong(
-            long deviceId, String attributeName, long defaultValue, boolean lookupConfig) {
-        Object result = lookupAttribute(deviceId, attributeName, lookupConfig);
+            long deviceId, String attributeName, long defaultValue, boolean lookupServer, boolean lookupConfig) {
+        Object result = lookupAttribute(deviceId, attributeName, lookupServer, lookupConfig);
         if (result != null) {
             return result instanceof String ? Long.parseLong((String) result) : ((Number) result).longValue();
         }
@@ -388,20 +410,20 @@ public class DeviceManager extends BaseObjectManager<Device> implements Identity
     }
 
     public double lookupAttributeDouble(
-            long deviceId, String attributeName, double defaultValue, boolean lookupConfig) {
-        Object result = lookupAttribute(deviceId, attributeName, lookupConfig);
+            long deviceId, String attributeName, double defaultValue, boolean lookupServer, boolean lookupConfig) {
+        Object result = lookupAttribute(deviceId, attributeName, lookupServer, lookupConfig);
         if (result != null) {
             return result instanceof String ? Double.parseDouble((String) result) : ((Number) result).doubleValue();
         }
         return defaultValue;
     }
 
-    private Object lookupAttribute(long deviceId, String attributeName, boolean lookupConfig) {
+    private Object lookupAttribute(long deviceId, String attributeName, boolean lookupServer, boolean lookupConfig) {
         Object result = null;
         Device device = getById(deviceId);
         if (device != null) {
             result = device.getAttributes().get(attributeName);
-            if (result == null && lookupGroupsAttribute) {
+            if (result == null) {
                 long groupId = device.getGroupId();
                 while (groupId != 0) {
                     Group group = Context.getGroupsManager().getById(groupId);
@@ -416,13 +438,12 @@ public class DeviceManager extends BaseObjectManager<Device> implements Identity
                     }
                 }
             }
-            if (result == null) {
-                if (lookupConfig) {
-                    result = Context.getConfig().getString(attributeName);
-                } else {
-                    Server server = Context.getPermissionsManager().getServer();
-                    result = server.getAttributes().get(attributeName);
-                }
+            if (result == null && lookupServer) {
+                Server server = Context.getPermissionsManager().getServer();
+                result = server.getAttributes().get(attributeName);
+            }
+            if (result == null && lookupConfig) {
+                result = Context.getConfig().getString(attributeName);
             }
         }
         return result;

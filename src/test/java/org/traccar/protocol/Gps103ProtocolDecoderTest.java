@@ -2,13 +2,37 @@ package org.traccar.protocol;
 
 import org.junit.Test;
 import org.traccar.ProtocolTest;
+import org.traccar.model.Position;
 
 public class Gps103ProtocolDecoderTest extends ProtocolTest {
 
     @Test
     public void testDecode() throws Exception {
 
-        Gps103ProtocolDecoder decoder = new Gps103ProtocolDecoder(null);
+        var decoder = new Gps103ProtocolDecoder(null);
+
+        verifyPosition(decoder, text(
+                "imei:864035050002451,tracker,201223064947,,F,064947,A,1935.70640,N,09859.94436,W,0.025,;"));
+
+        verifyPosition(decoder, text(
+                "imei:760112011448012,001,2001151918,,F,191833.000,A,6136.6174,N,2126.9901,E,0.00,202.6,-0.1,1,,,,20;"));
+
+        verifyAttribute(decoder, text(
+                "imei:868683023212255,tracker,190205084503,,F,064459.000,A,4915.1221,N,01634.5655,E,3.91,83.95;"),
+                "course", 83.95);
+
+        verifyPosition(decoder, text(
+                "imei:864180034124375,vt14,190116192753,,F,172750.000,A,3649.2186,N,00235.8411,W,0.00,0,,0,0,51.93%,,+22;"));
+
+        verifyNull(decoder, text(
+                "imei:864180034124375,vr,0c00fa011ea05a03d726977103ad0034c98ef49e6d303fffd1c8361303f2dbb0fa530d8ca3930be3e94f4110145c7029a507a0a00028f4a70514c05c500503170334b400531971cad002ab7634f001a4027949c8e541ea47f853bca2f961ba427ab1e290089197711c485e4f6e82ad0d1ee8f25573eed4af60284f6935bb7ef2307f1dc3f4355bbf3f90a607ffd2e5fcc6c60310be80f152dbca54ed53147fed3ae7fa1fe54809e45330fdedc993d073b7f2a6340a00d8cabeb9a4980c68900e5cb1f6e29aab9e00fc334012a5a5c32e5227c7b21a9a2d35dc02cdb49edb189fe545ec058fec7565e667cfa08b1fccd34686e4f12003dd7ffaf4b980957440bd595beb53269bb082a517dd570693604cb6299cb1663f5a9d608e3e42807d71cd002d206028011e50aa49381513494011349cd2092803ffd3d031f154ef11bc86d870781f8679a90302540adc545c55a00e28c8a602e47ad2e46680133cd19e6800cd1cf4a0063293ce695188e0d20265e58559305c3ffcb2948eca10d20278adb50518890c40f5ed9a5fece941ccb29cfd19ff00c2a6e860d6471c7da1cffb3b507eb9aaafa3dc4a4909b7fdf6c9fd28b88fffd4ca5d06e7b94152af87a53f7a7403d949a8e60265f0eaff0014ee7e8807f5a99340857abcadf881fd2973013a6936f1f48d4ffbc01fe95652dd63fba00fa521926d1de8e07a51600dc3d01d00;"));
+
+        verifyPosition(decoder, text(
+                "imei:868683026321020,T:+11,181217080050,,F,080047.000,A,3227.3057,N,11649.4754,W,0.00,0,,0,0,0.00%,,+11;"));
+
+        verifyAttribute(decoder, text(
+                "imei:868683026321020,tracker,181217080106,,F,080102.000,A,3227.3057,N,11649.4754,W,0.00,0,,0,0,0.00%,0,+11;"),
+                Position.PREFIX_TEMP + 1, 11);
 
         verifyPosition(decoder, text(
                 "imei:861359038609986,Equipo 1,---,------,----,214734,241018,26,1,-33.42317,-70.61930,067,229,0674,1.00,08,0,1,---,*"));
@@ -22,8 +46,9 @@ public class Gps103ProtocolDecoderTest extends ProtocolTest {
         verifyAttributes(decoder, text(
                 "imei:868683027758113,OBD,180905200218,,,,0,0,0.39%,70,9.41%,494,0.00,P0137,P0430,,;"));
 
-        verifyPosition(decoder, text(
-                "imei:353451044508750,001,0809231929,13554900601,F,055403.000,A,2233.1870,N,11354.3067,E,0.00,30.1,65.43,1,0,10.5%,0.0%,28;"));
+        verifyAttribute(decoder, text(
+                "imei:353451044508750,001,0809231929,13554900601,F,055403.000,A,2233.1870,N,11354.3067,E,0.00,30.1,65.43,1,0,10.5%,0.0%,28;"),
+                "fuel1", 10.5);
 
         verifyPosition(decoder, text(
                 "imei:864180036029895,acc on,180508145653,,F,065645.000,A,4729.1497,N,01904.2342,E,0.00,0,,1,,0.00%,,;"));
@@ -138,16 +163,16 @@ public class Gps103ProtocolDecoderTest extends ProtocolTest {
 
         verifyPosition(decoder, text(
                 "imei:359710040656622,tracker,13/02/27 23:40,,F,125952.000,A,3450.9430,S,13828.6753,E,0.00,0"));
-        
+
         verifyPosition(decoder, text(
                 "imei:359710040565419,tracker,13/05/25 14:23,,F,062209.000,A,0626.0411,N,10149.3904,E,0.00,0"));
 
         verifyPosition(decoder, text(
                 "imei:353451047570260,tracker,1302110948,,F,144807.000,A,0805.6615,S,07859.9763,W,0.00,,"));
-        
+
         verifyPosition(decoder, text(
                 "imei:359587016817564,tracker,1301251602,,F,080251.000,A,3223.5832,N,11058.9449,W,0.03,"));
-        
+
         verifyPosition(decoder, text(
                 "imei:359587016817564,tracker,1301251602,,F,080251.000,A,3223.5832,N,11058.9449,W,,"));
 
@@ -203,37 +228,37 @@ public class Gps103ProtocolDecoderTest extends ProtocolTest {
 
         verifyPosition(decoder, text(
                 "imei:863070010423167,tracker,1211060621,,F,062152.000,A,2220.6914,N,11407.5506,E,15.85,347.84,"));
-        
+
         verifyPosition(decoder, text(
                 "imei:863070012698733,tracker,1303092334,,F,193427.000,A,5139.0369,N,03907.2791,E,0.00,,"));
-        
+
         verifyPosition(decoder, text(
                 "imei:869039001186913,tracker,130925065533,0,F,065533.000,A,5604.11015,N,9232.12238,E,0.0,,329.0,"));
-        
+
         verifyPosition(decoder, text(
                 "imei:359710041641581,acc alarm,1402231159,,F,065907.000,A,2456.2591,N,06708.8335,E,7.53,76.10,,1,0,0.03%,,"));
-        
+
         verifyPosition(decoder, text(
                 "imei:359710041641581,acc alarm,1402231159,,F,065907.000,A,2456.2591,N,06708.8335,E,7.53,76.10,,1,0,0.03%,,"));
-        
+
         verifyPosition(decoder, text(
                 "imei:313009071131684,tracker,1403211928,,F,112817.000,A,0610.1133,N,00116.5840,E,0.00,,,0,0,0.0,0.0,"));
-        
+
         verifyPosition(decoder, text(
                 "imei:866989771979791,tracker,140527055653,,F,215653.00,A,5050.33113,N,00336.98783,E,0.066,0"));
-        
+
         verifyPosition(decoder, text(
                 "imei:353552045375005,tracker,150401165832,61.0,F,31.0,A,1050.73696,N,10636.49489,E,8.0,,22.0,"));
-        
+
         verifyPosition(decoder, text(
                 "imei:353552045403597,tracker,150420050648,53.0,F,0.0,A,N,5306.64155,E,00700.77848,0.0,,1.0,;"));
-        
+
         verifyPosition(decoder, text(
                 "imei:353552045403597,tracker,150420051153,53.0,F,0.0,A,5306.64155,N,00700.77848,E,0.0,,1.0,;"));
-        
+
         verifyPosition(decoder, text(
                 "imei:359710047424644,tracker,150506224036,,F,154037.000,A,0335.2785,N,09841.1543,E,3.03,337.54,,0,0,45.16%,,;"));
-        
+
         verifyPosition(decoder, text(
                 "imei:865328023776874,acc off,150619152221,,F,072218.000,A,5439.8489,N,02518.5945,E,0.00,,,1,1,0.0,0.0,23.0,;"));
 

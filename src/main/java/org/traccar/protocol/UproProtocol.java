@@ -34,7 +34,7 @@ public class UproProtocol extends BaseProtocol {
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new CharacterDelimiterFrameDecoder(1024, '#'));
                 pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new UproProtocolEncoder());
+                pipeline.addLast(new UproProtocolEncoder(UproProtocol.this));
                 pipeline.addLast(new UproProtocolDecoder(UproProtocol.this));
             }
         });

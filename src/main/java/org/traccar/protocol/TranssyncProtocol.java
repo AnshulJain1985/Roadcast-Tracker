@@ -30,7 +30,7 @@ public class TranssyncProtocol extends BaseProtocol {
         addServer(new TrackerServer(false, getName()) {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
-                pipeline.addLast(new TranssyncProtocolEncoder());
+                pipeline.addLast(new TranssyncProtocolEncoder(TranssyncProtocol.this));
                 pipeline.addLast(new TranssyncProtocolDecoder(TranssyncProtocol.this));
             }
         });

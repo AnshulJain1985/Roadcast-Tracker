@@ -9,7 +9,30 @@ public class Tk103ProtocolDecoderTest extends ProtocolTest {
     @Test
     public void testDecode() throws Exception {
 
-        Tk103ProtocolDecoder decoder = new Tk103ProtocolDecoder(null);
+        var decoder = new Tk103ProtocolDecoder(null);
+
+        verifyPosition(decoder, text(
+                "(868822040452227,DW3B,150421,A,4154.51607N,45.78950E,0.050,103142,0.000,595.200,7,0)"));
+
+        verifyPosition(decoder, text(
+                "(086375304593BR00210119A2220.0160N11335.4073E0000014000309.84001000293L0000015FP23BS27F)"));
+
+        verifyAttribute(decoder, text(
+                "(027023361470BV005J6RW2H53HL066029)"),
+                Position.KEY_VIN, "5J6RW2H53HL066029");
+
+        verifyAttribute(decoder, text(
+                "(044027395704BQ81,ALARM,1,164,151101A2238.5237N11349.4571E0.7031241010.0000,00000000)"),
+                Position.KEY_ALARM, Position.ALARM_OVERSPEED);
+
+        verifyPosition(decoder, text(
+                "(027023361470BR00200617A4000.5775N 8415.4076W 46.0173725 87.3101000000L00000000)"));
+
+        verifyPosition(decoder, text(
+                "(BALLESTEROS3BR00190408A4113.5700N00140.3100E000.0162431000.0001000000L00000000)"));
+
+        verifyPosition(decoder, text(
+                "(094625928000BR00190213A1156.0431S07705.6145W000.000023521.40000000007L00000314T113)"));
 
         verifyPosition(decoder, text(
                 "(019358704260BR00180725A2300.0957N07235.2748E032.412092187.58001100166L000D9779)"));
@@ -29,7 +52,7 @@ public class Tk103ProtocolDecoderTest extends ProtocolTest {
         verifyPosition(decoder, text(
                 "(864768011069660,ZC17,250517,A,3211.7118N,03452.8086E,0.68,115525,208.19,64.50,9)"));
 
-        verifyNull(decoder, text(
+        verifyPosition(decoder, text(
                 "(357593060760397BP02,G,2,170304A6015.7466N01101.8460E001.609445591.048,7)"));
 
         verifyPosition(decoder, text(
@@ -93,7 +116,7 @@ public class Tk103ProtocolDecoderTest extends ProtocolTest {
 
         verifyPosition(decoder, text(
                 "(088048003342BR00150917A1352.9801N10030.9050E000.0103224000.0000010000L000003F9)"));
-        
+
         verifyPosition(decoder, text(
                 "(088048003342BR00150807A1352.9871N10030.9084E000.0110718000.0001010000L00000000)"));
 
@@ -111,35 +134,35 @@ public class Tk103ProtocolDecoderTest extends ProtocolTest {
 
         verifyPosition(decoder, text(
                 "(013666666666BP05000013666666666110925A1234.5678N01234.5678W000.002033490.00000000000L000024DE)"));
-        
+
         verifyPosition(decoder, text(
                 "(013666666666BO012110925A1234.5678N01234.5678W000.0025948118.7200000000L000024DE)"));
 
         verifyPosition(decoder, text(
                 "(088045133878BR00130228A5124.5526N00117.7152W000.0233614352.2200000000L01B0CF1C)"));
-        
+
         verifyPosition(decoder, text(
                 "(008600410203BP05000008600410203130721A4152.5790N01239.2770E000.0145238173.870100000AL0000000)"));
-        
+
         verifyPosition(decoder, text(
                 "(013012345678BR00130515A4843.9703N01907.6211E000.019232800000000000000L00009239)"));
-        
+
         verifyPosition(decoder, text(
                 "(012345678901BP05000012345678901130520A3439.9629S05826.3504W000.1175622323.8700000000L000450AC)"));
-        
+
         verifyPosition(decoder, text(
                 "(012345678901BR00130520A3439.9629S05826.3504W000.1175622323.8700000000L000450AC)"));
-        
+
         verifyPosition(decoder, text(
                 "(352606090042050,BP05,240414,V,0000.0000N,00000.0000E,000.0,193133,000.0)"));
-        
+
         verifyPosition(decoder, text(
                 "(352606090042050,BP05,240414,A,4527.3513N,00909.9758E,4.80,112825,155.49)"),
                 position("2014-04-24 11:28:25.000", true, 45.45586, 9.16626));
 
         verifyPosition(decoder, text(
                 "(013632782450,BP05,101201,A,2234.0297N,11405.9101E,000.0,040137,178.48,00000000,L00000000)"));
-        
+
         verifyPosition(decoder, text(
                 "(864768010009188,BP05,271114,V,4012.19376N,00824.05638E,000.0,154436,000.0)"));
 

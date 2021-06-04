@@ -16,9 +16,8 @@
  */
 package org.traccar.reports.model;
 
-import java.util.Date;
 
-public class StopReport extends BaseReport  {
+public class StopReport extends BaseReport {
 
     private long positionId;
 
@@ -50,25 +49,6 @@ public class StopReport extends BaseReport  {
         this.longitude = longitude;
     }
 
-    private Date startTime;
-
-    public Date getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(Date startTime) {
-        this.startTime = startTime;
-    }
-
-    private Date endTime;
-
-    public Date getEndTime() {
-        return endTime;
-    }
-
-    public void setEndTime(Date endTime) {
-        this.endTime = endTime;
-    }
 
     private String address;
 
@@ -100,7 +80,4 @@ public class StopReport extends BaseReport  {
         this.engineHours = engineHours;
     }
 
-    public void addEngineHours(long engineHours) {
-        this.engineHours += engineHours;
-    }
 }

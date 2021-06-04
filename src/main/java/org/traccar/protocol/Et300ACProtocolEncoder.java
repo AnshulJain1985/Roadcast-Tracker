@@ -19,6 +19,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.traccar.BaseProtocolEncoder;
 import org.traccar.Context;
+import org.traccar.Protocol;
 import org.traccar.helper.Checksum;
 import org.traccar.model.Command;
 
@@ -26,10 +27,14 @@ import java.nio.charset.StandardCharsets;
 
 public class Et300ACProtocolEncoder extends BaseProtocolEncoder {
 
+    public Et300ACProtocolEncoder(Protocol protocol) {
+        super(protocol);
+    }
+
     private ByteBuf encodeContent(long deviceId, String content) {
 
         boolean language = Context.getIdentityManager().lookupAttributeBoolean(deviceId,
-                "et300ac.language", false, true);
+                "et300ac.language", false, false, true);
 
         ByteBuf buf = Unpooled.buffer();
 
@@ -62,7 +67,7 @@ public class Et300ACProtocolEncoder extends BaseProtocolEncoder {
     protected Object encodeCommand(Command command) {
 
         boolean alternative = Context.getIdentityManager().lookupAttributeBoolean(
-                command.getDeviceId(), "et300ac.alternative", false, true);
+                command.getDeviceId(), "et300ac.alternative", false, false, true);
 
         switch (command.getType()) {
             case Command.TYPE_ENGINE_STOP:
@@ -72,8 +77,8 @@ public class Et300ACProtocolEncoder extends BaseProtocolEncoder {
             case Command.TYPE_CUSTOM:
                 return encodeContent(command.getDeviceId(), command.getString(Command.KEY_DATA));
             default:
-        return null;
-    }
+                return null;
+        }
     }
 
 }

@@ -3,11 +3,7 @@ package org.traccar;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import io.netty.handler.codec.http.DefaultHttpHeaders;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.*;
 import org.traccar.helper.DataConverter;
 import org.traccar.model.CellTower;
 import org.traccar.model.Command;
@@ -17,16 +13,9 @@ import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class ProtocolTest extends BaseTest {
 
@@ -50,6 +39,14 @@ public class ProtocolTest extends BaseTest {
             builder.append(s);
         }
         return builder.toString();
+    }
+
+    protected ByteBuf concatenateBuffers(ByteBuf... buffers) {
+        ByteBuf result = Unpooled.buffer();
+        for (ByteBuf buf : buffers) {
+            result.writeBytes(buf);
+        }
+        return result;
     }
 
     protected ByteBuf binary(String... data) {
@@ -84,7 +81,7 @@ public class ProtocolTest extends BaseTest {
         assertNotNull(decoder.decode(null, null, object));
     }
 
-    protected void verifyNull(Object object) throws Exception {
+    protected void verifyNull(Object object) {
         assertNull(object);
     }
 
@@ -93,7 +90,24 @@ public class ProtocolTest extends BaseTest {
     }
 
     protected void verifyAttribute(BaseProtocolDecoder decoder, Object object, String key, Object expected) throws Exception {
-        assertEquals(expected, ((Position) decoder.decode(null, null, object)).getAttributes().get(key));
+        Object decodedObject = decoder.decode(null, null, object);
+        Position position;
+        if (decodedObject instanceof Collection) {
+            position = (Position) ((Collection) decodedObject).iterator().next();
+        } else {
+            position = (Position) decodedObject;
+        }
+        switch (key) {
+            case "speed":
+                assertEquals(expected, position.getSpeed());
+                break;
+            case "course":
+                assertEquals(expected, position.getCourse());
+                break;
+            default:
+                assertEquals(expected, position.getAttributes().get(key));
+                break;
+        }
     }
 
     protected void verifyAttributes(BaseProtocolDecoder decoder, Object object) throws Exception {
@@ -154,6 +168,7 @@ public class ProtocolTest extends BaseTest {
 
             } else {
 
+                assertNotNull(position.getServerTime());
                 assertNotNull(position.getFixTime());
                 assertTrue("year > 1999", position.getFixTime().after(new Date(915148800000L)));
                 assertTrue("time < +25 hours",
@@ -177,6 +192,8 @@ public class ProtocolTest extends BaseTest {
             assertTrue("course <= 360", position.getCourse() <= 360);
 
             assertNotNull("protocol is null", position.getProtocol());
+
+            assertTrue("deviceId > 0", position.getDeviceId() > 0);
 
         }
 
@@ -291,7 +308,7 @@ public class ProtocolTest extends BaseTest {
     }
 
     protected void verifyCommand(
-            BaseProtocolEncoder encoder, Command command, ByteBuf expected) throws Exception {
+            BaseProtocolEncoder encoder, Command command, ByteBuf expected) {
         verifyFrame(expected, encoder.encodeCommand(command));
     }
 

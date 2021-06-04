@@ -15,29 +15,32 @@
  */
 package org.traccar.notification;
 
-import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.traccar.Context;
+import org.traccar.config.Keys;
 import org.traccar.model.Device;
 import org.traccar.model.Event;
 import org.traccar.model.Geofence;
 import org.traccar.model.Maintenance;
 import org.traccar.model.Position;
 
-import javax.ws.rs.client.AsyncInvoker;
+import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
+import javax.ws.rs.client.InvocationCallback;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public abstract class EventForwarder {
+public class EventForwarder {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(EventForwarder.class);
     private final String url;
     private final String header;
 
     public EventForwarder() {
-        url = Context.getConfig().getString("event.forward.url", "http://localhost/");
-        header = Context.getConfig().getString("event.forward.header");
+        url = Context.getConfig().getString(Keys.EVENT_FORWARD_URL);
+        header = Context.getConfig().getString(Keys.EVENT_FORWARD_HEADERS);
     }
 
     private static final String KEY_POSITION = "position";
@@ -52,23 +55,25 @@ public abstract class EventForwarder {
         Invocation.Builder requestBuilder = Context.getClient().target(url).request();
 
         if (header != null && !header.isEmpty()) {
-            for (Map.Entry<String, String> entry : splitKeyValues(header, ":").entries()) {
-                requestBuilder = requestBuilder.header(entry.getKey(), entry.getValue());
+            for (String line : header.split("\\r?\\n")) {
+                String[] values = line.split(":", 2);
+                requestBuilder.header(values[0].trim(), values[1].trim());
             }
         }
 
-        executeRequest(event, position, users, requestBuilder.async());
-    }
+        LOGGER.debug("Event forwarding initiated");
+        requestBuilder.async().post(
+                Entity.json(preparePayload(event, position, users)), new InvocationCallback<Object>() {
+                    @Override
+                    public void completed(Object o) {
+                        LOGGER.debug("Event forwarding succeeded");
+                    }
 
-    protected MultiValuedMap<String, String> splitKeyValues(String params, String separator) {
-        MultiValuedMap<String, String> data = new ArrayListValuedHashMap<>();
-        for (String line: params.split("\\r?\\n")) {
-            String[] values = line.split(separator, 2);
-            if (values.length == 2) {
-                data.put(values[0].trim(), values[1].trim());
-            }
-        }
-        return data;
+                    @Override
+                    public void failed(Throwable throwable) {
+                        LOGGER.warn("Event forwarding failed", throwable);
+                    }
+                });
     }
 
     protected Map<String, Object> preparePayload(Event event, Position position, Set<Long> users) {
@@ -97,7 +102,5 @@ public abstract class EventForwarder {
         return data;
     }
 
-    protected abstract void executeRequest(
-            Event event, Position position, Set<Long> users, AsyncInvoker invoker);
 
 }

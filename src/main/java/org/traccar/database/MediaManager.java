@@ -54,8 +54,8 @@ public class MediaManager {
             int size = buf.readableBytes();
             String name = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + "." + extension;
             try (FileOutputStream output = new FileOutputStream(createFile(uniqueId, name));
-                    FileChannel fileChannel = output.getChannel()) {
-                    ByteBuffer byteBuffer = buf.nioBuffer();
+                 FileChannel fileChannel = output.getChannel()) {
+                ByteBuffer byteBuffer = buf.nioBuffer();
                 int written = 0;
                 while (written < size) {
                     written += fileChannel.write(byteBuffer);

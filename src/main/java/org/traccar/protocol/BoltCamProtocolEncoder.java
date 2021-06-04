@@ -18,6 +18,7 @@ package org.traccar.protocol;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.traccar.BaseProtocolEncoder;
+import org.traccar.Protocol;
 import org.traccar.helper.Checksum;
 import org.traccar.helper.DataConverter;
 import org.traccar.model.Command;
@@ -27,6 +28,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class BoltCamProtocolEncoder extends BaseProtocolEncoder {
+
+    public BoltCamProtocolEncoder(Protocol protocol) {
+        super(protocol);
+    }
 
     @Override
     protected Object encodeCommand(Command command) {

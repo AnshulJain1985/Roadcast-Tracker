@@ -18,6 +18,7 @@ package org.traccar.api.resource;
 import org.traccar.Context;
 import org.traccar.api.BaseResource;
 import org.traccar.helper.DataConverter;
+import org.traccar.helper.ServletHelper;
 import org.traccar.helper.LogAction;
 import org.traccar.model.User;
 
@@ -35,7 +36,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -106,6 +106,7 @@ public class SessionResource extends BaseResource {
             LogAction.login(user.getId());
             return user;
         } else {
+            LogAction.failedLogin(ServletHelper.retrieveRemoteAddress(request));
             throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).build());
         }
     }

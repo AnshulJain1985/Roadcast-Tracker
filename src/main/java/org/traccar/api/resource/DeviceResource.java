@@ -30,7 +30,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashSet;
@@ -52,7 +51,7 @@ public class DeviceResource extends BaseObjectResource<Device> {
             @QueryParam("uniqueId") List<String> uniqueIds,
             @QueryParam("id") List<Long> deviceIds) throws SQLException {
         DeviceManager deviceManager = Context.getDeviceManager();
-        Set<Long> result = null;
+        Set<Long> result;
         if (all) {
             if (Context.getPermissionsManager().getUserAdmin(getUserId())) {
                 result = deviceManager.getAllItems();

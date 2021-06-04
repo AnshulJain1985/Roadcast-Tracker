@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Anton Tananaev (anton@traccar.org)
+ * Copyright 2017 - 2019 Anton Tananaev (anton@traccar.org)
  * Copyright 2017 Andrey Kunitsyn (andrey@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,20 +16,25 @@
  */
 package org.traccar.protocol;
 
+import org.traccar.Protocol;
 import org.traccar.StringProtocolEncoder;
 import org.traccar.model.Command;
 
 public class GranitProtocolSmsEncoder extends StringProtocolEncoder {
 
+    public GranitProtocolSmsEncoder(Protocol protocol) {
+        super(protocol);
+    }
+
     @Override
     protected String encodeCommand(Command command) {
         switch (command.getType()) {
-        case Command.TYPE_REBOOT_DEVICE:
-            return "BB+RESET";
-        case Command.TYPE_POSITION_PERIODIC:
-            return formatCommand(command, "BB+BBMD={%s}", Command.KEY_FREQUENCY);
-        default:
-            return null;
+            case Command.TYPE_REBOOT_DEVICE:
+                return "BB+RESET";
+            case Command.TYPE_POSITION_PERIODIC:
+                return formatCommand(command, "BB+BBMD=%s", Command.KEY_FREQUENCY);
+            default:
+                return null;
         }
     }
 

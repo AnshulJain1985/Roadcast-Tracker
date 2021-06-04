@@ -20,6 +20,7 @@ import org.traccar.BaseProtocol;
 import org.traccar.Context;
 import org.traccar.PipelineBuilder;
 import org.traccar.TrackerServer;
+import org.traccar.config.Keys;
 import org.traccar.model.Command;
 
 public class H02Protocol extends BaseProtocol {
@@ -36,10 +37,10 @@ public class H02Protocol extends BaseProtocol {
         addServer(new TrackerServer(false, getName()) {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
-                int messageLength = Context.getConfig().getInteger(getName() + ".messageLength");
+                int messageLength = Context.getConfig().getInteger(Keys.PROTOCOL_MESSAGE_LENGTH.withPrefix(getName()));
                 pipeline.addLast(new H02FrameDecoder(messageLength));
                 pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new H02ProtocolEncoder());
+                pipeline.addLast(new H02ProtocolEncoder(H02Protocol.this));
                 pipeline.addLast(new H02ProtocolDecoder(H02Protocol.this));
             }
         });
@@ -47,7 +48,7 @@ public class H02Protocol extends BaseProtocol {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new H02ProtocolEncoder());
+                pipeline.addLast(new H02ProtocolEncoder(H02Protocol.this));
                 pipeline.addLast(new H02ProtocolDecoder(H02Protocol.this));
             }
         });

@@ -116,6 +116,9 @@ public class HuabaoProtocolDecoder extends BaseProtocolDecoder {
         if (BitUtil.check(value, 8)) {
             return Position.ALARM_POWER_OFF;
         }
+        if (BitUtil.check(value, 17)) {
+            return Position.ALARM_TAMPERING;
+        }
         if (BitUtil.check(value, 20)) {
             return Position.ALARM_GEOFENCE;
         }
@@ -174,6 +177,7 @@ public class HuabaoProtocolDecoder extends BaseProtocolDecoder {
             sendGeneralResponse(channel, remoteAddress, id, type, index);
 
         } else if (type == MSG_LOCATION_REPORT) {
+            sendGeneralResponse(channel, remoteAddress, id, type, index);
 
             return decodeLocation(deviceSession, buf);
 
@@ -248,6 +252,15 @@ public class HuabaoProtocolDecoder extends BaseProtocolDecoder {
                 .setSecond(BcdUtil.readInteger(buf, 2));
         position.setTime(dateBuilder.getDate());
 
+        if (buf.readableBytes() == 20) {
+            buf.skipBytes(4); // remaining battery and mileage
+            position.set(Position.KEY_ODOMETER, buf.readUnsignedInt() * 1000);
+            position.set(Position.KEY_BATTERY, buf.readUnsignedShort() * 0.1);
+            buf.readUnsignedInt(); // area id
+            position.set(Position.KEY_RSSI, buf.readUnsignedByte());
+            buf.skipBytes(3); // reserved
+            return position;
+        }
         while (buf.readableBytes() > 2) {
             int subtype = buf.readUnsignedByte();
             int length = buf.readUnsignedByte();
@@ -301,25 +314,51 @@ public class HuabaoProtocolDecoder extends BaseProtocolDecoder {
                 case 0xD3:
                     position.set(Position.KEY_POWER, buf.readUnsignedShort() * 0.1);
                     break;
+                case 0xD4:
+                case 0xFE:
+                    position.set(Position.KEY_BATTERY_LEVEL, buf.readUnsignedByte());
+                    break;
+                case 0xD5:
+                    position.set(Position.KEY_BATTERY, buf.readUnsignedShort() * 0.01);
+                    break;
+                case 0xDA:
+                    buf.readUnsignedShort(); // string cut count
+                    int deviceStatus = buf.readUnsignedByte();
+                    position.set("string", BitUtil.check(deviceStatus, 0));
+                    position.set(Position.KEY_MOTION, BitUtil.check(deviceStatus, 2));
+                    position.set("cover", BitUtil.check(deviceStatus, 3));
+                    break;
                 case 0xEB:
-                    while (buf.readerIndex() < endIndex) {
-                        int extendedLength = buf.readUnsignedShort();
-                        int extendedType = buf.readUnsignedShort();
-                        switch (extendedType) {
-                            case 0x0001:
-                                position.set("fuel1", buf.readUnsignedShort() * 0.1);
-                                buf.readUnsignedByte(); // unused
-                                break;
-                            case 0x0023:
-                                position.set("fuel2", Double.parseDouble(
-                                        buf.readCharSequence(6, StandardCharsets.US_ASCII).toString()));
-                                break;
-                            case 0x00CE:
-                                position.set(Position.KEY_POWER, buf.readUnsignedShort() * 0.01);
-                                break;
-                            default:
-                                buf.skipBytes(extendedLength - 2);
-                                break;
+                    if (buf.getUnsignedShort(buf.readerIndex()) > 200) {
+                        Network network = new Network();
+                        int mcc = buf.readUnsignedShort();
+                        int mnc = buf.readUnsignedByte();
+                        while (buf.readerIndex() < endIndex) {
+                            network.addCellTower(CellTower.from(
+                                    mcc, mnc, buf.readUnsignedShort(), buf.readUnsignedShort(),
+                                    buf.readUnsignedByte()));
+                        }
+                        position.setNetwork(network);
+                    } else {
+                        while (buf.readerIndex() < endIndex) {
+                            int extendedLength = buf.readUnsignedShort();
+                            int extendedType = buf.readUnsignedShort();
+                            switch (extendedType) {
+                                case 0x0001:
+                                    position.set("fuel1", buf.readUnsignedShort() * 0.1);
+                                    buf.readUnsignedByte(); // unused
+                                    break;
+                                case 0x0023:
+                                    position.set("fuel2", Double.parseDouble(
+                                            buf.readCharSequence(6, StandardCharsets.US_ASCII).toString()));
+                                    break;
+                                case 0x00CE:
+                                    position.set(Position.KEY_POWER, buf.readUnsignedShort() * 0.01);
+                                    break;
+                                default:
+                                    buf.skipBytes(extendedLength - 2);
+                                    break;
+                            }
                         }
                     }
                     break;

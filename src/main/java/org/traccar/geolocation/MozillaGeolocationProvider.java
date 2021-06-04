@@ -23,8 +23,4 @@ public class MozillaGeolocationProvider extends UniversalGeolocationProvider {
         super(URL, key != null ? key : "test");
     }
 
-    public MozillaGeolocationProvider(String url, String key) {
-        super(url, key != null ? key : "test");
-    }
-
 }

@@ -17,7 +17,6 @@ package org.traccar.protocol;
 
 import org.traccar.BaseFrameDecoder;
 import org.traccar.helper.BufferUtil;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;

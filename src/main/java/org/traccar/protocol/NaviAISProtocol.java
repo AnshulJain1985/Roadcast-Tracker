@@ -35,7 +35,7 @@ public class NaviAISProtocol extends BaseProtocol {
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new StringDecoder());
                 pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new NaviAISProtocolEncoder());
+                pipeline.addLast(new NaviAISProtocolEncoder(NaviAISProtocol.this));
                 pipeline.addLast(new NaviAISProtocolDecoder(NaviAISProtocol.this));
             }
         });

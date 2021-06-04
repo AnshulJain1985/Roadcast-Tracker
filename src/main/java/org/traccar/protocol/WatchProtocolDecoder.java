@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 - 2018 Anton Tananaev (anton@traccar.org)
+ * Copyright 2015 - 2020 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,10 @@
 package org.traccar.protocol;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.traccar.BaseProtocolDecoder;
 import org.traccar.Context;
 import org.traccar.DeviceSession;
@@ -38,6 +41,8 @@ import java.util.regex.Pattern;
 
 public class WatchProtocolDecoder extends BaseProtocolDecoder {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(WatchProtocolDecoder.class);
+
     public WatchProtocolDecoder(Protocol protocol) {
         super(protocol);
     }
@@ -52,7 +57,7 @@ public class WatchProtocolDecoder extends BaseProtocolDecoder {
             .expression("([EW])?,")
             .number("(d+.?d*),")                 // speed
             .number("(d+.?d*),")                 // course
-            .number("(d+.?d*),")                 // altitude
+            .number("(-?d+.?d*),")               // altitude
             .number("(d+),")                     // satellites
             .number("(d+),")                     // rssi
             .number("(d+),")                     // battery
@@ -64,36 +69,40 @@ public class WatchProtocolDecoder extends BaseProtocolDecoder {
 
     private void sendResponse(Channel channel, String id, String index, String content) {
         if (channel != null) {
+            String response;
             if (index != null) {
-                channel.writeAndFlush(new NetworkMessage(String.format("[%s*%s*%s*%04x*%s]",
-                        manufacturer, id, index, content.length(), content), channel.remoteAddress()));
+                response = String.format("[%s*%s*%s*%04x*%s]",
+                        manufacturer, id, index, content.length(), content);
             } else {
-                channel.writeAndFlush(new NetworkMessage(String.format("[%s*%s*%04x*%s]",
-                        manufacturer, id, content.length(), content), channel.remoteAddress()));
+                response = String.format("[%s*%s*%04x*%s]",
+                        manufacturer, id, content.length(), content);
             }
+            ByteBuf buf = Unpooled.copiedBuffer(response, StandardCharsets.US_ASCII);
+            channel.writeAndFlush(new NetworkMessage(buf, channel.remoteAddress()));
         }
     }
 
     private String decodeAlarm(int status) {
-        if (BitUtil.check(status, 21)) {
-            return Position.ALARM_FALL_DOWN;
-        } else if (BitUtil.check(status, 20)) {
-            return Position.ALARM_REMOVING;
-        } else if (BitUtil.check(status, 19)) {
-            return Position.ALARM_GEOFENCE_ENTER;
-        } else if (BitUtil.check(status, 17)) {
+        if (BitUtil.check(status, 0)) {
             return Position.ALARM_LOW_BATTERY;
-        } else if (BitUtil.check(status, 16)) {
-            return Position.ALARM_SOS;
-        } else if (BitUtil.check(status, 3)) {
-//            return Position.ALARM_OVERSPEED;
-            return null;
-        } else if (BitUtil.check(status, 2)) {
-            return Position.ALARM_GEOFENCE_ENTER;
         } else if (BitUtil.check(status, 1)) {
             return Position.ALARM_GEOFENCE_EXIT;
-        } else if (BitUtil.check(status, 0)) {
+        } else if (BitUtil.check(status, 2)) {
+            return Position.ALARM_GEOFENCE_ENTER;
+        } else if (BitUtil.check(status, 3)) {
+            return Position.ALARM_OVERSPEED;
+        } else if (BitUtil.check(status, 16)) {
+            return Position.ALARM_SOS;
+        } else if (BitUtil.check(status, 17)) {
             return Position.ALARM_LOW_BATTERY;
+        } else if (BitUtil.check(status, 18)) {
+            return Position.ALARM_GEOFENCE_EXIT;
+        } else if (BitUtil.check(status, 19)) {
+            return Position.ALARM_GEOFENCE_ENTER;
+        } else if (BitUtil.check(status, 20)) {
+            return Position.ALARM_REMOVING;
+        } else if (BitUtil.check(status, 21)) {
+            return Position.ALARM_FALL_DOWN;
         }
         return null;
     }
@@ -119,9 +128,7 @@ public class WatchProtocolDecoder extends BaseProtocolDecoder {
 
         position.set(Position.KEY_SATELLITES, parser.nextInt(0));
         position.set(Position.KEY_RSSI, parser.nextInt(0));
-        int batteryLevel = parser.nextInt(0);
-        position.set(Position.KEY_BATTERY_LEVEL, batteryLevel);
-        position.set(Position.KEY_POWER, batteryLevel);
+        position.set(Position.KEY_BATTERY_LEVEL, parser.nextInt(0));
 
         position.set(Position.KEY_STEPS, parser.nextInt(0));
 
@@ -181,9 +188,9 @@ public class WatchProtocolDecoder extends BaseProtocolDecoder {
 
         ByteBuf buf = (ByteBuf) msg;
 
-        buf.skipBytes(1); // header
+        buf.skipBytes(1); // '[' header
         manufacturer = buf.readSlice(2).toString(StandardCharsets.US_ASCII);
-        buf.skipBytes(1); // delimiter
+        buf.skipBytes(1); // '*' delimiter
 
         int idIndex = buf.indexOf(buf.readerIndex(), buf.writerIndex(), (byte) '*');
         String id = buf.readSlice(idIndex - buf.readerIndex()).toString(StandardCharsets.US_ASCII);
@@ -192,7 +199,7 @@ public class WatchProtocolDecoder extends BaseProtocolDecoder {
             return null;
         }
 
-        buf.skipBytes(1); // delimiter
+        buf.skipBytes(1); // '*' delimiter
 
         String index = null;
         int contentIndex = buf.indexOf(buf.readerIndex(), buf.writerIndex(), (byte) '*');
@@ -201,13 +208,13 @@ public class WatchProtocolDecoder extends BaseProtocolDecoder {
             int indexLength = buf.indexOf(buf.readerIndex(), buf.writerIndex(), (byte) '*') - buf.readerIndex();
             hasIndex = true;
             index = buf.readSlice(indexLength).toString(StandardCharsets.US_ASCII);
-            buf.skipBytes(1); // delimiter
+            buf.skipBytes(1); // '*' delimiter
         }
 
         buf.skipBytes(4); // length
-        buf.skipBytes(1); // delimiter
+        buf.skipBytes(1); // '*' delimiter
 
-        buf.writerIndex(buf.writerIndex() - 1); // ignore ending
+        buf.writerIndex(buf.writerIndex() - 1); // ']' ignore ending
 
         contentIndex = buf.indexOf(buf.readerIndex(), buf.writerIndex(), (byte) ',');
         if (contentIndex < 0) {
@@ -236,21 +243,18 @@ public class WatchProtocolDecoder extends BaseProtocolDecoder {
 
                     getLastLocation(position, null);
 
-                    int batteryLevel = Integer.parseInt(values[2]);
-                    position.set(Position.KEY_BATTERY_LEVEL, batteryLevel);
-                    position.set(Position.KEY_POWER, batteryLevel);
+                    position.set(Position.KEY_BATTERY_LEVEL, Integer.parseInt(values[2]));
 
                     return position;
                 }
             }
 
-        } else if (type.equals("UD") || type.equals("UD2") || type.equals("UD3")
-                || type.equals("AL") || type.equals("WT")) {
+        } else if (type.startsWith("UD") || type.startsWith("AL") || type.startsWith("WT")) {
 
             Position position = decodePosition(deviceSession, buf.toString(StandardCharsets.US_ASCII));
 
             if (type.equals("AL")) {
-                if (position != null && position.getString(Position.KEY_ALARM) == null) {
+                if (position != null) {
                     position.set(Position.KEY_ALARM, Position.ALARM_SOS);
                 }
                 sendResponse(channel, id, index, "AL");
@@ -258,11 +262,14 @@ public class WatchProtocolDecoder extends BaseProtocolDecoder {
 
             return position;
 
-        } else if (type.equals("TKQ")) {
+        } else if (type.equals("TKQ") || type.equals("TKQ2")) {
 
-            sendResponse(channel, id, index, "TKQ");
+            sendResponse(channel, id, index, type);
 
-        } else if (type.equals("PULSE") || type.equals("heart") || type.equals("bphrt")) {
+        } else if (type.equalsIgnoreCase("PULSE")
+                || type.equalsIgnoreCase("HEART")
+                || type.equalsIgnoreCase("BLOOD")
+                || type.equalsIgnoreCase("BPHRT")) {
 
             if (buf.isReadable()) {
 
@@ -270,16 +277,18 @@ public class WatchProtocolDecoder extends BaseProtocolDecoder {
                 position.setDeviceId(deviceSession.getDeviceId());
 
                 getLastLocation(position, new Date());
-                position.set(Position.KEY_POWER, 0);
 
                 String[] values = buf.toString(StandardCharsets.US_ASCII).split(",");
                 int valueIndex = 0;
 
-                if (type.equals("bphrt")) {
+                if (type.equalsIgnoreCase("BPHRT") || type.equalsIgnoreCase("BLOOD")) {
                     position.set("pressureHigh", values[valueIndex++]);
                     position.set("pressureLow", values[valueIndex++]);
                 }
-                position.set(Position.KEY_HEART_RATE, Integer.parseInt(values[valueIndex]));
+
+                if (valueIndex <= values.length - 1) {
+                    position.set(Position.KEY_HEART_RATE, Integer.parseInt(values[valueIndex]));
+                }
 
                 return position;
 
@@ -294,18 +303,25 @@ public class WatchProtocolDecoder extends BaseProtocolDecoder {
 
             int timeIndex = buf.indexOf(buf.readerIndex(), buf.writerIndex(), (byte) ',');
             buf.readerIndex(timeIndex + 12 + 2);
-            position.set(Position.KEY_POWER, 0);
             position.set(Position.KEY_IMAGE, Context.getMediaManager().writeFile(id, buf, "jpg"));
 
             return position;
 
         } else if (type.equals("TK")) {
 
+            if (buf.readableBytes() == 1) {
+                byte result = buf.readByte();
+                if (result != '1') {
+                    LOGGER.warn(type + "," + result);
+                }
+                return null;
+            }
+
             Position position = new Position(getProtocolName());
             position.setDeviceId(deviceSession.getDeviceId());
 
             getLastLocation(position, null);
-            position.set(Position.KEY_POWER, 0);
+
             position.set(Position.KEY_AUDIO, Context.getMediaManager().writeFile(id, buf, "amr"));
 
             return position;

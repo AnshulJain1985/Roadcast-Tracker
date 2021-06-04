@@ -1,18 +1,9 @@
 package org.traccar.database;
 
 import org.junit.Test;
-import org.traccar.model.Attribute;
-import org.traccar.model.Device;
-import org.traccar.model.Driver;
-import org.traccar.model.Geofence;
-import org.traccar.model.Group;
-import org.traccar.model.ManagedUser;
-import org.traccar.model.Position;
-import org.traccar.model.User;
+import org.traccar.model.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class DataManagerTest {
 

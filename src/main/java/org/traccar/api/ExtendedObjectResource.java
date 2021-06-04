@@ -16,17 +16,16 @@
  */
 package org.traccar.api;
 
+import org.traccar.Context;
+import org.traccar.database.ExtendedObjectManager;
+import org.traccar.model.BaseModel;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.QueryParam;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-
-import javax.ws.rs.GET;
-import javax.ws.rs.QueryParam;
-
-import org.traccar.Context;
-import org.traccar.database.ExtendedObjectManager;
-import org.traccar.model.BaseModel;
 
 public class ExtendedObjectResource<T extends BaseModel> extends BaseObjectResource<T> {
 

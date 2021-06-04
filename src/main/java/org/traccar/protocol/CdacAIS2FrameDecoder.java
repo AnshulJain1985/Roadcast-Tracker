@@ -19,11 +19,13 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import org.traccar.BaseFrameDecoder;
+
 import java.nio.charset.StandardCharsets;
 
 public class CdacAIS2FrameDecoder extends BaseFrameDecoder {
 
-    public CdacAIS2FrameDecoder() { }
+    public CdacAIS2FrameDecoder() {
+    }
 
     @Override
     protected Object decode(

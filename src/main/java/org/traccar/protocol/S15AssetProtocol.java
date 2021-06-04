@@ -31,7 +31,7 @@ public class S15AssetProtocol extends BaseProtocol {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new S15AssetFrameDecoder());
-                pipeline.addLast(new S15AssetProtocolEncoder());
+                pipeline.addLast(new S15AssetProtocolEncoder(S15AssetProtocol.this));
                 pipeline.addLast(new S15AssetProtocolDecoder(S15AssetProtocol.this));
             }
         });

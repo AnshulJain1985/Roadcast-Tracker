@@ -31,7 +31,7 @@ public class Et300ACProtocol extends BaseProtocol {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new Et300ACFrameDecoder());
-                pipeline.addLast(new Et300ACProtocolEncoder());
+                pipeline.addLast(new Et300ACProtocolEncoder(Et300ACProtocol.this));
                 pipeline.addLast(new Et300ACProtocolDecoder(Et300ACProtocol.this));
             }
         });

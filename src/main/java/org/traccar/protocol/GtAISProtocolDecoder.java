@@ -26,10 +26,10 @@ import org.traccar.helper.DateBuilder;
 import org.traccar.helper.Parser;
 import org.traccar.helper.PatternBuilder;
 import org.traccar.helper.UnitsConverter;
-//import org.traccar.helper.Log;
 import org.traccar.model.CellTower;
 import org.traccar.model.Network;
 import org.traccar.model.Position;
+
 import java.net.SocketAddress;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -62,7 +62,7 @@ public class GtAISProtocolDecoder extends BaseProtocolDecoder {
             .compile();
 
 
-//    $,Header,MARK,WETRACK_800_11_A1A_D23_R0_V02_WM,351510091150527,5.99%,20%,0.00%,10,10,0010,00,0.1,*,93BA
+    //    $,Header,MARK,WETRACK_800_11_A1A_D23_R0_V02_WM,351510091150527,5.99%,20%,0.00%,10,10,0010,00,0.1,*,93BA
 //    $HBT,MARK,V0.0.1,351510091197726,54,20,0,10,20,0000,0.1,*
     private static final Pattern PATTERN_HEARTBEAT = new PatternBuilder()
             .groupBegin()

@@ -36,7 +36,7 @@ public class RpAISProtocol extends BaseProtocol {
                 pipeline.addLast(new StringDecoder());
                 pipeline.addLast(new CharacterDelimiterFrameDecoder(1024, ';'));
                 pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new RpAISProtocolEncoder());
+                pipeline.addLast(new RpAISProtocolEncoder(RpAISProtocol.this));
                 pipeline.addLast(new RpAISProtocolDecoder(RpAISProtocol.this));
             }
         });
@@ -44,7 +44,7 @@ public class RpAISProtocol extends BaseProtocol {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new RpAISProtocolEncoder());
+                pipeline.addLast(new RpAISProtocolEncoder(RpAISProtocol.this));
                 pipeline.addLast(new RpAISProtocolDecoder(RpAISProtocol.this));
             }
         });

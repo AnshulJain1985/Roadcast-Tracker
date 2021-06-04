@@ -10,7 +10,7 @@ import java.util.TimeZone;
 import static org.junit.Assert.assertEquals;
 
 public class DateBuilderTest {
-    
+
     @Test
     public void testDateBuilder() throws ParseException {
 

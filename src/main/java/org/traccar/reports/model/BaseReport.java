@@ -16,6 +16,8 @@
  */
 package org.traccar.reports.model;
 
+import java.util.Date;
+
 public class BaseReport {
 
     private long deviceId;
@@ -58,7 +60,7 @@ public class BaseReport {
         return averageSpeed;
     }
 
-    public void setAverageSpeed(Double averageSpeed) {
+    public void setAverageSpeed(double averageSpeed) {
         this.averageSpeed = averageSpeed;
     }
 
@@ -69,9 +71,7 @@ public class BaseReport {
     }
 
     public void setMaxSpeed(double maxSpeed) {
-        if (maxSpeed > this.maxSpeed) {
-            this.maxSpeed = maxSpeed;
-        }
+        this.maxSpeed = maxSpeed;
     }
 
     private double spentFuel;
@@ -93,6 +93,7 @@ public class BaseReport {
     public void setStartOdometer(double startOdometer) {
         this.startOdometer = startOdometer;
     }
+
     private double endOdometer;
 
     public double getEndOdometer() {
@@ -103,4 +104,23 @@ public class BaseReport {
         this.endOdometer = endOdometer;
     }
 
+    private Date startTime;
+
+    public Date getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(Date startTime) {
+        this.startTime = startTime;
+    }
+
+    private Date endTime;
+
+    public Date getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(Date endTime) {
+        this.endTime = endTime;
+    }
 }

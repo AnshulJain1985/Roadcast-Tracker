@@ -16,8 +16,12 @@
  */
 package org.traccar.helper;
 
-import java.beans.Introspector;
 
+import java.beans.Introspector;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.traccar.model.BaseModel;
@@ -44,7 +48,9 @@ public final class LogAction {
     private static final String PATTERN_OBJECT = "user: %d, action: %s, object: %s, id: %d";
     private static final String PATTERN_LINK = "user: %d, action: %s, owner: %s, id: %d, property: %s, id: %d";
     private static final String PATTERN_LOGIN = "user: %d, action: %s";
+    private static final String PATTERN_LOGIN_FAILED = "login failed from: %s";
     private static final String PATTERN_DEVICE_ACCUMULATORS = "user: %d, action: %s, deviceId: %d";
+    private static final String PATTERN_REPORT = "user: %d, report: %s, from: %s, to: %s, devices: %s, groups: %s";
 
     public static void create(long userId, BaseModel object) {
         logObjectAction(ACTION_CREATE, userId, object.getClass(), object.getId());
@@ -74,6 +80,13 @@ public final class LogAction {
         logLoginAction(ACTION_LOGOUT, userId);
     }
 
+    public static void failedLogin(String remoteAddress) {
+        if (remoteAddress == null || remoteAddress.isEmpty()) {
+            remoteAddress = "unknown";
+        }
+        LOGGER.info(String.format(PATTERN_LOGIN_FAILED, remoteAddress));
+    }
+
     public static void resetDeviceAccumulators(long userId, long deviceId) {
         LOGGER.info(String.format(
                 PATTERN_DEVICE_ACCUMULATORS, userId, ACTION_DEVICE_ACCUMULATORS, deviceId));
@@ -84,8 +97,8 @@ public final class LogAction {
                 PATTERN_OBJECT, userId, action, Introspector.decapitalize(clazz.getSimpleName()), objectId));
     }
 
-    private static void logLinkAction(String action, long userId,
-            Class<?> owner, long ownerId, Class<?> property, long propertyId) {
+    private static void logLinkAction(
+            String action, long userId, Class<?> owner, long ownerId, Class<?> property, long propertyId) {
         LOGGER.info(String.format(
                 PATTERN_LINK, userId, action,
                 Introspector.decapitalize(owner.getSimpleName()), ownerId,
@@ -96,4 +109,12 @@ public final class LogAction {
         LOGGER.info(String.format(PATTERN_LOGIN, userId, action));
     }
 
+    public static void logReport(
+            long userId, String report, Date from, Date to, List<Long> deviceIds, List<Long> groupIds) {
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        LOGGER.info(String.format(
+                PATTERN_REPORT, userId, report,
+                dateFormat.format(from), dateFormat.format(to),
+                deviceIds.toString(), groupIds.toString()));
+    }
 }

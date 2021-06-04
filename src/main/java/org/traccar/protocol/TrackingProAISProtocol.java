@@ -35,7 +35,7 @@ public class TrackingProAISProtocol extends BaseProtocol {
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new StringDecoder());
                 pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new TrackingProAISProtocolEncoder());
+                pipeline.addLast(new TrackingProAISProtocolEncoder(TrackingProAISProtocol.this));
                 pipeline.addLast(new TrackingProAISProtocolDecoder(TrackingProAISProtocol.this));
             }
         });
@@ -43,7 +43,7 @@ public class TrackingProAISProtocol extends BaseProtocol {
             @Override
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new TrackingProAISProtocolEncoder());
+                pipeline.addLast(new TrackingProAISProtocolEncoder(TrackingProAISProtocol.this));
                 pipeline.addLast(new TrackingProAISProtocolDecoder(TrackingProAISProtocol.this));
             }
         });

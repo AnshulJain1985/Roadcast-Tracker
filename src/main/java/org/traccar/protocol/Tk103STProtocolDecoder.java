@@ -339,7 +339,7 @@ public class Tk103STProtocolDecoder extends BaseProtocolDecoder {
 
     }
 
-@Override
+    @Override
     protected Object decode(
             Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
 

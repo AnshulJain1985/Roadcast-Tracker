@@ -16,13 +16,13 @@
  */
 package org.traccar.api.resource;
 
+import org.traccar.api.ExtendedObjectResource;
+import org.traccar.model.Driver;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-
-import org.traccar.api.ExtendedObjectResource;
-import org.traccar.model.Driver;
 
 @Path("drivers")
 @Produces(MediaType.APPLICATION_JSON)

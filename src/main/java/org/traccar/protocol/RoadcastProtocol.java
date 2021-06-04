@@ -33,7 +33,7 @@ public class RoadcastProtocol extends BaseProtocol {
                 pipeline.addLast(new CharacterDelimiterFrameDecoder(2048, false, "\r\n", "\n", ";", "*"));
                 pipeline.addLast(new StringEncoder());
                 pipeline.addLast(new StringDecoder());
-                pipeline.addLast(new RoadcastProtocolEncoder());
+                pipeline.addLast(new RoadcastProtocolEncoder(RoadcastProtocol.this));
                 pipeline.addLast(new RoadcastProtocolDecoder(RoadcastProtocol.this));
             }
         });
@@ -42,7 +42,7 @@ public class RoadcastProtocol extends BaseProtocol {
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new StringEncoder());
                 pipeline.addLast(new StringDecoder());
-                pipeline.addLast(new RoadcastProtocolEncoder());
+                pipeline.addLast(new RoadcastProtocolEncoder(RoadcastProtocol.this));
                 pipeline.addLast(new RoadcastProtocolDecoder(RoadcastProtocol.this));
             }
         });

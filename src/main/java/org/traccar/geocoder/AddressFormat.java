@@ -21,7 +21,7 @@ import java.text.ParsePosition;
 
 /**
  * Available parameters:
- *
+ * <p>
  * %p - postcode
  * %c - country
  * %s - state
@@ -31,7 +31,6 @@ import java.text.ParsePosition;
  * %r - street (road)
  * %h - house
  * %f - formatted address
- *
  */
 public class AddressFormat extends Format {
 

@@ -16,7 +16,6 @@
 package org.traccar.protocol;
 
 import org.traccar.BaseProtocolDecoder;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import org.traccar.Protocol;

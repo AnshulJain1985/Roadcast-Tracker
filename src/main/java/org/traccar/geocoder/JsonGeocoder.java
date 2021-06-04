@@ -18,6 +18,8 @@ package org.traccar.geocoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.traccar.Context;
+import org.traccar.Main;
+import org.traccar.database.StatisticsManager;
 
 import javax.json.JsonObject;
 import javax.ws.rs.ClientErrorException;
@@ -50,6 +52,13 @@ public abstract class JsonGeocoder implements Geocoder {
         }
     }
 
+    protected String readValue(JsonObject object, String key) {
+        if (object.containsKey(key) && !object.isNull(key)) {
+            return object.getString(key);
+        }
+        return null;
+    }
+
     private String handleResponse(
             double latitude, double longitude, JsonObject json, ReverseGeocoderCallback callback) {
 
@@ -64,10 +73,11 @@ public abstract class JsonGeocoder implements Geocoder {
             }
             return formattedAddress;
         } else {
+            String msg = "Empty address. Error: " + parseError(json);
             if (callback != null) {
-                callback.onFailure(new GeocoderException("Empty address"));
+                callback.onFailure(new GeocoderException(msg));
             } else {
-                LOGGER.warn("Empty address");
+                LOGGER.warn(msg);
             }
         }
         return null;
@@ -86,6 +96,8 @@ public abstract class JsonGeocoder implements Geocoder {
                 return cachedAddress;
             }
         }
+
+        Main.getInjector().getInstance(StatisticsManager.class).registerGeocoderRequest();
 
         Invocation.Builder request = Context.getClient().target(String.format(url, latitude, longitude)).request();
 
@@ -112,5 +124,9 @@ public abstract class JsonGeocoder implements Geocoder {
     }
 
     public abstract Address parseAddress(JsonObject json);
+
+    protected String parseError(JsonObject json) {
+        return null;
+    }
 
 }

@@ -34,7 +34,7 @@ public class VT333Protocol extends BaseProtocol {
             protected void addProtocolHandlers(PipelineBuilder pipeline) {
                 pipeline.addLast(new StringDecoder());
                 pipeline.addLast(new StringEncoder());
-                pipeline.addLast(new VT333ProtocolEncoder());
+                pipeline.addLast(new VT333ProtocolEncoder(VT333Protocol.this));
                 pipeline.addLast(new VT333ProtocolDecoder(VT333Protocol.this));
             }
         });
