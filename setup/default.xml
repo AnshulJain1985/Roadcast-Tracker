@@ -29,6 +29,7 @@
     <entry key='logger.enable'>true</entry>
     <entry key='logger.level'>info</entry>
     <entry key='logger.file'>./logs/tracker-server.log</entry>
+    <entry key='logger.rotate'>true</entry>
 
     <entry key='event.enable'>true</entry>
     <entry key='processing.computedAttributes.enable'>true</entry>
@@ -109,15 +110,7 @@
     </entry>
 
     <entry key='database.selectEvents'>
-        SELECT * FROM tc_events WHERE deviceId = :deviceId AND serverTime BETWEEN :from AND :to ORDER BY serverTime
-    </entry>
-
-    <entry key='database.deletePositions'>
-        DELETE FROM tc_positions WHERE serverTime &lt; :serverTime AND id NOT IN (SELECT positionId FROM tc_devices WHERE positionId IS NOT NULL)
-    </entry>
-
-    <entry key='database.deleteEvents'>
-        DELETE FROM tc_events WHERE serverTime &lt; :serverTime
+        SELECT * FROM tc_events WHERE deviceId = :deviceId AND eventTime BETWEEN :from AND :to ORDER BY eventTime
     </entry>
 
     <entry key='database.selectStatistics'>
@@ -317,6 +310,12 @@
     <entry key='smartsole.port'>5178</entry>
     <entry key='its.port'>5179</entry>
     <entry key='xrb28.port'>5180</entry>
+    <entry key='c2stek.port'>5181</entry>
+    <entry key='nyitech.port'>5182</entry>
+    <entry key='neos.port'>5183</entry>
+    <entry key='satsol.port'>5184</entry>
+    <entry key='globalstar.port'>5185</entry>
+    <entry key='sanul.port'>5186</entry>
     <entry key='minifinder2.port'>5187</entry>
 
 

@@ -90,7 +90,7 @@ public class WatchProtocolEncoder extends StringProtocolEncoder implements Strin
         return buf;
     }
 
-    private static final Map<Byte, Byte> mapping = new HashMap<>();
+    private static Map<Byte, Byte> mapping = new HashMap<>();
 
     static {
         mapping.put((byte) 0x7d, (byte) 0x01);
