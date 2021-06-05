@@ -83,6 +83,7 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
     public static final int MSG_X1_PHOTO_DATA = 0x36;
     public static final int MSG_WIFI_2 = 0x69;
     public static final int MSG_GPS_MODULAR = 0x70;
+    public static final int MSG_WIFI_4 = 0xF3;
     public static final int MSG_COMMAND_0 = 0x80;
     public static final int MSG_COMMAND_1 = 0x81;
     public static final int MSG_COMMAND_2 = 0x82;
@@ -294,7 +295,7 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
         return true;
     }
 
-    private boolean decodeStatus(Position position, ByteBuf buf) {
+    private boolean decodeStatus(Position position, ByteBuf buf, boolean batteryLevel) {
 
         int status = buf.readUnsignedByte();
 
@@ -323,7 +324,11 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
                 break;
         }
 
+        if (batteryLevel) {
         position.set(Position.KEY_BATTERY_LEVEL, buf.readUnsignedByte() * 100 / 6);
+        } else {
+            position.set(Position.KEY_POWER, buf.readUnsignedShort() * 0.01);
+        }
         position.set(Position.KEY_RSSI, buf.readUnsignedByte());
         position.set(Position.KEY_ALARM, decodeAlarm(buf.readUnsignedByte()));
 
@@ -521,7 +526,7 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
 
             return decodeX1(channel, buf, deviceSession, type);
 
-        } else if (type == MSG_WIFI || type == MSG_WIFI_2) {
+        } else if (type == MSG_WIFI || type == MSG_WIFI_2 || type == MSG_WIFI_4) {
 
             return decodeWifi(channel, buf, deviceSession, type);
 
@@ -620,13 +625,28 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
 
         Network network = new Network();
 
-        int wifiCount = buf.getByte(2);
-        for (int i = 0; i < wifiCount; i++) {
-            String mac = String.format("%02x:%02x:%02x:%02x:%02x:%02x",
-                    buf.readUnsignedByte(), buf.readUnsignedByte(), buf.readUnsignedByte(),
-                    buf.readUnsignedByte(), buf.readUnsignedByte(), buf.readUnsignedByte());
-            network.addWifiAccessPoint(WifiAccessPoint.from(mac, buf.readUnsignedByte()));
+        int wifiCount;
+        if (type == MSG_WIFI_4) {
+            wifiCount = buf.readUnsignedByte();
+        } else {
+            wifiCount = buf.getUnsignedByte(2);
         }
+
+        for (int i = 0; i < wifiCount; i++) {
+            if (type == MSG_WIFI_4) {
+                buf.skipBytes(2);
+            }
+            WifiAccessPoint wifiAccessPoint = new WifiAccessPoint();
+            wifiAccessPoint.setMacAddress(String.format("%02x:%02x:%02x:%02x:%02x:%02x",
+                    buf.readUnsignedByte(), buf.readUnsignedByte(), buf.readUnsignedByte(),
+                    buf.readUnsignedByte(), buf.readUnsignedByte(), buf.readUnsignedByte()));
+            if (type != MSG_WIFI_4) {
+                wifiAccessPoint.setSignalStrength((int) buf.readUnsignedByte());
+        }
+            network.addWifiAccessPoint(wifiAccessPoint);
+        }
+
+        if (type != MSG_WIFI_4) {
 
         int cellCount = buf.readUnsignedByte();
         int mcc = buf.readUnsignedShort();
@@ -635,8 +655,6 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
             network.addCellTower(CellTower.from(
                     mcc, mnc, buf.readUnsignedShort(), buf.readUnsignedShort(), buf.readUnsignedByte()));
         }
-
-        position.setNetwork(network);
 
         if (channel != null) {
             ByteBuf response = Unpooled.buffer();
@@ -648,6 +666,10 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
             response.writeByte('\n');
             channel.writeAndFlush(new NetworkMessage(response, channel.remoteAddress()));
         }
+
+        }
+
+        position.setNetwork(network);
 
         return position;
     }
@@ -701,9 +723,13 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
             int commandLength = buf.readUnsignedByte();
 
             if (commandLength > 0) {
-                buf.readUnsignedByte(); // server flag (reserved)
-                position.set(Position.KEY_RESULT,
-                        buf.readSlice(commandLength - 1).toString(StandardCharsets.US_ASCII));
+                buf.readUnsignedInt(); // server flag (reserved)
+                String data = buf.readSlice(commandLength - 4).toString(StandardCharsets.US_ASCII);
+                if (data.startsWith("<ICCID:")) {
+                    position.set(Position.KEY_ICCID, data.substring(7, 27));
+                } else {
+                    position.set(Position.KEY_RESULT, data);
+                }
             }
 
         } else if (type == MSG_BMS || type == MSG_BMS_2) {
@@ -740,7 +766,11 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
 
         } else if (isSupported(type)) {
 
+            if (type == MSG_STATUS && buf.readableBytes() == 22) {
+                decodeHeartbeat(buf, position);
+            } else {
             decodeBasicUniversal(buf, deviceSession, type, position);
+            }
 
         } else if (type == MSG_ALARM) {
             boolean extendedAlarm = dataLength > 7;
@@ -804,6 +834,29 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
         return position;
     }
 
+    private void decodeHeartbeat(ByteBuf buf, Position position) {
+
+        getLastLocation(position, null);
+
+        buf.readUnsignedByte(); // information content
+        buf.readUnsignedShort(); // satellites
+        buf.readUnsignedByte(); // alarm
+        buf.readUnsignedByte(); // language
+
+        position.set(Position.KEY_BATTERY_LEVEL, buf.readUnsignedByte());
+
+        buf.readUnsignedByte(); // working mode
+        buf.readUnsignedShort(); // working voltage
+        buf.readUnsignedByte(); // reserved
+        buf.readUnsignedShort(); // working times
+        buf.readUnsignedShort(); // working time
+
+        int value = buf.readUnsignedShort();
+        double temperature = BitUtil.to(value, 15) * 0.1;
+        position.set(Position.PREFIX_TEMP + 1, BitUtil.check(value, 15) ? temperature : -temperature);
+
+    }
+
     private void decodeBasicUniversal(ByteBuf buf, DeviceSession deviceSession, int type, Position position) {
 
         if (hasGps(type)) {
@@ -817,7 +870,7 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
         }
 
         if (hasStatus(type)) {
-            decodeStatus(position, buf);
+            decodeStatus(position, buf, true);
         }
 
         if (type == MSG_GPS_LBS_1 && buf.readableBytes() > 75 + 6) {
@@ -826,6 +879,17 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
             buf.readUnsignedByte(); // alarm
             buf.readUnsignedByte(); // swiped
             position.set("driverLicense", data.trim());
+        }
+
+        if (type == MSG_GPS_LBS_1 && buf.readableBytes() == 18) {
+            decodeStatus(position, buf, false);
+            position.set("oil", buf.readUnsignedShort());
+            int temperature = buf.readUnsignedByte();
+            if (BitUtil.check(temperature, 7)) {
+                temperature = -BitUtil.to(temperature, 7);
+            }
+            position.set(Position.PREFIX_TEMP + 1, temperature);
+            position.set(Position.KEY_ODOMETER, buf.readUnsignedInt() * 10);
         }
 
         if (type == MSG_GPS_LBS_1 && buf.readableBytes() == 2 + 6) {
@@ -1025,6 +1089,7 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
             String data = buf.readCharSequence(buf.readableBytes() - 18, StandardCharsets.US_ASCII).toString();
             for (String pair : data.split(",")) {
                 String[] values = pair.split("=");
+                if (values.length >= 2) {
                 switch (Integer.parseInt(values[0].substring(0, 2), 16)) {
                     case 40:
                         position.set(Position.KEY_ODOMETER, Integer.parseInt(values[1], 16) * 0.01);
@@ -1053,6 +1118,7 @@ public class Gt06ProtocolDecoder extends BaseProtocolDecoder {
                     default:
                         break;
                 }
+            }
             }
 
             return position;

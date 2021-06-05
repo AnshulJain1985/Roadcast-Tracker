@@ -27,7 +27,6 @@ import org.traccar.helper.Checksum;
 import org.traccar.model.Position;
 
 import java.net.SocketAddress;
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.LinkedList;
