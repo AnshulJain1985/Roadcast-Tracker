@@ -548,7 +548,7 @@ public class Tk103BmsProtocolDecoder extends BaseProtocolDecoder {
 
         getLastLocation(position, null);
 
-        DecimalFormat df = new DecimalFormat("#.#");
+        DecimalFormat df = new DecimalFormat("#.###");
         int contentLength = parser.nextHexInt();
         int startByte = parser.nextHexInt();
 
@@ -562,7 +562,7 @@ public class Tk103BmsProtocolDecoder extends BaseProtocolDecoder {
         }
         position.set(KEY_BMS_WORKING_STATUS, parser.nextHexInt());
         position.set(KEY_BMS_CURRENT, parser.nextHexInt());
-        position.set(KEY_BMS_TOTAL_VOLTAGE, parser.nextHexInt());
+        position.set(KEY_BMS_TOTAL_VOLTAGE, df.format(parser.nextHexInt() / 1000.0));
         position.set(KEY_BMS_REMAINING_CAPACITY, parser.nextHexInt());
         position.set(KEY_BMS_BATTERY_OVER_TEMP, parser.nextHexInt());
         position.set(KEY_BMS_CHARGE_PROTECTION, parser.nextHexInt());
