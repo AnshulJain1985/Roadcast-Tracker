@@ -45,6 +45,7 @@ public class BoltCamProtocolDecoder extends BaseProtocolDecoder {
 
     public static final int MSG_GENERAL_RESPONSE = 0x8001;
     public static final int MSG_GENERAL_RESPONSE_2 = 0x4401;
+    public static final int MSG_HEARTBEAT = 0x0002;
     public static final int MSG_TERMINAL_REGISTER = 0x0100;
     public static final int MSG_TERMINAL_REGISTER_RESPONSE = 0x8100;
     public static final int MSG_TERMINAL_CONTROL = 0x8105;
@@ -118,6 +119,9 @@ public class BoltCamProtocolDecoder extends BaseProtocolDecoder {
         if (BitUtil.check(value, 8)) {
             return Position.ALARM_POWER_OFF;
         }
+        if (BitUtil.check(value, 17)) {
+            return Position.ALARM_TAMPERING;
+        }
         if (BitUtil.check(value, 20)) {
             return Position.ALARM_GEOFENCE;
         }
@@ -171,7 +175,7 @@ public class BoltCamProtocolDecoder extends BaseProtocolDecoder {
                         formatMessage(MSG_TERMINAL_REGISTER_RESPONSE, id, false, response), remoteAddress));
             }
 
-        } else if (type == MSG_TERMINAL_AUTH) {
+        } else if (type == MSG_TERMINAL_AUTH || type == MSG_HEARTBEAT) {
 
             sendGeneralResponse(channel, remoteAddress, id, type, index);
 
@@ -251,6 +255,15 @@ public class BoltCamProtocolDecoder extends BaseProtocolDecoder {
                 .setSecond(BcdUtil.readInteger(buf, 2));
         position.setTime(dateBuilder.getDate());
 
+        if (buf.readableBytes() == 20) {
+            buf.skipBytes(4); // remaining battery and mileage
+            position.set(Position.KEY_ODOMETER, buf.readUnsignedInt() * 1000);
+            position.set(Position.KEY_BATTERY, buf.readUnsignedShort() * 0.1);
+            buf.readUnsignedInt(); // area id
+            position.set(Position.KEY_RSSI, buf.readUnsignedByte());
+            buf.skipBytes(3); // reserved
+            return position;
+        }
         while (buf.readableBytes() > 2) {
             int subtype = buf.readUnsignedByte();
             int length = buf.readUnsignedByte();
@@ -305,6 +318,7 @@ public class BoltCamProtocolDecoder extends BaseProtocolDecoder {
                     position.set(Position.KEY_POWER, buf.readUnsignedShort() * 0.1);
                     break;
                 case 0xD4:
+                case 0xFE:
                     position.set(Position.KEY_BATTERY_LEVEL, buf.readUnsignedByte());
                     break;
                 case 0xD5:
@@ -318,6 +332,17 @@ public class BoltCamProtocolDecoder extends BaseProtocolDecoder {
                     position.set("cover", BitUtil.check(deviceStatus, 3));
                     break;
                 case 0xEB:
+                    if (buf.getUnsignedShort(buf.readerIndex()) > 200) {
+                        Network network = new Network();
+                        int mcc = buf.readUnsignedShort();
+                        int mnc = buf.readUnsignedByte();
+                        while (buf.readerIndex() < endIndex) {
+                            network.addCellTower(CellTower.from(
+                                    mcc, mnc, buf.readUnsignedShort(), buf.readUnsignedShort(),
+                                    buf.readUnsignedByte()));
+                        }
+                        position.setNetwork(network);
+                    } else {
                     while (buf.readerIndex() < endIndex) {
                         int extendedLength = buf.readUnsignedShort();
                         int extendedType = buf.readUnsignedShort();
@@ -337,6 +362,7 @@ public class BoltCamProtocolDecoder extends BaseProtocolDecoder {
                                 buf.skipBytes(extendedLength - 2);
                                 break;
                         }
+                    }
                     }
                     break;
                 default:
