@@ -185,14 +185,14 @@ public class Tk103BmsProtocolDecoder extends BaseProtocolDecoder {
             .number("(xx)")                       // b0 battery undervoltage
             .number("(xx)")                       // 1 to indicate that the charging current is detected.
             .number("(xx)")                       // 1 to indicate that the effective discharge current is detected
-            .number("(x{4})")                     // skip
+            .number("x{4}")                     // skip
             .number("(xx)")                       // temperature quantity
             .number("(xx)")                       // power board temp Offset 40 degrees 40 = 0 degrees 50 = 10 35 = -5
             .number("(xx)")                       // balance plate temperature
             .number("(xx)(xx)(xx)(xx)(xx)(xx)(xx)")                    // balance plate temperature
             .number("(x{4})")                     // Calibration capacity 0.01
             .number("(x{8})")                     // Total discharge capacity
-            .number("(x{8})")                    // skip
+            .number("x{8}")                    // skip
             .number("(x{16})")                    // Protection board factory information
             .any()
             .text(")").optional()
