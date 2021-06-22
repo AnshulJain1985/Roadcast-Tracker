@@ -417,6 +417,7 @@
     <entry key='h02libiobd.timeout'>185</entry>
 
     <entry key='boltcam.port'>8015</entry>
+    <entry key='huabaomt10.port'>7015</entry>
 
     <entry key='thinture.port'>5334</entry>
     <entry key='thinture.timeout'>185</entry>
