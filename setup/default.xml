@@ -19,10 +19,8 @@
     <entry key='geocoder.enable'>false</entry>
     <entry key='geocoder.type'>google</entry>
 
-    <entry key='geolocation.enable'>true</entry>
+    <entry key='geolocation.enable'>false</entry>
     <entry key='geolocation.type'>mozilla</entry>
-    <entry key='geolocation.url'>http://37.247.116.196:8000/v1/geolocate</entry>
-    <entry key='geolocation.key'>a813bbba-6be0-46e4-be6f-b9943b23bfaa</entry>
     <entry key='geolocation.processInvalidPositions'>true</entry>
     <entry key='geolocation.protocols'>watch,minifinder2</entry>
 
@@ -32,7 +30,6 @@
     <entry key='logger.rotate'>true</entry>
 
     <entry key='event.enable'>true</entry>
-    <entry key='processing.computedAttributes.enable'>true</entry>
     <entry key='event.overspeedHandler'>true</entry>
     <entry key='event.overspeed.notRepeat'>false</entry>
     <entry key='event.motionHandler'>false</entry>
@@ -51,19 +48,15 @@
 
     <entry key='event.forward.enable'>true</entry>
     <entry key='event.forward.header'>Content-Type:application/json; charset=utf-8</entry>
-    <!--entry key='event.forward.url'>http://10.139.148.198:3000/home</entry-->
-    <entry key='event.forward.url'>http://10.139.148.198:81/traccar-event/1</entry>
+    <entry key='event.forward.url'>http://172.31.27.159:81/traccar-event/1</entry>
 
     <entry key='forward.enable'>true</entry>
     <entry key='forward.json'>true</entry>
-    <!--entry key='forward.url'>http://68.183.244.137:8084</entry-->
-    <!--entry key='forward.url'>http://10.139.148.198:3000/push-api/position-redis</entry-->
-    <entry key='forward.url'>http://10.139.148.198:81/traccar-position/1</entry>
+    <entry key='forward.url'>https://eng2csnghdpc1wd.m.pipedream.net</entry>
 
     <entry key='processing.copyAttributes.enable'>true</entry>
     <entry key='processing.copyAttributes'>door,ignition,battery,batteryLevel,charge</entry>
-
-    <!--entry key='status.updateDeviceState'>true</entry-->
+    <entry key='processing.engineHours.enable'>true</entry>
 
     <entry key='filter.enable'>true</entry>
     <entry key='filter.duplicate'>true</entry>
@@ -77,7 +70,6 @@
     <entry key='coordinates.filter'>true</entry>
     <entry key='coordinates.maxError'>5000</entry>
 
-    <entry key='processing.engineHours.enable'>true</entry>
 
     <entry key='media.path'>./media</entry>
     <entry key='media.dirAllowed'>true</entry>
