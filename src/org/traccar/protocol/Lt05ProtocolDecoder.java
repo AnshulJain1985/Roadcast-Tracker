@@ -971,6 +971,12 @@ public class Lt05ProtocolDecoder extends BaseProtocolDecoder {
                 buf.readUnsignedByte(); // checksum
                 buf.readUnsignedByte(); // footer
                 return position;
+            } else if (subType == 0xfe) {
+                position.set("maininput", buf.readUnsignedShort() * 0.1);
+                position.set("battv", buf.readUnsignedByte() * 0.1);
+                position.set(Position.PREFIX_ADC + 1, buf.readUnsignedShort() * 0.1);
+                position.set(Position.PREFIX_ADC + 2, buf.readUnsignedShort() * 0.1);
+                return position;
             }
 
         } else if (type == MSG_X1_PHOTO_DATA) {
