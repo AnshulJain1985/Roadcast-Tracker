@@ -422,6 +422,10 @@
     <entry key='thinture.port'>5334</entry>
     <entry key='thinture.timeout'>185</entry>
 
+    <entry key='nisais.port'>5335</entry>
+    <entry key='nisais.timeout'>185</entry>
+
+
 
 
 </properties>
