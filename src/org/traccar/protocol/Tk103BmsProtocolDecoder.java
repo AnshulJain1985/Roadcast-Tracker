@@ -36,6 +36,30 @@ import java.util.regex.Pattern;
 
 public class Tk103BmsProtocolDecoder extends BaseProtocolDecoder {
 
+    private static final String KEY_BMS_CHARGE_PROTECTION_VOLTAGE = "bCPV";
+    private static final String KEY_BMS_DISCHARGE_PROTECTION_VOLTAGE = "bDPV";
+    private static final String KEY_BMS_SEC_CHARGE_PROTECTION_VOLTAGE = "bSCPV";
+    private static final String KEY_BMS_SEC_DISCHARGE_PROTECTION_VOLTAGE = "bSDPV";
+    private static final String KEY_BMS_CHARGE_RECOVERING_VOLTAGE = "bCRV";
+    private static final String KEY_BMS_DISCHARGE_RECOVERING_VOLTAGE = "bDRV";
+    private static final String KEY_BMS_BALANCED_STARTING_VOLTAGE = "bBSV";
+    private static final String KEY_BMS_DISCHARGE_OVERCURRENT_PROTECTION = "bDOCP";
+    private static final String KEY_BMS_PEAK_DISCHARGE_PROTECTION = "bPDP";
+    private static final String KEY_BMS_DISCHARGE_PROTECTION_DELAY = "bDPD";
+    private static final String KEY_BMS_CHARGING_CURRENT_PROTECTION = "bCCP";
+    private static final String KEY_BMS_CHARGE_BALANCE_RATION = "bCBR";
+    private static final String KEY_BMS_EQUILIZATION_ACCURACY_MV = "bEQA";
+    private static final String KEY_BMS_MOS_TEMP_PROTECTION = "bMOSTP";
+    private static final String KEY_BMS_BALANCED_TEMP_PROTECTION = "bBALTP";
+    private static final String KEY_BMS_BATTERY_TEMP_PROTECTION = "bBTP";
+    private static final String KEY_BMS_BATTERY_TEMP_RECOVERY = "bBTR";
+    private static final String KEY_BMS_BATTERY_STRING_SETTING = "bBSS";
+    private static final String KEY_BMS_BATTERY_CAPACITY_SETTING = "bBCS";
+    private static final String KEY_BMS_BALANCE_SWITCH = "bBS";
+    private static final String KEY_BMS_CHARGE_SWITCH = "bCS";
+    private static final String KEY_BMS_DISCHARGE_SWITCH = "bDS";
+    private static final String KEY_BMS_DEDICATED_CHARGE_SWITCH = "bDCS";
+    private static final String KEY_BMS_REMAINING_CAPACITY_ALARM_VAL = "bRCAV";
     private final boolean decodeLow;
 
     private static final String KEY_BMS_NO_OF_BATTERIES = "bNB";
@@ -161,7 +185,7 @@ public class Tk103BmsProtocolDecoder extends BaseProtocolDecoder {
             .any()
             .compile();
 
-    private static final Pattern PATTERN_BMS = new PatternBuilder()
+    private static final Pattern PATTERN_BMS_FF = new PatternBuilder()
             .text("(").optional()
             .number("(d+)")                   // device id
             .text("BS50")
@@ -194,6 +218,43 @@ public class Tk103BmsProtocolDecoder extends BaseProtocolDecoder {
             .number("(x{8})")                     // Total discharge capacity
             .number("x{8}")                    // skip
             .number("(x{16})")                    // Protection board factory information
+            .any()
+            .text(")").optional()
+            .compile();
+
+    private static final Pattern PATTERN_BMS_FA = new PatternBuilder()
+            .text("(").optional()
+            .number("(d+)")                   // device id
+            .text("BS50")
+            .number("(x{4})")                     // content length
+            .number("(xx)")                       // start bit FA
+            .number("(xx)")                       // Number of data
+            .number("(x{4})")                     // Charge protection voltage
+            .number("(x{4})")                     // Discharge protection voltage
+            .number("(x{4})")                     // Secondary charge protection voltage
+            .number("(x{4})")                     // Secondary discharge protection value
+            .number("(x{4})")                     // Charging recovery voltage
+            .number("(x{4})")                     // Discharge recovery voltage
+            .number("(x{4})")                     // Balanced starting voltage
+            .number("(x{4})")                     // Discharge overcurrent protection
+            .number("(x{4})")                     // Peak discharge protection
+            .number("(xx)")                       // Discharge protection delay
+            .number("(xx)")                       // Charging current protection
+            .number("(xx)")                       // Charge balance ratio (10%-100%)
+            .number("(xx)")                       // Equalization accuracy Mv
+            .number("(xx)")                       // MOS tube temperature protection value
+            .number("(xx)")                       // Balanced temperature protection value
+            .number("(xx)")                       // Battery temperature protection value
+            .number("(xx)")                       // Battery temperature recovery value
+            .number("x{4}")                       // unused
+            .number("(xx)")                       // Battery string setting
+            .number("(x{4})")                     // Battery capacity setting
+            .number("(xx)")                       // Balance switch
+            .number("xx")                         // unused
+            .number("(xx)")                       // charging switch
+            .number("(xx)")                       // discharging switch
+            .number("(xx)")                       // Dedicated charger switch 1 = use dedicated charger
+            .number("(xx)")                       // Remaining capacity alarm value
             .any()
             .text(")").optional()
             .compile();
@@ -464,9 +525,11 @@ public class Tk103BmsProtocolDecoder extends BaseProtocolDecoder {
 
         DateBuilder dateBuilder = new DateBuilder();
         if (alternative) {
-            dateBuilder.setDateReverse(parser.nextInt(0), parser.nextInt(0), parser.nextInt(0));
+            dateBuilder.setDateReverse(parser.nextInt(0),
+                    parser.nextInt(0), parser.nextInt(0));
         } else {
-            dateBuilder.setDate(parser.nextInt(0), parser.nextInt(0), parser.nextInt(0));
+            dateBuilder.setDate(parser.nextInt(0), parser.nextInt(0),
+                    parser.nextInt(0));
         }
 
         position.setValid(parser.next().equals("A"));
@@ -533,11 +596,64 @@ public class Tk103BmsProtocolDecoder extends BaseProtocolDecoder {
 
     private Position decodeBMS(Channel channel, SocketAddress remoteAddress, String sentence) {
 
-        Parser parser = new Parser(PATTERN_BMS, sentence);
-        if (!parser.matches()) {
+        Parser parser = new Parser(PATTERN_BMS_FF, sentence);
+        if (parser.matches()) {
+            return decodeBMSFF(channel, remoteAddress, parser);
+        }
+
+        parser = new Parser(PATTERN_BMS_FA, sentence);
+        if (parser.matches()) {
+            return decodeBMSFA(channel, remoteAddress, parser);
+        }
+        return null;
+    }
+
+    private Position decodeBMSFA(Channel channel, SocketAddress remoteAddress, Parser parser) {
+        DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, parser.next());
+        if (deviceSession == null) {
             return null;
         }
 
+        Position position = new Position(getProtocolName());
+        position.setDeviceId(deviceSession.getDeviceId());
+
+        getLastLocation(position, null);
+
+        DecimalFormat df = new DecimalFormat("#.###");
+        int contentLength = parser.nextHexInt();
+        int startByte = parser.nextHexInt();
+
+        position.set("bms", true);
+
+        position.set(KEY_BMS_CHARGE_PROTECTION_VOLTAGE, parser.toLittleEndian(parser.next()));
+        position.set(KEY_BMS_DISCHARGE_PROTECTION_VOLTAGE, parser.toLittleEndian(parser.next()));
+        position.set(KEY_BMS_SEC_CHARGE_PROTECTION_VOLTAGE, parser.toLittleEndian(parser.next()));
+        position.set(KEY_BMS_SEC_DISCHARGE_PROTECTION_VOLTAGE, parser.toLittleEndian(parser.next()));
+        position.set(KEY_BMS_CHARGE_RECOVERING_VOLTAGE, parser.toLittleEndian(parser.next()));
+        position.set(KEY_BMS_DISCHARGE_RECOVERING_VOLTAGE, parser.toLittleEndian(parser.next()));
+        position.set(KEY_BMS_BALANCED_STARTING_VOLTAGE, parser.toLittleEndian(parser.next()));
+        position.set(KEY_BMS_DISCHARGE_OVERCURRENT_PROTECTION, parser.nextHexInt());
+        position.set(KEY_BMS_PEAK_DISCHARGE_PROTECTION, parser.nextHexInt());
+        position.set(KEY_BMS_DISCHARGE_PROTECTION_DELAY, parser.nextHexInt());
+        position.set(KEY_BMS_CHARGING_CURRENT_PROTECTION, parser.nextHexInt());
+        position.set(KEY_BMS_CHARGE_BALANCE_RATION, parser.nextHexInt());
+        position.set(KEY_BMS_EQUILIZATION_ACCURACY_MV, parser.nextHexInt());
+        position.set(KEY_BMS_MOS_TEMP_PROTECTION, parser.nextHexInt());
+        position.set(KEY_BMS_BALANCED_TEMP_PROTECTION, parser.nextHexInt());
+        position.set(KEY_BMS_BATTERY_TEMP_PROTECTION, parser.nextHexInt());
+        position.set(KEY_BMS_BATTERY_TEMP_RECOVERY, parser.nextHexInt());
+        position.set(KEY_BMS_BATTERY_STRING_SETTING, parser.nextHexInt());
+        position.set(KEY_BMS_BATTERY_CAPACITY_SETTING, parser.nextHexInt());
+        position.set(KEY_BMS_BALANCE_SWITCH, parser.nextHexInt());
+        position.set(KEY_BMS_CHARGE_SWITCH, parser.nextHexInt());
+        position.set(KEY_BMS_DISCHARGE_SWITCH, parser.nextHexInt());
+        position.set(KEY_BMS_DEDICATED_CHARGE_SWITCH, parser.nextHexInt());
+        position.set(KEY_BMS_REMAINING_CAPACITY_ALARM_VAL, parser.nextHexInt());
+
+        return position;
+    }
+
+    private Position decodeBMSFF(Channel channel, SocketAddress remoteAddress, Parser parser) {
         DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, parser.next());
         if (deviceSession == null) {
             return null;
@@ -594,7 +710,6 @@ public class Tk103BmsProtocolDecoder extends BaseProtocolDecoder {
         position.set(KEY_BMS_PROTECTION_BOARD_INFO, parser.next());
 
         return position;
-
     }
 
     private void decodeBMSAlarm1(Position position, int mask) {
