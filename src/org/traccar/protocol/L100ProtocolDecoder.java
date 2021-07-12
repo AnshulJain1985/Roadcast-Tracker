@@ -57,7 +57,7 @@ public class L100ProtocolDecoder extends BaseProtocolDecoder {
             .any()
             .text("#")
             .number("([01]+),")                  // io status
-            .number("(d+.?d*|N.C),")             // adc
+            .number("(-?d+.?d*|N.C),")             // adc
             .number("(d+.?d*),")                // 1-Wire temperature reading
             .expression("([^,]*),")                // I-button data
             .number("(d+.?d*),")                 // odometer

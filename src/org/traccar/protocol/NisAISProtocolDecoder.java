@@ -19,6 +19,7 @@ import io.netty.channel.Channel;
 import org.traccar.BaseProtocolDecoder;
 import org.traccar.Context;
 import org.traccar.DeviceSession;
+import org.traccar.NetworkMessage;
 import org.traccar.helper.DateBuilder;
 import org.traccar.helper.Parser;
 import org.traccar.helper.PatternBuilder;
@@ -27,6 +28,7 @@ import org.traccar.model.CellTower;
 import org.traccar.model.Network;
 import org.traccar.model.Position;
 import java.net.SocketAddress;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.regex.Pattern;
 
@@ -328,13 +330,14 @@ public class NisAISProtocolDecoder extends BaseProtocolDecoder {
 
         Parser parser = new Parser(PATTERN_LOGIN, sentence);
         if (parser.matches()) {
-//            String currentDate = new SimpleDateFormat("ddMMyyyyHHmmss").format(new Date());
-//            channel.write("$LGN" + currentDate + "*");
+            String currentDate = new SimpleDateFormat("ddMMyyyyHHmmss").format(new Date());
+            channel.writeAndFlush(new NetworkMessage("$LGN" + currentDate + "*", remoteAddress));
             return decodeLogin(position, channel, remoteAddress, parser);
         }
 
         parser = new Parser(PATTERN_EMERGENCY, sentence);
         if (parser.matches()) {
+            channel.writeAndFlush(new NetworkMessage("$HBT*", remoteAddress));
             return decodeEmergency(position, channel, remoteAddress, parser);
         }
 
