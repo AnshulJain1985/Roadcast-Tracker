@@ -51,6 +51,23 @@ public class NisAISProtocolDecoder extends BaseProtocolDecoder {
             .any()
             .compile();
 
+    private static final Pattern PATTERN_HEARTBEAT = new PatternBuilder()
+            .text("$")
+            .expression("([^,]+)?,")                // Header
+            .expression("([^,]+)?,")                // Vendor Id
+            .expression("([^,]+)?,")                // Software version
+            .expression("([0-9]+),")                // IMEI
+            .number("(d+.?d*)?,?")                  // Battery percentage
+            .number("(d+.?d*)?,?")                  // Low battery threshold value
+            .number("(d+.?d*)?,?")                  // Memory percentage
+            .number("(d+.?d*)?,?")                  // Data update rate when ignition ON
+            .number("(d+.?d*)?,?")                  // Data update rate when ignition OFF
+            .number("(d)(d)(d)(d),")                // digital Input 4
+            .number("(d)(d)")                      // digital Output 2
+            .text("*")
+            .any()
+            .compile();
+
     private static final Pattern PATTERN = new PatternBuilder()
             .text("$")
             .expression("([^,]+)?,")                // Header
@@ -323,6 +340,33 @@ public class NisAISProtocolDecoder extends BaseProtocolDecoder {
         return position;
     }
 
+    private Object decodeHeartbeat(Position position, Channel channel, SocketAddress remoteAddress, Parser parser) {
+        String header = parser.next();
+        position.set(Position.KEY_VERSION_HW, parser.next());
+        position.set(Position.KEY_VERSION_FW, parser.next());
+        String imei = parser.next();
+        DeviceSession deviceSession = getDeviceSession(channel, remoteAddress, imei);
+        if (deviceSession == null) {
+            return null;
+        }
+        position.setDeviceId(deviceSession.getDeviceId());
+        position.set(Position.KEY_BATTERY, parser.nextDouble(0));
+        double lowBattery =  parser.nextDouble(0);
+        double memoryPerc =  parser.nextDouble(0);
+        double dataUpdateOn =  parser.nextDouble(0);
+        double dataUpdateOff =  parser.nextDouble(0);
+
+        for (int i = 1; i <= 4; i++) {
+            int tempDio = parser.nextInt(0);
+            position.set(Position.PREFIX_IN + i, tempDio);
+        }
+        for (int i = 1; i <= 2; i++) {
+            position.set(Position.PREFIX_OUT + i, parser.nextInt(0));
+        }
+        getLastLocation(position, null);
+        return position;
+    }
+
     @Override
     protected Object decode(Channel channel, SocketAddress remoteAddress, Object msg) throws Exception {
         String sentence = (String) msg;
@@ -335,9 +379,14 @@ public class NisAISProtocolDecoder extends BaseProtocolDecoder {
             return decodeLogin(position, channel, remoteAddress, parser);
         }
 
-        parser = new Parser(PATTERN_EMERGENCY, sentence);
+        parser = new Parser(PATTERN_HEARTBEAT, sentence);
         if (parser.matches()) {
             channel.writeAndFlush(new NetworkMessage("$HBT*", remoteAddress));
+            return decodeHeartbeat(position, channel, remoteAddress, parser);
+        }
+
+        parser = new Parser(PATTERN_EMERGENCY, sentence);
+        if (parser.matches()) {
             return decodeEmergency(position, channel, remoteAddress, parser);
         }
 
