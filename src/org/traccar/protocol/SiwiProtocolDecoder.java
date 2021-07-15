@@ -19,6 +19,7 @@ import org.jboss.netty.channel.Channel;
 import org.traccar.BaseProtocolDecoder;
 import org.traccar.Context;
 import org.traccar.DeviceSession;
+import org.traccar.helper.BitUtil;
 import org.traccar.helper.Parser;
 import org.traccar.helper.PatternBuilder;
 import org.traccar.helper.UnitsConverter;
@@ -61,6 +62,14 @@ public class SiwiProtocolDecoder extends BaseProtocolDecoder {
             .number("(d+),")                     // server status
             .number("(d+),")                     // internal battery
             .number("(d+),")                     // adc1
+            .number("(d+),")                     // digital input
+            .number("[^,]*,")                    // Aux Field 1
+            .number("[^,]*,")                    // Aux Field 2
+            .number("[^,]*,")                    // Aux Field 3
+            .number("[^,]*,")                    // Aux Field 4
+            .number("[^,]*,")                    // Hardware Version
+            .number("[^,]*,")                    // Software Version
+            .number("(d+)")                     // Packet Type
             .any()
             .compile();
 
@@ -81,7 +90,7 @@ public class SiwiProtocolDecoder extends BaseProtocolDecoder {
         Position position = new Position(getProtocolName());
         position.setDeviceId(deviceSession.getDeviceId());
 
-        position.set(Position.KEY_EVENT, parser.next());
+        decodeAlarm(position, parser.next());
         boolean isIgnition = parser.next().equals("1");
         position.set(Position.KEY_IGNITION, isIgnition);
         boolean isCharge = parser.next().equals("1");
@@ -110,20 +119,53 @@ public class SiwiProtocolDecoder extends BaseProtocolDecoder {
         position.setAltitude(parser.nextDouble(0));
         position.setCourse(parser.nextInt(0));
 
-        position.setTime(parser.nextDateTime(Parser.DateTimeFormat.HMS_DMY, "IST"));
+        position.setTime(parser.nextDateTime(Parser.DateTimeFormat.HMS_DMY));
 
         position.set(Position.KEY_RSSI, parser.nextInt(0));
 
         position.set(Position.KEY_STATUS, parser.nextDouble(0));
         position.set(Position.KEY_BATTERY, (parser.nextInt(0) / 1000));
-        position.set(Position.PREFIX_ADC + 1, (parser.nextInt(0) / 100));
+        position.set(Position.PREFIX_ADC + 1, (parser.nextInt(0) / 1000));
 
-        if (!isIgnition) {
+        int digitalInput = parser.nextInt(0);
+        position.set(Position.KEY_DOOR, BitUtil.check(digitalInput, 0));
+        if (BitUtil.check(digitalInput, 3)) {
+            position.set(Position.ALARM_SOS, true);
+        }
+
+        boolean isLivePacket = parser.next().equals("0");
+
+        if (!isIgnition && isLivePacket) {
             getLastLocation(position, position.getDeviceTime());
         }
 
         return position;
     }
+
+    private void decodeAlarm(Position position, String alarm) {
+        position.set(Position.KEY_EVENT, alarm);
+        switch (alarm) {
+            case "K":
+                position.set(Position.KEY_ALARM, Position.ALARM_TAMPERING);
+                break;
+            case "M":
+                position.set(Position.KEY_ALARM, Position.ALARM_CORNERING);
+                break;
+            case "N":
+                position.set(Position.KEY_ALARM, Position.ALARM_SOS);
+                break;
+            case "P":
+                position.set(Position.KEY_ALARM, Position.ALARM_ACCELERATION);
+                break;
+            case "S":
+                position.set(Position.KEY_ALARM, Position.ALARM_BRAKING);
+                break;
+            default:
+                break;
+
+        }
+    }
+
 
     public void getLastLocation(Position position, Date deviceTime) {
         if (position.getDeviceId() != 0) {
